@@ -1,122 +1,123 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+/*
+  App.jsx
+  --------------------------------------------------
+  ไฟล์นี้เป็น Component หลักของ Frontend
 
+  หน้าที่ของ App.jsx ในโปรเจกต์ MealQ คือ:
+  1. รับการทำงานต่อมาจาก main.jsx
+  2. เรียก AppRoutes เพื่อจัดการ Routing ทั้งหมด
+  3. ไม่เก็บรายละเอียด UI ของแต่ละหน้าไว้ที่นี่
+
+  โครงสร้างการทำงานจะเป็น:
+
+  main.jsx
+      ↓
+  App.jsx
+      ↓
+  AppRoutes.jsx
+      ↓
+  CustomerLayout / MerchantLayout
+      ↓
+  Page ต่าง ๆ
+
+  ตัวอย่าง:
+
+  ถ้า URL เป็น:
+  /restaurants
+
+  ระบบจะทำงาน:
+  main.jsx
+      ↓
+  App.jsx
+      ↓
+  AppRoutes.jsx
+      ↓
+  CustomerLayout.jsx
+      ↓
+  Restaurants.jsx
+*/
+
+
+// นำ Component AppRoutes เข้ามาใช้งาน
+// AppRoutes เป็นไฟล์ที่เก็บ Route ทั้งหมดของเว็บไซต์
+//
+// ตัวอย่าง Route:
+// /
+// /restaurants
+// /restaurants/1
+// /cart
+// /orders
+// /merchant/dashboard
+import AppRoutes from "./routes/AppRoutes";
+
+
+/*
+  Component หลักของ Application
+
+  App ไม่จำเป็นต้องมี Navbar หรือ Sidebar โดยตรง
+
+  เพราะเราจะแยกออกเป็น:
+
+  CustomerLayout.jsx
+  -> Layout สำหรับลูกค้า
+
+  MerchantLayout.jsx
+  -> Layout สำหรับร้านค้า
+
+  ทำให้โครงสร้างโปรเจกต์อ่านง่าย
+  และคนในทีมสามารถแก้แต่ละส่วนได้ง่ายขึ้น
+*/
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      {/*
+        AppRoutes จะตรวจ URL ปัจจุบันของ Browser
 
-      <div className="ticks"></div>
+        แล้วเลือกว่าต้องแสดงหน้าอะไร
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        เช่น:
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+        URL:
+        /
+
+        จะแสดง:
+        CustomerLayout
+            ↓
+        Home
+
+
+        URL:
+        /restaurants
+
+        จะแสดง:
+        CustomerLayout
+            ↓
+        Restaurants
+
+
+        URL:
+        /cart
+
+        จะแสดง:
+        CustomerLayout
+            ↓
+        Cart
+
+
+        URL:
+        /merchant/dashboard
+
+        จะแสดง:
+        MerchantLayout
+            ↓
+        Dashboard
+      */}
+
+      <AppRoutes />
     </>
-  )
+  );
 }
 
-export default App
+
+// export App เพื่อให้ main.jsx สามารถ import ไปใช้งานได้
+export default App;
