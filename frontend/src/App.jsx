@@ -1,11 +1,18 @@
+/*
+  App.jsx
+  --------------------------------------------------
+  Component หลักของ Frontend
+
+  main.jsx
+      ↓
+  App.jsx        (สร้าง Router + ScrollRestoration)
+      ↓
+  AppRoutes.jsx  (Route ทั้งหมดของเว็บไซต์ อยู่ที่ไฟล์นี้ไฟล์เดียว)
+      ↓
+  Layout / Page ต่าง ๆ
+*/
 import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration } from "react-router";
-import AuthLayout from "@/pages/auth/auth-layout";
-import ForgotPasswordPage from "@/pages/auth/forgot-password";
-import LoginPage from "@/pages/auth/login";
-import RegisterPage from "@/pages/auth/register";
-import ResetPasswordPage from "@/pages/auth/reset-password";
-import HomePage from "@/pages/home";
-import NotFoundPage from "@/pages/not-found";
+import AppRoutes from "./routes/AppRoutes";
 
 function RootLayout() {
   return (
@@ -16,22 +23,11 @@ function RootLayout() {
   );
 }
 
+// ทุก URL ส่งต่อให้ AppRoutes เป็นคนเลือกหน้า
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
-    children: [
-      { path: "/", element: <HomePage /> },
-      {
-        element: <AuthLayout />,
-        children: [
-          { path: "/login", element: <LoginPage /> },
-          { path: "/register", element: <RegisterPage /> },
-          { path: "/forgot-password", element: <ForgotPasswordPage /> },
-          { path: "/reset-password", element: <ResetPasswordPage /> },
-        ],
-      },
-      { path: "*", element: <NotFoundPage /> },
-    ],
+    children: [{ path: "*", element: <AppRoutes /> }],
   },
 ]);
 

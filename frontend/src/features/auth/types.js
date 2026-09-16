@@ -5,6 +5,6 @@ export function isUserRole(value) {
 }
 
 export const ROLE_HOME = {
-  CUSTOMER: "/customer",
+  CUSTOMER: "/restaurants",
   MERCHANT: "/merchant",
 };
