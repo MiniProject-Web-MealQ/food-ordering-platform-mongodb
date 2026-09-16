@@ -1,30 +1,36 @@
-# --------------------------------------------------
-# MealQ Route Smoke Test
-# --------------------------------------------------
-# ใช้ทดสอบว่า:
-# 1. Frontend เปิดได้
-# 2. Customer Routes ตอบ HTTP 200
-# 3. Backend API ทำงาน
-# 4. MongoDB เชื่อมต่ออยู่
+# ==========================================================
+# MealQ Full Smoke Test
+# ==========================================================
+# ทดสอบระบบเบื้องต้นทั้งหมด:
+#
+# 1. Customer Frontend Routes
+# 2. Merchant Frontend Routes
+# 3. Backend Health API
+# 4. MongoDB Connection
+#
+# Frontend : http://localhost:5173
+# Backend  : http://localhost:5000
 #
 # หมายเหตุ:
-# การทดสอบ Frontend แบบนี้เป็น HTTP Smoke Test
-# ยังไม่ได้ยืนยันว่า React Component ในแต่ละ Route
-# แสดงผลถูกต้อง 100%
-# --------------------------------------------------
+# Route Test นี้ตรวจว่า URL ตอบ HTTP 200 หรือไม่
+# แต่ไม่ได้รัน JavaScript ใน Browser จริง
+# ดังนั้นหลังผ่าน Test ควรลองกด Flow ใน Browser ด้วย
+# ==========================================================
 
 
-# URL หลักของ Frontend
+# ----------------------------------------------------------
+# URL หลัก
+# ----------------------------------------------------------
+
 $frontendBase = "http://localhost:5173"
-
-# URL หลักของ Backend
-$backendBase = "http://localhost:5000"
+$backendBase  = "http://localhost:5000"
 
 
-# --------------------------------------------------
-# Customer Routes ที่ต้องการทดสอบ
-# --------------------------------------------------
-$frontendRoutes = @(
+# ----------------------------------------------------------
+# Customer Routes
+# ----------------------------------------------------------
+
+$customerRoutes = @(
     "/",
     "/login",
     "/register",
@@ -38,41 +44,60 @@ $frontendRoutes = @(
 )
 
 
+# ----------------------------------------------------------
+# Merchant Routes
+# ----------------------------------------------------------
+
+$merchantRoutes = @(
+    "/merchant/login",
+    "/merchant/dashboard",
+    "/merchant/orders",
+    "/merchant/orders/1001",
+    "/merchant/menu",
+    "/merchant/menu/new",
+    "/merchant/menu/1/edit",
+    "/merchant/settings"
+)
+
+
+# ----------------------------------------------------------
 # ตัวนับผลการทดสอบ
+# ----------------------------------------------------------
+
 $passed = 0
 $failed = 0
 
 
+# ==========================================================
+# Header
+# ==========================================================
+
 Write-Host ""
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "       MealQ Customer Smoke Test      " -ForegroundColor Cyan
-Write-Host "======================================" -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host "              MealQ Full Smoke Test               " -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
 
 
-# --------------------------------------------------
-# FRONTEND TEST
-# --------------------------------------------------
+# ==========================================================
+# CUSTOMER TEST
+# ==========================================================
 
-Write-Host "Frontend Route Tests" -ForegroundColor Yellow
+Write-Host "CUSTOMER ROUTE TESTS" -ForegroundColor Yellow
 Write-Host "--------------------"
 
 
-foreach ($route in $frontendRoutes) {
+foreach ($route in $customerRoutes) {
 
-    # รวม URL เช่น
-    # http://localhost:5173/restaurants
     $url = "$frontendBase$route"
 
     try {
 
-        # ส่ง HTTP request ไปยัง URL
         $response = Invoke-WebRequest `
             -Uri $url `
             -UseBasicParsing `
             -TimeoutSec 5
 
-        # ถ้าได้ HTTP 200
         if ($response.StatusCode -eq 200) {
 
             Write-Host "[PASS] $url -> 200 OK" -ForegroundColor Green
@@ -81,7 +106,7 @@ foreach ($route in $frontendRoutes) {
         }
         else {
 
-            Write-Host "[FAIL] $url -> $($response.StatusCode)" -ForegroundColor Red
+            Write-Host "[FAIL] $url -> HTTP $($response.StatusCode)" -ForegroundColor Red
             $failed++
 
         }
@@ -89,7 +114,6 @@ foreach ($route in $frontendRoutes) {
     }
     catch {
 
-        # ถ้าเปิด URL ไม่ได้
         Write-Host "[FAIL] $url" -ForegroundColor Red
         Write-Host "       $($_.Exception.Message)" -ForegroundColor DarkRed
 
@@ -101,23 +125,72 @@ foreach ($route in $frontendRoutes) {
 Write-Host ""
 
 
-# --------------------------------------------------
-# BACKEND TEST
-# --------------------------------------------------
+# ==========================================================
+# MERCHANT TEST
+# ==========================================================
 
-Write-Host "Backend Tests" -ForegroundColor Yellow
+Write-Host "MERCHANT ROUTE TESTS" -ForegroundColor Yellow
+Write-Host "--------------------"
+
+
+foreach ($route in $merchantRoutes) {
+
+    $url = "$frontendBase$route"
+
+    try {
+
+        $response = Invoke-WebRequest `
+            -Uri $url `
+            -UseBasicParsing `
+            -TimeoutSec 5
+
+        if ($response.StatusCode -eq 200) {
+
+            Write-Host "[PASS] $url -> 200 OK" -ForegroundColor Green
+            $passed++
+
+        }
+        else {
+
+            Write-Host "[FAIL] $url -> HTTP $($response.StatusCode)" -ForegroundColor Red
+            $failed++
+
+        }
+
+    }
+    catch {
+
+        Write-Host "[FAIL] $url" -ForegroundColor Red
+        Write-Host "       $($_.Exception.Message)" -ForegroundColor DarkRed
+
+        $failed++
+    }
+}
+
+
+Write-Host ""
+
+
+# ==========================================================
+# BACKEND TEST
+# ==========================================================
+
+Write-Host "BACKEND TESTS" -ForegroundColor Yellow
 Write-Host "-------------"
 
 
 try {
 
-    # เรียก Health API ของ Backend
+    # เรียก Health API
     $health = Invoke-RestMethod `
         -Uri "$backendBase/api/v1/health" `
         -TimeoutSec 5
 
 
-    # ตรวจสถานะ Backend
+    # ------------------------------------------------------
+    # ตรวจ Backend
+    # ------------------------------------------------------
+
     if ($health.status -eq "ok") {
 
         Write-Host "[PASS] Backend API -> OK" -ForegroundColor Green
@@ -126,13 +199,16 @@ try {
     }
     else {
 
-        Write-Host "[FAIL] Backend API status is not OK" -ForegroundColor Red
+        Write-Host "[FAIL] Backend API -> Unexpected status" -ForegroundColor Red
         $failed++
 
     }
 
 
-    # ตรวจสถานะ MongoDB
+    # ------------------------------------------------------
+    # ตรวจ MongoDB
+    # ------------------------------------------------------
+
     if ($health.database -eq "connected") {
 
         Write-Host "[PASS] MongoDB -> Connected" -ForegroundColor Green
@@ -152,21 +228,26 @@ catch {
     Write-Host "[FAIL] Backend API" -ForegroundColor Red
     Write-Host "       $($_.Exception.Message)" -ForegroundColor DarkRed
 
-    $failed++
+    # Backend ล้ม หมายความว่าตรวจ Backend + Mongo ไม่สำเร็จ
+    $failed += 2
 }
 
 
-# --------------------------------------------------
+# ==========================================================
 # SUMMARY
-# --------------------------------------------------
+# ==========================================================
 
 Write-Host ""
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "              Test Summary            " -ForegroundColor Cyan
-Write-Host "======================================" -ForegroundColor Cyan
-
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host "                   TEST SUMMARY                   " -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
+
+$total = $passed + $failed
+
+Write-Host "Total : $total"
 Write-Host "Passed: $passed" -ForegroundColor Green
+
 
 if ($failed -eq 0) {
 
@@ -174,6 +255,7 @@ if ($failed -eq 0) {
 
     Write-Host ""
     Write-Host "ALL TESTS PASSED" -ForegroundColor Green
+    Write-Host ""
 
 }
 else {
@@ -182,9 +264,37 @@ else {
 
     Write-Host ""
     Write-Host "SOME TESTS FAILED" -ForegroundColor Red
+    Write-Host ""
 
 }
 
-Write-Host ""
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host ""
+
+# ==========================================================
+# Expected Result
+# ==========================================================
+#
+# Customer Routes = 10 Tests
+# Merchant Routes = 8 Tests
+# Backend          = 1 Test
+# MongoDB          = 1 Test
+#
+# Total            = 20 Tests
+#
+# ถ้าทุกอย่างทำงาน:
+#
+# Total : 20
+# Passed: 20
+# Failed: 0
+#
+# ALL TESTS PASSED
+# ==========================================================
+
+
+# ถ้ามี Test fail ให้คืน Exit Code 1
+# มีประโยชน์ถ้าอนาคตเอา Script ไปใช้กับ CI/CD
+
+if ($failed -gt 0) {
+    exit 1
+}
+
+exit 0
