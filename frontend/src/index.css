@@ -1,111 +1,92 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/*
+ * MealQ design tokens — see AGENTS.md §32 "Brand Color Palette".
+ * The four brand colors (butter, honey, apricot, coral) are the main theme, always as flat fills (no gradients).
+ * Text on them is `ink`; links use `apricot-ink`; errors use `danger`.
+ */
+@theme {
+  --color-butter: #ffedb9;
+  --color-honey: #ffcb56;
+  --color-apricot: #ffa259;
+  --color-coral: #ff7e7e;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Supporting tones derived from the palette. */
+  --color-apricot-ink: #b8531c; /* apricot dark enough for link text (AA on white/linen) */
+  --color-ink: #3b2a16;
+  --color-muted: #6e5b45;
+  --color-danger: #b23a2e;
+  --color-page: #fff6e5;
+  --color-linen: #fff9ee;
+  --color-oat: #f4eee2;
+  --color-line: #ffedb9;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --shadow-card: 0 20px 50px -24px rgb(110 80 30 / 0.2);
+  --shadow-float: 0 14px 34px -12px rgb(110 80 30 / 0.28);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* Self-hosted variable fonts, imported in src/main.jsx. Figtree has no Thai glyphs, so Thai text falls through to Anuphan. */
+:root {
+  --font-figtree: "Figtree Variable";
+  --font-anuphan: "Anuphan Variable";
+  --font-fraunces: "Fraunces Variable";
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+@theme inline {
+  --font-sans: var(--font-figtree), var(--font-anuphan), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  background: var(--color-page);
+  color: var(--color-ink);
+}
+
+/*
+ * GlyphPortal (src/components/ui/glyph-portal.jsx) skin for the landing page.
+ * The component scopes its own CSS with :where(), so these attribute selectors win without !important.
+ */
+/* The component defaults the whole section to Arial; use the site's Figtree/Anuphan stack instead. */
+[data-mealq-portal] section {
+  font-family: var(--font-sans);
+}
+
+[data-mealq-portal] [data-gp-caption] {
+  inset: calc(var(--gp-word-bottom, 50%) + 88px) 24px auto;
+  justify-content: center;
+  font-family: inherit;
+}
+
+[data-mealq-portal] [data-gp-enter] {
+  min-height: 3rem;
+  padding: 0 1.5rem;
+  gap: 0.75rem;
+  border-radius: 9999px;
+  background: var(--color-apricot);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.18s;
+}
+
+[data-mealq-portal] [data-gp-enter]:hover {
+  background: var(--color-coral);
+}
+
+[data-mealq-portal] [data-gp-enter]:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
   margin: 0;
+  padding: 0 1.5rem;
+  background: var(--color-apricot);
+  color: var(--color-ink);
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+[data-mealq-portal] [data-gp-content] {
+  padding-inline: clamp(1.25rem, 5vw, 2rem);
+  font-family: inherit;
 }
