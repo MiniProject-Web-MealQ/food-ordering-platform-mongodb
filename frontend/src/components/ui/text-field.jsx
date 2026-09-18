@@ -32,7 +32,7 @@ export function TextField({
           aria-describedby={describedByIds}
           className={cx(
             "h-14 w-full rounded-full border-2 border-mint bg-snow px-6 text-base text-ink transition",
-            "placeholder:text-muted/70 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none",
+            "placeholder:text-ink-soft/70 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none",
             "aria-invalid:border-alert aria-invalid:focus:border-brand",
             error ? "bg-alert/10" : undefined,
             trailing ? "pr-14" : undefined,
@@ -43,7 +43,7 @@ export function TextField({
         {trailing && <div className="absolute inset-y-0 right-2 flex items-center">{trailing}</div>}
       </div>
       {hint && (
-        <p id={hintId} className="px-1 text-sm text-muted">
+        <p id={hintId} className="px-1 text-sm text-ink-soft">
           {hint}
         </p>
       )}

@@ -47,7 +47,7 @@ function Notifications() {
       </header>
 
       {notifications.length === 0 ? (
-        <p className="rounded-3xl bg-cream p-6 text-center text-muted">ยังไม่มีการแจ้งเตือน</p>
+        <p className="rounded-3xl bg-cream p-6 text-center text-ink-soft">ยังไม่มีการแจ้งเตือน</p>
       ) : (
         <ul className="space-y-3">
           {notifications.map((notification) => {
@@ -80,7 +80,7 @@ function Notifications() {
                         {!notification.read && <span className="sr-only"> (ยังไม่อ่าน)</span>}
                       </button>
                     </p>
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-ink-soft">
                       {notification.body} · {formatWhen(notification.at)}
                     </p>
                     {highlight && (

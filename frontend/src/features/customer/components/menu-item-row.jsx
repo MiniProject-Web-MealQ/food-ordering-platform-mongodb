@@ -36,7 +36,7 @@ export function MenuItemRow({ menuItem, variant = "restaurant" }) {
             </span>
           )}
         </p>
-        <p className="truncate text-sm text-muted">
+        <p className="truncate text-sm text-ink-soft">
           {variant === "restaurant" ? (
             menuItem.description
           ) : restaurant.isOpen ? (
@@ -52,7 +52,7 @@ export function MenuItemRow({ menuItem, variant = "restaurant" }) {
       {orderable ? (
         <AddButton menuItem={menuItem} className="relative" />
       ) : (
-        <span className="relative rounded-full bg-haze px-3 py-1 text-xs font-semibold text-muted">
+        <span className="relative rounded-full bg-haze px-3 py-1 text-xs font-semibold text-ink-soft">
           {unavailableLabel}
         </span>
       )}

@@ -84,7 +84,7 @@ function Payment() {
             <CheckIcon className="size-8" strokeWidth={3} />
           </span>
           <p className="mt-6 text-2xl font-bold text-ink">ชำระเงินสำเร็จ</p>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm text-ink-soft">
             {formatBaht(summary.total)} · {method.label} · {formatClock(result.at)}
           </p>
         </div>
@@ -96,7 +96,7 @@ function Payment() {
             <XIcon className="size-8" strokeWidth={3} />
           </span>
           <p className="mt-6 text-2xl font-bold text-ink">การชำระเงินไม่สำเร็จ</p>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm text-ink-soft">
             ธนาคารปฏิเสธรายการนี้ · ยังไม่มีการตัดเงิน และออเดอร์ยังไม่ถูกส่งให้ร้าน
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3">

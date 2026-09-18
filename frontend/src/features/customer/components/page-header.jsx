@@ -35,7 +35,7 @@ export function PageHeader({ title, subtitle, fallback, action }) {
       {fallback && <BackButton fallback={fallback} className="-ml-1" />}
       <div className="min-w-0 flex-1 pt-1">
         <h1 className="text-2xl leading-tight font-bold text-ink lg:text-4xl">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
+        {subtitle && <p className="mt-0.5 text-sm text-ink-soft">{subtitle}</p>}
       </div>
       {action}
     </header>

@@ -11,7 +11,7 @@ function QueueBadge({ restaurant }) {
       คิว {restaurant.queueLength}
     </span>
   ) : (
-    <span className="shrink-0 rounded-full bg-haze px-2.5 py-0.5 text-xs font-semibold text-muted">
+    <span className="shrink-0 rounded-full bg-haze px-2.5 py-0.5 text-xs font-semibold text-ink-soft">
       ปิดอยู่
     </span>
   );
@@ -43,7 +43,7 @@ export function RestaurantCard({ restaurant }) {
           </h3>
           <QueueBadge restaurant={restaurant} />
         </div>
-        <p className="text-sm text-muted">
+        <p className="text-sm text-ink-soft">
           {restaurant.category} · <Rating value={restaurant.rating} count={restaurant.reviewCount} />
           {restaurant.isOpen && <> · ~{formatRange(restaurant.waitMinutes)} นาที</>}
         </p>
@@ -54,7 +54,7 @@ export function RestaurantCard({ restaurant }) {
             </li>
           ))}
           {menu.length > shown.length && (
-            <li className="rounded-full bg-haze px-3 py-1 text-xs font-semibold text-muted">
+            <li className="rounded-full bg-haze px-3 py-1 text-xs font-semibold text-ink-soft">
               +{menu.length - shown.length} เมนู
             </li>
           )}
@@ -81,13 +81,13 @@ export function RestaurantRow({ restaurant, meta, trailing }) {
           <span
             className={cx(
               "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold",
-              restaurant.isOpen ? "bg-mint text-brand-ink" : "bg-haze text-muted",
+              restaurant.isOpen ? "bg-mint text-brand-ink" : "bg-haze text-ink-soft",
             )}
           >
             {restaurant.isOpen ? "เปิด" : "ปิด"}
           </span>
         </h3>
-        <p className="truncate text-sm text-muted">
+        <p className="truncate text-sm text-ink-soft">
           {restaurant.category} · <Rating value={restaurant.rating} count={restaurant.reviewCount} /> ·{" "}
           {formatDistance(restaurant.distance)}
         </p>
@@ -95,7 +95,7 @@ export function RestaurantRow({ restaurant, meta, trailing }) {
           restaurant.isOpen && (
             <p className="mt-0.5 text-sm font-semibold text-brand-ink">
               คิว {restaurant.queueLength} คน{" "}
-              <span className="font-normal text-muted">~{formatRange(restaurant.waitMinutes)} นาที</span>
+              <span className="font-normal text-ink-soft">~{formatRange(restaurant.waitMinutes)} นาที</span>
             </p>
           )
         )}

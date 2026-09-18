@@ -76,7 +76,7 @@ function InfoTab({ restaurant }) {
       <dl className="divide-y divide-haze rounded-3xl bg-cream px-5">
         {rows.map(([term, detail]) => (
           <div key={term} className="flex justify-between gap-4 py-3.5">
-            <dt className="text-muted">{term}</dt>
+            <dt className="text-ink-soft">{term}</dt>
             <dd className="text-right font-semibold text-ink">{detail}</dd>
           </div>
         ))}
@@ -90,14 +90,14 @@ function ReviewsTab({ restaurant }) {
     <div className="space-y-3">
       <p className="text-ink">
         <span className="font-display text-4xl font-black">{restaurant.rating.toFixed(1)}</span>{" "}
-        <span className="text-muted">จาก {restaurant.reviewCount.toLocaleString("th-TH")} รีวิว</span>
+        <span className="text-ink-soft">จาก {restaurant.reviewCount.toLocaleString("th-TH")} รีวิว</span>
       </p>
       <ul className="grid gap-3 md:grid-cols-2">
         {restaurant.reviews.map((review) => (
           <li key={review.id} className="rounded-3xl bg-cream p-4">
             <div className="flex items-center justify-between">
               <p className="font-semibold text-ink">{review.author}</p>
-              <p className="text-sm text-muted">{review.daysAgo} วันก่อน</p>
+              <p className="text-sm text-ink-soft">{review.daysAgo} วันก่อน</p>
             </div>
             <p className="text-amber" aria-label={`${review.rating} ดาว`}>
               {"★".repeat(review.rating)}
@@ -148,7 +148,7 @@ function RestaurantDetail() {
                 <p
                   className={cx(
                     "mb-2 rounded-full px-3 py-1 text-xs font-semibold lg:hidden",
-                    restaurant.isOpen ? "bg-mint text-brand-ink" : "bg-haze text-muted",
+                    restaurant.isOpen ? "bg-mint text-brand-ink" : "bg-haze text-ink-soft",
                   )}
                 >
                   {openLabel}
@@ -158,13 +158,13 @@ function RestaurantDetail() {
                 <p
                   className={cx(
                     "mb-2 hidden w-fit rounded-full px-3 py-1 text-xs font-semibold lg:block",
-                    restaurant.isOpen ? "bg-mint text-brand-ink" : "bg-haze text-muted",
+                    restaurant.isOpen ? "bg-mint text-brand-ink" : "bg-haze text-ink-soft",
                   )}
                 >
                   {openLabel}
                 </p>
                 <h1 className="text-3xl font-bold text-ink lg:text-4xl">{restaurant.name}</h1>
-                <p className="mt-1 text-sm text-muted lg:text-base">
+                <p className="mt-1 text-sm text-ink-soft lg:text-base">
                   {restaurant.category} · <Rating value={restaurant.rating} count={restaurant.reviewCount} /> ·{" "}
                   {restaurant.location}
                 </p>
@@ -176,11 +176,11 @@ function RestaurantDetail() {
                 <p className="font-display text-2xl font-black text-cocoa">
                   {restaurant.isOpen ? restaurant.queueLength : "–"}
                 </p>
-                <p className="text-xs text-muted">คิวปัจจุบัน</p>
+                <p className="text-xs text-ink-soft">คิวปัจจุบัน</p>
               </div>
               <div className="flex-1 rounded-3xl bg-cream px-4 py-3">
                 <p className="font-display text-2xl font-black text-cocoa">{formatRange(restaurant.waitMinutes)}</p>
-                <p className="text-xs text-muted">นาที (ประมาณ)</p>
+                <p className="text-xs text-ink-soft">นาที (ประมาณ)</p>
               </div>
               <button
                 type="button"
@@ -215,7 +215,7 @@ function RestaurantDetail() {
       {cart && cart.itemCount > 0 && (
         <div className="sticky bottom-0 z-10 flex items-center justify-between gap-4 border-t border-haze bg-cream px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 lg:hidden">
           <div>
-            <p className="text-xs text-muted">{cart.itemCount} รายการในตะกร้า</p>
+            <p className="text-xs text-ink-soft">{cart.itemCount} รายการในตะกร้า</p>
             <p className="text-xl font-bold text-ink">{formatBaht(cart.subtotal)}</p>
           </div>
           <Link to="/customer/cart" className={buttonClasses({ variant: "primary", size: "md" })}>

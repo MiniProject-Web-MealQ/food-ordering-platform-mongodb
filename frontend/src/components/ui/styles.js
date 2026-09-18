@@ -9,7 +9,7 @@ export const textLinkClass = `rounded font-semibold text-brand-ink underline-off
 
 const BUTTON_VARIANTS = {
   primary:
-    "bg-brand text-white hover:bg-brand-dark disabled:bg-haze disabled:text-muted disabled:hover:bg-haze",
+    "bg-brand text-white hover:bg-brand-dark disabled:bg-haze disabled:text-ink-soft disabled:hover:bg-haze",
   outline: "border-2 border-brand/35 bg-white text-brand-ink hover:bg-mint",
   soft: "bg-mint text-brand-ink hover:bg-leaf",
   secondary: "border-2 border-line bg-snow text-ink hover:bg-haze",

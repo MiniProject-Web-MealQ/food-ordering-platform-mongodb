@@ -22,7 +22,7 @@ export function Alert({ tone, title, children }) {
       </span>
       <div className="space-y-0.5">
         <p className={cx("font-semibold", isError ? "text-danger" : "text-ink")}>{title}</p>
-        {children && <div className="text-sm text-muted">{children}</div>}
+        {children && <div className="text-sm text-ink-soft">{children}</div>}
       </div>
     </div>
   );

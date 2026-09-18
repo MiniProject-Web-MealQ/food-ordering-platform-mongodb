@@ -80,7 +80,7 @@ function Favorites() {
               </li>
             ))}
           {(tab === "restaurants" ? restaurants : menus).length === 0 && (
-            <li className="rounded-3xl bg-cream p-6 text-center text-muted md:col-span-2">
+            <li className="rounded-3xl bg-cream p-6 text-center text-ink-soft md:col-span-2">
               ยังไม่มีรายการโปรด กดรูปหัวใจที่หน้าร้านเพื่อบันทึกไว้
             </li>
           )}

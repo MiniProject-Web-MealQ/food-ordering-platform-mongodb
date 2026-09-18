@@ -34,7 +34,7 @@ function OptionGroup({ group, selected, onChange }) {
     <fieldset className="space-y-2">
       <legend className="w-full">
         <span className="block text-lg font-bold text-ink">{group.label}</span>
-        <span className="block text-sm text-muted">
+        <span className="block text-sm text-ink-soft">
           {group.multiple ? "เลือกได้หลายอย่าง · ไม่บังคับ" : `เลือก 1 อย่าง${group.required ? " · จำเป็น" : ""}`}
         </span>
       </legend>
@@ -55,7 +55,7 @@ function OptionGroup({ group, selected, onChange }) {
               className={cx(
                 "grid size-5 shrink-0 place-items-center border-2 transition-colors",
                 group.multiple ? "rounded-md" : "rounded-full",
-                checked ? "border-brand bg-brand" : "border-muted/40 bg-white",
+                checked ? "border-brand bg-brand" : "border-ink-soft/40 bg-white",
               )}
             >
               {checked &&
@@ -146,7 +146,7 @@ function FoodDetail() {
               <h1 className="text-2xl font-bold text-ink lg:text-4xl">{menuItem.name}</h1>
               <p className="text-2xl font-bold text-ink lg:text-4xl">{formatBaht(menuItem.price)}</p>
             </div>
-            <p className="text-muted lg:text-lg">
+            <p className="text-ink-soft lg:text-lg">
               {menuItem.description} ·{" "}
               <Link to={`/customer/restaurants/${restaurantId}`} className={textLinkClass}>
                 {restaurant.name}
@@ -188,7 +188,7 @@ function FoodDetail() {
               placeholder="เช่น ไม่ใส่ผัก แยกน้ำจิ้ม"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full resize-none rounded-3xl border-2 border-haze bg-cream px-5 py-3 text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none"
+              className="w-full resize-none rounded-3xl border-2 border-haze bg-cream px-5 py-3 text-ink placeholder:text-ink-soft/70 focus:border-brand focus:outline-none"
             />
           </div>
 

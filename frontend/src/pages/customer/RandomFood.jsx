@@ -61,12 +61,12 @@ function SetupView({ filters, setFilter, spinning, reelItem, onSpin }) {
               {reelItem ? (
                 <div key={reelItem.id} className={cx(spinning && "motion-safe:animate-[reel_90ms_ease-out]")}>
                   <p className="mt-1 truncate text-2xl font-bold lg:text-4xl">{reelItem.name}</p>
-                  <p className="text-sm text-muted">
+                  <p className="text-sm text-ink-soft">
                     {getRestaurant(reelItem.restaurantId).name} · {formatBaht(reelItem.price)}
                   </p>
                 </div>
               ) : (
-                <p className="mt-1 text-2xl font-bold text-muted">? ? ?</p>
+                <p className="mt-1 text-2xl font-bold text-ink-soft">? ? ?</p>
               )}
             </div>
             <button
@@ -158,7 +158,7 @@ function ResultView({ item, onRespin }) {
         />
         <div className="space-y-1 p-6 text-center md:flex md:flex-col md:justify-center md:p-10">
           <h2 className="text-2xl font-bold text-ink lg:text-4xl">{item.name}</h2>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-ink-soft">
             {restaurant.name} · <Rating value={item.rating} /> · คิว {restaurant.queueLength} · ~
             {formatRange(restaurant.waitMinutes)} นาที
           </p>
@@ -203,7 +203,7 @@ function EmptyView({ filters, onWiden, onBack }) {
           🎲
         </span>
         <h1 className="text-2xl font-bold text-ink">ไม่มีเมนูที่ตรงเงื่อนไข</h1>
-        <p className="text-muted">
+        <p className="text-ink-soft">
           งบ {formatBaht(filters.budget)}
           {cuisine && ` · ${cuisine.label}`} ตอนนี้ยังไม่มีเมนูที่ตรง — ลองขยายงบหรือเปลี่ยนประเภท
         </p>

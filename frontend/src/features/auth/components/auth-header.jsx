@@ -16,7 +16,7 @@ export function AuthHeader({ title, description, back, leading }) {
       <h1 className="text-3xl font-bold leading-tight text-ink sm:text-4xl lg:text-[2.75rem]">
         {title}
       </h1>
-      {description && <p className="text-muted">{description}</p>}
+      {description && <p className="text-ink-soft">{description}</p>}
     </header>
   );
 }

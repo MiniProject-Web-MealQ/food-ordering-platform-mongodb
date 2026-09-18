@@ -33,7 +33,7 @@ function StarInput({ value, onChange }) {
             <StarIcon
               filled={star <= value}
               strokeWidth={1.5}
-              className={cx("size-11 transition-colors", star <= value ? "text-amber" : "text-muted/40")}
+              className={cx("size-11 transition-colors", star <= value ? "text-amber" : "text-ink-soft/40")}
             />
           </label>
         ))}
@@ -108,7 +108,7 @@ function Review() {
 
         <div className="space-y-3">
           <p id="review-photos" className="font-bold text-ink">
-            รูปอาหาร <span className="font-normal text-muted">(ไม่บังคับ · สูงสุด {MAX_PHOTOS} รูป)</span>
+            รูปอาหาร <span className="font-normal text-ink-soft">(ไม่บังคับ · สูงสุด {MAX_PHOTOS} รูป)</span>
           </p>
           <ul aria-labelledby="review-photos" className="flex flex-wrap gap-3">
             {photos.map((photo, index) => (
@@ -129,7 +129,7 @@ function Review() {
             ))}
             {photos.length < MAX_PHOTOS && (
               <li>
-                <label className="grid size-20 cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-leaf bg-cream text-muted hover:bg-haze has-focus-visible:outline-2 has-focus-visible:outline-ink">
+                <label className="grid size-20 cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-leaf bg-cream text-ink-soft hover:bg-haze has-focus-visible:outline-2 has-focus-visible:outline-ink">
                   <input
                     type="file"
                     accept="image/*"
@@ -163,7 +163,7 @@ function Review() {
             placeholder="เขียนรีวิว (ไม่บังคับ)"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="w-full resize-none rounded-3xl border-2 border-haze bg-cream px-5 py-4 text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none"
+            className="w-full resize-none rounded-3xl border-2 border-haze bg-cream px-5 py-4 text-ink placeholder:text-ink-soft/70 focus:border-brand focus:outline-none"
           />
         </div>
 

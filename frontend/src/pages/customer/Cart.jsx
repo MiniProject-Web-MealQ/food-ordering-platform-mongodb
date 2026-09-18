@@ -22,7 +22,7 @@ function SoldOutNotice({ names, restaurantId, onDismiss }) {
             <p className="font-semibold text-ink">
               {names.map((n) => `“${n}”`).join(", ")} หมดระหว่างที่คุณเลือก
             </p>
-            <p className="text-sm text-muted">เราเอาออกจากตะกร้าและยังไม่เก็บเงินรายการนี้</p>
+            <p className="text-sm text-ink-soft">เราเอาออกจากตะกร้าและยังไม่เก็บเงินรายการนี้</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {restaurantId && (
@@ -60,7 +60,7 @@ function CouponField({ coupon, onApply, onRemove }) {
           type="button"
           onClick={onRemove}
           aria-label={`ยกเลิกคูปอง ${coupon.code}`}
-          className={`-mr-2 grid size-8 place-items-center rounded-full text-muted hover:bg-haze ${focusRing}`}
+          className={`-mr-2 grid size-8 place-items-center rounded-full text-ink-soft hover:bg-haze ${focusRing}`}
         >
           <XIcon className="size-4" />
         </button>
@@ -76,7 +76,7 @@ function CouponField({ coupon, onApply, onRemove }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-1" noValidate>
       <div className="flex items-center gap-2 rounded-full border-2 border-haze py-1.5 pr-1.5 pl-5 focus-within:border-brand">
-        <TicketIcon className="size-5 shrink-0 text-muted" />
+        <TicketIcon className="size-5 shrink-0 text-ink-soft" />
         <label htmlFor="coupon-code" className="sr-only">
           โค้ดส่วนลด
         </label>
@@ -91,7 +91,7 @@ function CouponField({ coupon, onApply, onRemove }) {
             setCode(e.target.value);
             setError("");
           }}
-          className="min-w-0 flex-1 bg-transparent text-ink uppercase placeholder:text-muted/70 placeholder:normal-case focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-ink uppercase placeholder:text-ink-soft/70 placeholder:normal-case focus:outline-none"
         />
         <button type="submit" disabled={!code.trim()} className={buttonClasses({ variant: "soft", size: "sm" })}>
           ใช้โค้ด
@@ -147,7 +147,7 @@ function Cart() {
             )}
             <div className="mx-auto max-w-xl space-y-4 rounded-4xl bg-cream px-6 py-10 text-center lg:py-16">
               <p className="text-lg font-bold text-ink lg:text-2xl">ตะกร้ายังว่างอยู่</p>
-              <p className="text-muted">เลือกร้านแล้วกด + ที่เมนูที่อยากกิน</p>
+              <p className="text-ink-soft">เลือกร้านแล้วกด + ที่เมนูที่อยากกิน</p>
               <Link to="/customer/explore" className={buttonClasses({ variant: "primary", size: "md" })}>
                 ไปค้นหาร้าน
               </Link>
@@ -171,7 +171,7 @@ function Cart() {
                 <span aria-hidden="true" className="size-10 shrink-0 rounded-full bg-cream lg:size-12" />
                 <span>
                   <span className="block font-bold text-ink lg:text-lg">{restaurant.name}</span>
-                  <span className="block text-sm text-muted">
+                  <span className="block text-sm text-ink-soft">
                     คิว {restaurant.queueLength} · รับเองที่{restaurant.location.split(" ชั้น")[0]}
                   </span>
                 </span>
@@ -191,9 +191,9 @@ function Cart() {
                         <p className="font-semibold text-ink lg:text-lg">{formatBaht(line.lineTotal)}</p>
                       </div>
                       {line.optionLabels.length > 0 && (
-                        <p className="text-sm text-muted">{line.optionLabels.join(" · ")}</p>
+                        <p className="text-sm text-ink-soft">{line.optionLabels.join(" · ")}</p>
                       )}
-                      {line.note && <p className="text-sm text-muted">“{line.note}”</p>}
+                      {line.note && <p className="text-sm text-ink-soft">“{line.note}”</p>}
                       <div className="pt-1">
                         <QtyStepper
                           size="sm"

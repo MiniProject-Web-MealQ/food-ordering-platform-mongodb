@@ -24,7 +24,7 @@ export function AddButton({ menuItem, disabled = false, className }) {
       disabled={disabled}
       aria-label={`เพิ่ม ${menuItem.name} ลงตะกร้า`}
       className={cx(
-        "grid size-9 shrink-0 place-items-center rounded-full bg-brand text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:bg-haze disabled:text-muted",
+        "grid size-9 shrink-0 place-items-center rounded-full bg-brand text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:bg-haze disabled:text-ink-soft",
         className,
       )}
     >

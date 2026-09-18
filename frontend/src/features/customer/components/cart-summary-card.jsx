@@ -28,7 +28,7 @@ export function CartSummaryCard({ restaurantId }) {
                     {line.qty}× {line.menuItem.name}
                   </span>
                   {line.optionLabels.length > 0 && (
-                    <span className="block truncate text-xs text-muted">{line.optionLabels.join(" · ")}</span>
+                    <span className="block truncate text-xs text-ink-soft">{line.optionLabels.join(" · ")}</span>
                   )}
                 </span>
                 <span className="shrink-0 font-semibold text-ink">{formatBaht(line.lineTotal)}</span>
@@ -36,7 +36,7 @@ export function CartSummaryCard({ restaurantId }) {
             ))}
           </ul>
           <p className="mt-4 flex items-baseline justify-between border-t border-haze pt-4">
-            <span className="text-muted">ยอดรวมอาหาร</span>
+            <span className="text-ink-soft">ยอดรวมอาหาร</span>
             <span className="text-2xl font-bold text-ink">{formatBaht(cart.subtotal)}</span>
           </p>
           <Link to="/customer/cart" className={`${buttonClasses({ variant: "primary", fullWidth: true })} mt-4`}>
@@ -44,7 +44,7 @@ export function CartSummaryCard({ restaurantId }) {
           </Link>
         </>
       ) : (
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-3 text-sm text-ink-soft">
           {otherRestaurant
             ? `ตะกร้ามีอาหารจาก${otherRestaurant.name}อยู่ สั่งได้ครั้งละร้านเดียว`
             : "ยังไม่มีเมนูในตะกร้า กด + ที่เมนูเพื่อเริ่มสั่ง"}

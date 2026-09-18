@@ -25,10 +25,10 @@ function HistoryCard({ order, onReorder }) {
               {restaurant.name}
             </Link>
           </h3>
-          <p className="truncate text-sm text-muted">
+          <p className="truncate text-sm text-ink-soft">
             {order.items.map((item) => `${item.qty}× ${item.name}`).join(" · ")}
           </p>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-ink-soft">
             #{order.id} · {formatWhen(order.statusTimes.PICKED_UP)}
           </p>
         </div>
@@ -85,7 +85,7 @@ function Orders() {
             {active.map((order) => (
               <ActiveOrderCard key={order.id} order={order} variant="list" />
             ))}
-            <p className="rounded-3xl bg-cream px-5 py-4 text-sm text-muted md:col-span-2">
+            <p className="rounded-3xl bg-cream px-5 py-4 text-sm text-ink-soft md:col-span-2">
               {active.length > 0
                 ? "ออเดอร์ที่กำลังดำเนินการจะแสดงที่นี่จนกดรับอาหารเสร็จ"
                 : "ยังไม่มีออเดอร์ที่กำลังดำเนินการ"}
@@ -98,7 +98,7 @@ function Orders() {
               <HistoryCard key={order.id} order={order} onReorder={() => reorder(order)} />
             ))
           ) : (
-            <p className="rounded-3xl bg-cream px-5 py-4 text-sm text-muted md:col-span-2">ยังไม่มีประวัติการสั่ง</p>
+            <p className="rounded-3xl bg-cream px-5 py-4 text-sm text-ink-soft md:col-span-2">ยังไม่มีประวัติการสั่ง</p>
           ))}
       </div>
     </div>

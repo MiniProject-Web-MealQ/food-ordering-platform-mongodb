@@ -32,7 +32,7 @@ function Home() {
         <header className="flex items-center gap-3 lg:col-start-1">
           <span aria-hidden="true" className="size-11 shrink-0 rounded-full bg-leaf lg:hidden" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted lg:text-lg">{greeting()}</p>
+            <p className="text-sm text-ink-soft lg:text-lg">{greeting()}</p>
             <h1 className="text-lg font-bold text-ink lg:text-5xl lg:leading-tight">วันนี้กินอะไรดี?</h1>
           </div>
           <Link
@@ -64,7 +64,7 @@ function Home() {
 
         <Link
           to="/customer/search"
-          className={`flex h-13 items-center gap-3 rounded-full bg-cream px-5 text-muted ring-1 ring-haze hover:bg-haze lg:col-start-1 lg:h-15 lg:text-lg ${focusRing}`}
+          className={`flex h-13 items-center gap-3 rounded-full bg-cream px-5 text-ink-soft ring-1 ring-haze hover:bg-haze lg:col-start-1 lg:h-15 lg:text-lg ${focusRing}`}
         >
           <SearchIcon className="size-5" />
           ค้นหาเมนู ร้าน หรือประเภทอาหาร
@@ -76,7 +76,7 @@ function Home() {
           ) : (
             <div className="hidden rounded-4xl bg-mint p-8 lg:block">
               <p className="text-2xl font-bold text-ink">ยังไม่มีออเดอร์ที่กำลังทำ</p>
-              <p className="mt-1 text-muted">คิดไม่ออกว่าจะกินอะไร ให้เราสุ่มให้ได้เลย</p>
+              <p className="mt-1 text-ink-soft">คิดไม่ออกว่าจะกินอะไร ให้เราสุ่มให้ได้เลย</p>
               <Link to="/customer/random" className={cx(buttonClasses({ variant: "primary", size: "md" }), "mt-5")}>
                 <span aria-hidden="true">🎲</span> สุ่มอาหาร
               </Link>
@@ -125,7 +125,7 @@ function Home() {
                     {item.name}
                   </Link>
                 </h3>
-                <p className="line-clamp-2 min-h-10 text-xs text-muted">
+                <p className="line-clamp-2 min-h-10 text-xs text-ink-soft">
                   {getRestaurant(item.restaurantId).name} · <Rating value={item.rating} /> ·{" "}
                   {item.weeklyOrders} ออเดอร์
                 </p>

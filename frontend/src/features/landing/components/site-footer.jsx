@@ -25,7 +25,7 @@ export function SiteFooter() {
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-10 sm:grid-cols-[2fr_1fr_1fr] sm:px-8 lg:py-16">
         <div className="space-y-3">
           <p className="text-2xl font-bold text-ink lg:text-3xl">MealQ</p>
-          <p className="max-w-xs text-muted">
+          <p className="max-w-xs text-ink-soft">
             สั่งก่อน ไม่ต้องต่อคิว — Order fast. Skip the queue.
           </p>
         </div>
@@ -33,7 +33,7 @@ export function SiteFooter() {
         {LINK_GROUPS.map((group) => (
           <nav key={group.title} aria-label={group.title}>
             <p className="font-semibold text-ink">{group.title}</p>
-            <ul className="mt-3 space-y-2 text-muted">
+            <ul className="mt-3 space-y-2 text-ink-soft">
               {group.links.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -49,7 +49,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-leaf/60">
-        <p className="mx-auto w-full max-w-7xl px-5 py-5 text-sm text-muted sm:px-8">
+        <p className="mx-auto w-full max-w-7xl px-5 py-5 text-sm text-ink-soft sm:px-8">
           © 2026 MealQ
         </p>
       </div>

@@ -30,7 +30,7 @@ export function Faq() {
         <h2 id="faq-title" className="text-3xl font-bold text-ink lg:text-5xl">
           คำถามที่พบบ่อย
         </h2>
-        <p className="mt-4 hidden text-lg text-muted lg:block">
+        <p className="mt-4 hidden text-lg text-ink-soft lg:block">
           ไม่เจอคำตอบที่ต้องการ?{" "}
           <Link to="/help" className={textLinkClass}>
             ติดต่อทีมช่วยเหลือ
@@ -52,7 +52,7 @@ export function Faq() {
                 <PlusIcon className="size-4 text-ink transition-transform group-open:rotate-45" />
               </span>
             </summary>
-            <p className="px-6 pb-5 leading-relaxed text-muted lg:px-8 lg:pb-6 lg:text-lg">
+            <p className="px-6 pb-5 leading-relaxed text-ink-soft lg:px-8 lg:pb-6 lg:text-lg">
               {item.answer}
             </p>
           </details>

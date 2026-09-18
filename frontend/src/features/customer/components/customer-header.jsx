@@ -40,7 +40,7 @@ export function CustomerHeader() {
                     className={cx(
                       "flex items-center gap-2 rounded-full px-3.5 py-2 font-medium whitespace-nowrap transition-colors",
                       focusRing,
-                      active ? "bg-mint text-ink" : "text-muted hover:bg-cream hover:text-ink",
+                      active ? "bg-mint text-ink" : "text-ink-soft hover:bg-cream hover:text-ink",
                     )}
                   >
                     <item.Icon className="size-5" />
@@ -57,7 +57,7 @@ export function CustomerHeader() {
         {/* Full search box when there is room (xl); an icon button on smaller laptops. */}
         <Link
           to="/customer/search"
-          className={`hidden h-11 w-72 items-center gap-2.5 rounded-full bg-cream px-4 text-sm whitespace-nowrap text-muted ring-1 ring-haze hover:bg-haze xl:flex ${focusRing}`}
+          className={`hidden h-11 w-72 items-center gap-2.5 rounded-full bg-cream px-4 text-sm whitespace-nowrap text-ink-soft ring-1 ring-haze hover:bg-haze xl:flex ${focusRing}`}
         >
           <SearchIcon className="size-4.5" />
           ค้นหาเมนู ร้าน หรือประเภทอาหาร

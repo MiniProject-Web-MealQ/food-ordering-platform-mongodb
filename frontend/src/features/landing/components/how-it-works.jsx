@@ -20,7 +20,7 @@ export function HowItWorks() {
           <h2 id="how-it-works-title" className="text-3xl font-bold text-ink lg:text-5xl">
             ใช้งานอย่างไร
           </h2>
-          <p className="mt-1 text-muted lg:mt-3 lg:text-lg">4 ขั้นตอน เสร็จใน 1 นาที</p>
+          <p className="mt-1 text-ink-soft lg:mt-3 lg:text-lg">4 ขั้นตอน เสร็จใน 1 นาที</p>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export function HowItWorks() {
             </span>
             <span>
               <span className="block font-semibold text-ink lg:text-xl">{step.title}</span>
-              <span className="block text-sm text-muted lg:mt-1 lg:text-base">
+              <span className="block text-sm text-ink-soft lg:mt-1 lg:text-base">
                 {step.description}
               </span>
             </span>

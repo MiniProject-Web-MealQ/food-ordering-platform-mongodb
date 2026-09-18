@@ -116,7 +116,7 @@ export function LoginForm() {
         </Link>
       </p>
 
-      <div className="flex items-center gap-4 text-sm text-muted/80" role="separator">
+      <div className="flex items-center gap-4 text-sm text-ink-soft/80" role="separator">
         <span className="h-0.5 flex-1 rounded-full bg-mint" />
         หรือ
         <span className="h-0.5 flex-1 rounded-full bg-mint" />
@@ -129,7 +129,7 @@ export function LoginForm() {
         เข้าสู่ระบบด้วย Google
       </a>
 
-      <p className="text-center text-sm text-muted">
+      <p className="text-center text-sm text-ink-soft">
         ยังไม่มีบัญชี?{" "}
         <Link
           to={portal === "MERCHANT" ? "/register?role=merchant" : "/register"}

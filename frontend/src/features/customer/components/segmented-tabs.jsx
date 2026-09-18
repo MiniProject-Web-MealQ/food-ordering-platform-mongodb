@@ -36,7 +36,7 @@ export function SegmentedTabs({ idPrefix, label, tabs, value, onChange }) {
             onClick={() => onChange(tab.value)}
             className={cx(
               "h-10 rounded-full text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
-              selected ? "bg-white text-ink shadow-sm" : "text-muted hover:text-ink",
+              selected ? "bg-white text-ink shadow-sm" : "text-ink-soft hover:text-ink",
             )}
           >
             {tab.label}

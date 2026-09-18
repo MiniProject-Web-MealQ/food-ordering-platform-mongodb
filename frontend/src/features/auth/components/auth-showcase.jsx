@@ -44,7 +44,7 @@ export function AuthShowcase() {
         <div aria-hidden="true" className="max-w-sm rounded-4xl bg-white p-6 shadow-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted">คิวของคุณ · ร้านป้าแดง</p>
+              <p className="text-sm text-ink-soft">คิวของคุณ · ร้านป้าแดง</p>
               <p className="text-5xl font-bold text-ink">#18</p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-brand-ink">
@@ -57,14 +57,14 @@ export function AuthShowcase() {
                 <span
                   className={`block h-2 rounded-full ${index < 3 ? "bg-brand" : "bg-mint"}`}
                 />
-                <span className="block text-xs text-muted">{step}</span>
+                <span className="block text-xs text-ink-soft">{step}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <p className="relative text-sm text-muted">© 2026 MealQ · Order fast. Skip the queue.</p>
+      <p className="relative text-sm text-ink-soft">© 2026 MealQ · Order fast. Skip the queue.</p>
     </aside>
   );
 }

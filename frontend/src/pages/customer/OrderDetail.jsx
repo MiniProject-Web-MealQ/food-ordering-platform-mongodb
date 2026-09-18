@@ -134,11 +134,11 @@ function OrderDetail() {
                     {reached && !current && <CheckIcon className="size-4" strokeWidth={3} />}
                   </span>
                   <div>
-                    <p className={cx("font-bold", reached ? "text-ink" : "text-muted")}>
+                    <p className={cx("font-bold", reached ? "text-ink" : "text-ink-soft")}>
                       {step.label}
                       <span className="sr-only">{reached ? (current ? " (ตอนนี้)" : " (เสร็จแล้ว)") : " (ยังไม่ถึง)"}</span>
                     </p>
-                    <p className="text-sm text-muted">{stepDetail(step.status, order, restaurant)}</p>
+                    <p className="text-sm text-ink-soft">{stepDetail(step.status, order, restaurant)}</p>
                   </div>
                 </li>
               );
@@ -162,7 +162,7 @@ function OrderDetail() {
             ))}
           </ul>
           {notes.length > 0 && (
-            <p className="mt-3 text-sm text-muted">หมายเหตุ: {notes.map((item) => item.note).join(" / ")}</p>
+            <p className="mt-3 text-sm text-ink-soft">หมายเหตุ: {notes.map((item) => item.note).join(" / ")}</p>
           )}
           <p className="mt-3 flex justify-between border-t border-haze pt-3 font-bold text-ink">
             <span>ยอดชำระ</span>

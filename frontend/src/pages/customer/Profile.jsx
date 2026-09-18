@@ -19,7 +19,7 @@ function Stat({ value, label, highlight }) {
   return (
     <div className={cx("rounded-3xl px-3 py-4 text-center", highlight ? "bg-mint" : "bg-cream")}>
       <dd className="font-display text-2xl font-black text-ink">{value}</dd>
-      <dt className="text-xs text-muted">{label}</dt>
+      <dt className="text-xs text-ink-soft">{label}</dt>
     </div>
   );
 }
@@ -48,7 +48,7 @@ function Profile() {
       <header className="flex items-center gap-4 lg:col-start-1">
         <span
           aria-hidden="true"
-          className="grid size-20 shrink-0 place-items-center rounded-full border-2 border-dashed border-leaf bg-cream text-center text-xs text-muted"
+          className="grid size-20 shrink-0 place-items-center rounded-full border-2 border-dashed border-leaf bg-cream text-center text-xs text-ink-soft"
         >
           รูป
           <br />
@@ -56,8 +56,8 @@ function Profile() {
         </span>
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-ink lg:text-3xl">{CUSTOMER_PROFILE.name}</h1>
-          <p className="truncate text-muted">{CUSTOMER_PROFILE.email}</p>
-          <p className="text-muted">{CUSTOMER_PROFILE.phone}</p>
+          <p className="truncate text-ink-soft">{CUSTOMER_PROFILE.email}</p>
+          <p className="text-ink-soft">{CUSTOMER_PROFILE.phone}</p>
         </div>
       </header>
 
@@ -73,13 +73,13 @@ function Profile() {
             <li>
               <Link to="/customer/orders" className={rowClass}>
                 <span className="font-semibold">คำสั่งซื้อของฉัน</span>
-                <ChevronRightIcon className="size-5 text-muted" />
+                <ChevronRightIcon className="size-5 text-ink-soft" />
               </Link>
             </li>
             <li>
               <Link to="/customer/favorites" className={rowClass}>
                 <span className="font-semibold">ร้านโปรด</span>
-                <ChevronRightIcon className="size-5 text-muted" />
+                <ChevronRightIcon className="size-5 text-ink-soft" />
               </Link>
             </li>
             <li>
@@ -91,7 +91,7 @@ function Profile() {
                     <span className="sr-only"> รายการใหม่</span>
                   </span>
                 ) : (
-                  <ChevronRightIcon className="size-5 text-muted" />
+                  <ChevronRightIcon className="size-5 text-ink-soft" />
                 )}
               </Link>
             </li>
@@ -104,7 +104,7 @@ function Profile() {
                 className={cx(rowClass, "w-full text-left")}
               >
                 <span className="font-semibold">วิธีชำระเงิน</span>
-                <span className="flex items-center gap-1 text-muted">
+                <span className="flex items-center gap-1 text-ink-soft">
                   {payment.label.replace(" QR", "")}
                   <ChevronRightIcon className={cx("size-5 transition-transform", choosingPayment && "rotate-90")} />
                 </span>
@@ -149,11 +149,11 @@ function Profile() {
           </div>
           <div className="flex items-center justify-between px-5 py-4 text-ink">
             <span className="font-semibold">ภาษา</span>
-            <span className="text-muted">ไทย</span>
+            <span className="text-ink-soft">ไทย</span>
           </div>
           <Link to="/#faq" className={cx(rowClass, "rounded-b-3xl")}>
             <span className="font-semibold">ช่วยเหลือ</span>
-            <ChevronRightIcon className="size-5 text-muted" />
+            <ChevronRightIcon className="size-5 text-ink-soft" />
           </Link>
         </section>
 
@@ -163,7 +163,7 @@ function Profile() {
         <h2 id="devices-title" className="font-bold text-ink">
           อุปกรณ์ที่เข้าสู่ระบบ
         </h2>
-        <ul className="space-y-1 text-sm text-muted">
+        <ul className="space-y-1 text-sm text-ink-soft">
           {devices.map((device) => (
             <li key={device.id}>
               {device.label} · {device.lastSeen}

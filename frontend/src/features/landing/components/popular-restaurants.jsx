@@ -16,7 +16,7 @@ export function PopularRestaurants() {
             <h2 id="popular-restaurants-title" className="text-3xl font-bold text-ink lg:text-5xl">
               ร้านยอดนิยม
             </h2>
-            <p className="mt-3 hidden text-lg text-muted lg:block">
+            <p className="mt-3 hidden text-lg text-ink-soft lg:block">
               ร้านที่คนสั่งบ่อยที่สุดในสัปดาห์นี้
             </p>
           </div>
@@ -38,7 +38,7 @@ export function PopularRestaurants() {
                 />
                 <div className="sm:px-2 sm:pt-1 sm:pb-2">
                   <p className="mt-3 font-semibold text-ink lg:text-lg">{restaurant.name}</p>
-                  <p className="text-sm text-muted">
+                  <p className="text-sm text-ink-soft">
                     {restaurant.category} · <span aria-hidden="true">★</span>
                     <span className="sr-only">คะแนน</span> {restaurant.rating.toFixed(1)} · คิว{" "}
                     {restaurant.queueLength}

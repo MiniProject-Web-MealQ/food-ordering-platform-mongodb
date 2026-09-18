@@ -17,7 +17,7 @@ export function RoleSegmented({ name, legend, value, onChange }) {
         {ROLE_ORDER.map((role) => (
           <label
             key={role}
-            className={`grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-muted transition-colors hover:text-ink has-checked:bg-brand has-checked:text-white ${focusRing}`}
+            className={`grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-ink-soft transition-colors hover:text-ink has-checked:bg-brand has-checked:text-white ${focusRing}`}
           >
             <input
               type="radio"

@@ -22,7 +22,7 @@ export function Hero() {
             <br />
             ไม่ต้องต่อคิว
           </h1>
-          <p className="max-w-md text-lg leading-relaxed text-muted lg:max-w-lg lg:text-xl">
+          <p className="max-w-md text-lg leading-relaxed text-ink-soft lg:max-w-lg lg:text-xl">
             เลือกร้าน สั่งอาหาร จ่ายเงิน และรอรับอาหารได้ง่าย ๆ ผ่าน MealQ
           </p>
           <div className="flex flex-wrap gap-3">
@@ -33,7 +33,7 @@ export function Hero() {
               ฉันเป็นร้านค้า
             </Link>
           </div>
-          <ul className="hidden flex-wrap gap-x-6 gap-y-2 text-sm text-muted lg:flex">
+          <ul className="hidden flex-wrap gap-x-6 gap-y-2 text-sm text-ink-soft lg:flex">
             {HIGHLIGHTS.map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <span
@@ -63,7 +63,7 @@ export function Hero() {
             </span>
             <span className="leading-tight">
               <span className="block font-semibold text-ink">อาหารพร้อมแล้ว</span>
-              <span className="block text-sm text-muted">คิว #18 · ร้านป้าแดง</span>
+              <span className="block text-sm text-ink-soft">คิว #18 · ร้านป้าแดง</span>
             </span>
           </div>
           <div
@@ -72,7 +72,7 @@ export function Hero() {
           >
             <span className="size-3 animate-pulse rounded-full bg-brand motion-reduce:animate-none" />
             <span className="leading-tight">
-              <span className="block text-xs text-muted">คิวปัจจุบัน</span>
+              <span className="block text-xs text-ink-soft">คิวปัจจุบัน</span>
               <span className="block text-2xl font-bold text-ink">#15</span>
             </span>
           </div>

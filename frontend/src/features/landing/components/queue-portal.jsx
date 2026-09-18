@@ -91,10 +91,10 @@ export function QueuePortal() {
         }
         front={
           <>
-            <p className="absolute inset-x-6 bottom-[calc(100%-var(--gp-word-top,35%)+28px)] text-center text-xs font-bold tracking-[0.25em] text-muted sm:text-sm">
+            <p className="absolute inset-x-6 bottom-[calc(100%-var(--gp-word-top,35%)+28px)] text-center text-xs font-bold tracking-[0.25em] text-ink-soft sm:text-sm">
               ORDER FAST · SKIP THE QUEUE
             </p>
-            <p className="absolute inset-x-6 top-[calc(var(--gp-word-bottom,50%)+24px)] text-center text-base text-muted sm:text-lg">
+            <p className="absolute inset-x-6 top-[calc(var(--gp-word-bottom,50%)+24px)] text-center text-base text-ink-soft sm:text-lg">
               เลื่อนลงเพื่อเข้าไปในคิวที่ไม่ต้องยืนรอ
             </p>
           </>

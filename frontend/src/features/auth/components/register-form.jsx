@@ -130,7 +130,7 @@ export function RegisterForm({ defaultRole }) {
         {pending ? "กำลังสร้างบัญชี…" : "สร้างบัญชี"}
       </Button>
 
-      <p className="text-center text-sm text-muted">
+      <p className="text-center text-sm text-ink-soft">
         มีบัญชีอยู่แล้ว?{" "}
         <Link to="/login" className={textLinkClass}>
           เข้าสู่ระบบ

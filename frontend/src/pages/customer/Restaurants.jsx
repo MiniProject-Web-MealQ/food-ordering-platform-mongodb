@@ -56,7 +56,7 @@ function Restaurants() {
         <aside className={cx("space-y-5 lg:rounded-4xl lg:bg-cream lg:p-6", stickySidebarClass)}>
           <Link
             to="/customer/search"
-            className={`flex h-13 items-center gap-3 rounded-full bg-cream px-5 text-muted ring-1 ring-haze hover:bg-haze lg:h-12 lg:bg-white lg:text-sm ${focusRing}`}
+            className={`flex h-13 items-center gap-3 rounded-full bg-cream px-5 text-ink-soft ring-1 ring-haze hover:bg-haze lg:h-12 lg:bg-white lg:text-sm ${focusRing}`}
           >
             <SearchIcon className="size-5" />
             ร้าน เมนู หรือประเภทอาหาร

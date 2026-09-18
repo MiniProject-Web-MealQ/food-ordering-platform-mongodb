@@ -55,7 +55,7 @@ function Checkout() {
                 </li>
               ))}
             </ol>
-            <p className="mt-2 text-xs text-muted">
+            <p className="mt-2 text-xs text-ink-soft">
               ขั้นที่ {CURRENT_STEP} จาก {STEPS.length} · {STEPS[CURRENT_STEP - 1]}
             </p>
           </div>
@@ -67,7 +67,7 @@ function Checkout() {
             <p className="text-sm font-semibold text-ink">
               คิวประมาณ #{queueNumber} · พร้อมประมาณ {formatClock(readyAt)}
             </p>
-            <p className="flex gap-2 rounded-2xl bg-haze px-4 py-3 text-xs text-muted">
+            <p className="flex gap-2 rounded-2xl bg-haze px-4 py-3 text-xs text-ink-soft">
               <InfoIcon className="size-4 shrink-0" />
               เวลาเป็นค่าประมาณจากคิวและเวลาทำเฉลี่ย ไม่ใช่เวลารับประกัน
             </p>
@@ -95,7 +95,7 @@ function Checkout() {
                   <span>{formatBaht(line.lineTotal)}</span>
                 </li>
               ))}
-              <li className="flex justify-between gap-3 text-muted">
+              <li className="flex justify-between gap-3 text-ink-soft">
                 <span>ค่าบริการ</span>
                 <span>{formatBaht(priced.serviceFee)}</span>
               </li>
@@ -132,7 +132,7 @@ function Checkout() {
                 />
                 <span>
                   <span className="block font-semibold text-ink">{option.label}</span>
-                  <span className="block text-xs text-muted">{option.description}</span>
+                  <span className="block text-xs text-ink-soft">{option.description}</span>
                 </span>
               </label>
             ))}
