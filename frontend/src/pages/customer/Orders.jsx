@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { FilterBar } from "@/components/ui/filter-token-bar";
 import { buttonClasses } from "@/components/ui/styles";
 import { getRestaurant, isActiveOrder } from "@/features/customer/catalog";
 import { ActiveOrderCard } from "@/features/customer/components/active-order-card";
 import { SegmentedTabs } from "@/features/customer/components/segmented-tabs";
 import { formatBaht, formatWhen } from "@/features/customer/format";
+import { matchesFilters, orderFilterFields } from "@/features/customer/order-filters";
 import { useCustomer } from "@/features/customer/store";
 import { containerClass } from "@/features/customer/styles";
 import { cx } from "@/lib/cx";
@@ -56,6 +58,10 @@ function Orders() {
   const active = state.orders.filter(isActiveOrder);
   const history = state.orders.filter((o) => !isActiveOrder(o));
   const [tab, setTab] = useState(active.length > 0 ? "active" : "history");
+  const [filters, setFilters] = useState([]);
+
+  const filterFields = useMemo(() => orderFilterFields(history), [history]);
+  const shownHistory = history.filter((order) => matchesFilters(order, filters));
 
   function reorder(order) {
     dispatch({ type: "cart/reorder", order });
@@ -79,6 +85,22 @@ function Orders() {
         />
       </div>
 
+      {tab === "history" && history.length > 0 && (
+        <div className="space-y-2">
+          <FilterBar
+            fields={filterFields}
+            value={filters}
+            onChange={setFilters}
+            aria-label="ตัวกรองประวัติการสั่ง"
+          />
+          {filters.length > 0 && (
+            <p aria-live="polite" className="text-sm text-ink-soft">
+              พบ {shownHistory.length} จาก {history.length} ออเดอร์
+            </p>
+          )}
+        </div>
+      )}
+
       <div id="orders-tab-panel" role="tabpanel" aria-labelledby={`orders-tab-${tab}`} className="grid gap-3 md:grid-cols-2 lg:gap-5">
         {tab === "active" && (
           <>
@@ -93,12 +115,14 @@ function Orders() {
           </>
         )}
         {tab === "history" &&
-          (history.length > 0 ? (
-            history.map((order) => (
+          (shownHistory.length > 0 ? (
+            shownHistory.map((order) => (
               <HistoryCard key={order.id} order={order} onReorder={() => reorder(order)} />
             ))
           ) : (
-            <p className="rounded-3xl bg-cream px-5 py-4 text-sm text-ink-soft md:col-span-2">ยังไม่มีประวัติการสั่ง</p>
+            <p className="rounded-3xl bg-cream px-5 py-4 text-sm text-ink-soft md:col-span-2">
+              {history.length > 0 ? "ไม่มีออเดอร์ที่ตรงกับตัวกรอง" : "ยังไม่มีประวัติการสั่ง"}
+            </p>
           ))}
       </div>
     </div>
