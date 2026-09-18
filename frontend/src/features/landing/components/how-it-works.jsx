@@ -1,11 +1,11 @@
 import { cx } from "@/lib/cx";
 
-// Flat butter tints that deepen step by step.
+// Flat mint tints that deepen step by step.
 const STEPS = [
-  { title: "เลือกร้าน", description: "ดูคิวและเวลารอก่อนสั่ง", tone: "bg-butter/60" },
-  { title: "สั่งและจ่าย", description: "PromptPay หรือบัตร จ่ายจบในแอป", tone: "bg-butter" },
-  { title: "รอแจ้งเตือน", description: "เห็นคิวปัจจุบันแบบเรียลไทม์", tone: "bg-butter/60" },
-  { title: "เดินมารับ", description: "แสดงรหัส 4 หลักหรือ QR ที่ร้าน", tone: "bg-butter" },
+  { title: "เลือกร้าน", description: "ดูคิวและเวลารอก่อนสั่ง", tone: "bg-mint/60" },
+  { title: "สั่งและจ่าย", description: "PromptPay หรือบัตร จ่ายจบในแอป", tone: "bg-mint" },
+  { title: "รอแจ้งเตือน", description: "เห็นคิวปัจจุบันแบบเรียลไทม์", tone: "bg-mint/60" },
+  { title: "เดินมารับ", description: "แสดงรหัส 4 หลักหรือ QR ที่ร้าน", tone: "bg-mint" },
 ];
 
 export function HowItWorks() {
@@ -36,7 +36,7 @@ export function HowItWorks() {
           >
             <span
               aria-hidden="true"
-              className="text-3xl font-bold text-apricot tabular-nums lg:text-5xl"
+              className="text-3xl font-bold text-brand-ink tabular-nums lg:text-5xl"
             >
               {String(index + 1).padStart(2, "0")}
             </span>

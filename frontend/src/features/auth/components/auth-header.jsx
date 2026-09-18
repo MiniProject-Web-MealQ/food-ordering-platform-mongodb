@@ -7,7 +7,7 @@ export function AuthHeader({ title, description, back, leading }) {
       {back && (
         <Link
           to={back.href}
-          className={`mb-6 inline-flex items-center gap-1.5 rounded-full text-sm font-semibold text-apricot-ink hover:underline ${focusRing}`}
+          className={`mb-6 inline-flex items-center gap-1.5 rounded-full text-sm font-semibold text-brand-ink hover:underline ${focusRing}`}
         >
           <span aria-hidden="true">←</span> {back.label}
         </Link>

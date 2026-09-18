@@ -30,7 +30,7 @@ export function PopularRestaurants() {
             <li key={restaurant.id} className="relative w-48 shrink-0 snap-start sm:w-auto">
               <Link
                 to={`/customer/restaurants/${restaurant.id}`}
-                className={`group block rounded-4xl sm:rounded-[2.25rem] sm:bg-linen sm:p-3 sm:ring-2 sm:ring-butter sm:transition-shadow sm:hover:shadow-card ${focusRing}`}
+                className={`group block rounded-4xl sm:rounded-[2.25rem] sm:bg-snow sm:p-3 sm:ring-2 sm:ring-mint sm:transition-shadow sm:hover:shadow-card ${focusRing}`}
               >
                 <ImagePlaceholder
                   label={restaurant.imageLabel}

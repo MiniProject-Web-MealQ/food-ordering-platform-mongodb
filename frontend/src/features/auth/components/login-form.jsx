@@ -117,15 +117,15 @@ export function LoginForm() {
       </p>
 
       <div className="flex items-center gap-4 text-sm text-muted/80" role="separator">
-        <span className="h-0.5 flex-1 rounded-full bg-butter" />
+        <span className="h-0.5 flex-1 rounded-full bg-mint" />
         หรือ
-        <span className="h-0.5 flex-1 rounded-full bg-butter" />
+        <span className="h-0.5 flex-1 rounded-full bg-mint" />
       </div>
       <a
         href={googleSignInUrl(portal)}
         className={buttonClasses({ variant: "secondary", fullWidth: true })}
       >
-        <GoogleIcon className="size-5 text-apricot-ink" />
+        <GoogleIcon className="size-5 text-brand-ink" />
         เข้าสู่ระบบด้วย Google
       </a>
 

@@ -96,3 +96,193 @@ export function GoogleIcon(props) {
     </svg>
   );
 }
+
+export function MinusIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M5 12h14" />
+    </Icon>
+  );
+}
+
+export function CheckIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </Icon>
+  );
+}
+
+export function XIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </Icon>
+  );
+}
+
+export function ArrowLeftIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </Icon>
+  );
+}
+
+export function ChevronRightIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="m9 18 6-6-6-6" />
+    </Icon>
+  );
+}
+
+export function SearchIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Icon>
+  );
+}
+
+export function SlidersIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4 6h16" />
+      <path d="M7 12h10" />
+      <path d="M10 18h4" />
+    </Icon>
+  );
+}
+
+export function HomeIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" />
+    </Icon>
+  );
+}
+
+export function CompassIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m16 8-2.5 5.5L8 16l2.5-5.5Z" />
+    </Icon>
+  );
+}
+
+export function ReceiptIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2Z" />
+      <path d="M9 8h6" />
+      <path d="M9 12h6" />
+    </Icon>
+  );
+}
+
+export function DiceIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <circle cx="8.5" cy="8.5" r="1.25" fill="currentColor" />
+      <circle cx="15.5" cy="8.5" r="1.25" fill="currentColor" />
+      <circle cx="8.5" cy="15.5" r="1.25" fill="currentColor" />
+      <circle cx="15.5" cy="15.5" r="1.25" fill="currentColor" />
+    </Icon>
+  );
+}
+
+export function UserIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </Icon>
+  );
+}
+
+export function BellIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </Icon>
+  );
+}
+
+export function BagIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M5 8h14l-1 13H6Z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </Icon>
+  );
+}
+
+export function HeartIcon({ filled = false, ...props }) {
+  return (
+    <Icon {...props} fill={filled ? "currentColor" : "none"}>
+      <path d="M12 20s-7.5-4.6-9.3-9.2C1.5 7.6 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.5 3.1 4.3 6.3C19.5 15.4 12 20 12 20Z" />
+    </Icon>
+  );
+}
+
+export function StarIcon({ filled = false, ...props }) {
+  return (
+    <Icon {...props} fill={filled ? "currentColor" : "none"}>
+      <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z" />
+    </Icon>
+  );
+}
+
+export function InfoIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </Icon>
+  );
+}
+
+export function LockIcon(props) {
+  return (
+    <Icon {...props}>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </Icon>
+  );
+}
+
+export function AlertTriangleIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </Icon>
+  );
+}
+
+export function TicketIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2Z" />
+      <path d="M13 6v12" strokeDasharray="2 2" />
+    </Icon>
+  );
+}
+
+export function PlayIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="m8 5 11 7-11 7Z" fill="currentColor" />
+    </Icon>
+  );
+}

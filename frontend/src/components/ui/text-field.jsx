@@ -31,10 +31,10 @@ export function TextField({
           aria-invalid={invalid || Boolean(error) || undefined}
           aria-describedby={describedByIds}
           className={cx(
-            "h-14 w-full rounded-full border-2 border-butter bg-linen px-6 text-base text-ink transition",
-            "placeholder:text-muted/70 focus:border-apricot focus:ring-1 focus:ring-apricot focus:outline-none",
-            "aria-invalid:border-coral aria-invalid:focus:border-apricot",
-            error ? "bg-coral/10" : undefined,
+            "h-14 w-full rounded-full border-2 border-mint bg-snow px-6 text-base text-ink transition",
+            "placeholder:text-muted/70 focus:border-brand focus:ring-1 focus:ring-brand focus:outline-none",
+            "aria-invalid:border-alert aria-invalid:focus:border-brand",
+            error ? "bg-alert/10" : undefined,
             trailing ? "pr-14" : undefined,
             className,
           )}

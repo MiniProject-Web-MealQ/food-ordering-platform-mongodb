@@ -11,14 +11,14 @@ const TRACK = ["สั่งแล้ว", "เข้าคิว", "กำล�
 /** Brand panel shown beside auth forms on large screens. Decorative only — no live data. */
 export function AuthShowcase() {
   return (
-    <aside className="relative hidden overflow-hidden bg-butter lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:p-12 xl:p-16">
+    <aside className="relative hidden overflow-hidden bg-mint lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:p-12 xl:p-16">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-28 -bottom-28 size-96 rounded-full bg-honey/60"
+        className="pointer-events-none absolute -right-28 -bottom-28 size-96 rounded-full bg-leaf/60"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-10 bottom-40 size-24 rounded-full bg-coral/40"
+        className="pointer-events-none absolute -right-10 bottom-40 size-24 rounded-full bg-brand/30"
       />
       <div className="relative">
         <Logo />
@@ -34,7 +34,7 @@ export function AuthShowcase() {
           <ul className="space-y-2 text-lg text-ink/80">
             {BENEFITS.map((benefit) => (
               <li key={benefit} className="flex items-center gap-3">
-                <span aria-hidden="true" className="size-2.5 rounded-full bg-apricot" />
+                <span aria-hidden="true" className="size-2.5 rounded-full bg-brand" />
                 {benefit}
               </li>
             ))}
@@ -47,7 +47,7 @@ export function AuthShowcase() {
               <p className="text-sm text-muted">คิวของคุณ · ร้านป้าแดง</p>
               <p className="text-5xl font-bold text-ink">#18</p>
             </div>
-            <span className="rounded-full bg-coral/20 px-3 py-1 text-sm font-semibold text-ink">
+            <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-brand-ink">
               อีก ~6 นาที
             </span>
           </div>
@@ -55,7 +55,7 @@ export function AuthShowcase() {
             {TRACK.map((step, index) => (
               <div key={step} className="space-y-1.5">
                 <span
-                  className={`block h-2 rounded-full ${index < 3 ? "bg-apricot" : "bg-butter"}`}
+                  className={`block h-2 rounded-full ${index < 3 ? "bg-brand" : "bg-mint"}`}
                 />
                 <span className="block text-xs text-muted">{step}</span>
               </div>

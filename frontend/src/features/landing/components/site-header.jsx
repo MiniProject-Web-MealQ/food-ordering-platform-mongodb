@@ -11,7 +11,7 @@ const NAV = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-transparent bg-white/90 backdrop-blur-md lg:border-butter">
+    <header className="sticky top-0 z-30 border-b border-transparent bg-white/90 backdrop-blur-md lg:border-mint">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-5 py-4 sm:px-8 lg:py-5">
         <Logo />
 
@@ -21,7 +21,7 @@ export function SiteHeader() {
               <li key={item.href}>
                 <a
                   href={item.href}
-                  className={`rounded-full px-4 py-2 font-medium text-muted transition-colors hover:bg-butter hover:text-ink ${focusRing}`}
+                  className={`rounded-full px-4 py-2 font-medium text-muted transition-colors hover:bg-mint hover:text-ink ${focusRing}`}
                 >
                   {item.label}
                 </a>

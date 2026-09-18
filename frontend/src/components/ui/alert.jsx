@@ -8,14 +8,14 @@ export function Alert({ tone, title, children }) {
       role={isError ? "alert" : "status"}
       className={cx(
         "flex gap-3 rounded-3xl border-2 px-5 py-4",
-        isError ? "border-coral bg-coral/10" : "border-honey bg-butter/60",
+        isError ? "border-alert bg-alert/10" : "border-leaf bg-mint/60",
       )}
     >
       <span
         aria-hidden="true"
         className={cx(
           "mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-sm font-bold",
-          isError ? "bg-coral text-white" : "bg-honey text-ink",
+          isError ? "bg-alert text-white" : "bg-leaf text-ink",
         )}
       >
         {isError ? "!" : "✓"}

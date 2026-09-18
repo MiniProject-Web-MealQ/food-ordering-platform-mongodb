@@ -13,7 +13,7 @@ export function Hero() {
     <section className="relative overflow-hidden">
       <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 px-5 pt-4 pb-12 sm:px-8 md:grid-cols-2 md:pt-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-16 lg:pb-24">
         <div className="space-y-6 lg:space-y-8">
-          <p className="inline-flex items-center gap-2 rounded-full bg-butter px-4 py-1.5 text-sm font-semibold text-ink">
+          <p className="inline-flex items-center gap-2 rounded-full bg-mint px-4 py-1.5 text-sm font-semibold text-ink">
             <span aria-hidden="true">🍜</span>
             ร้านอาหารในมหาวิทยาลัยและออฟฟิศ
           </p>
@@ -38,7 +38,7 @@ export function Hero() {
               <li key={item} className="flex items-center gap-2">
                 <span
                   aria-hidden="true"
-                  className="grid size-5 place-items-center rounded-full bg-honey text-xs text-ink"
+                  className="grid size-5 place-items-center rounded-full bg-leaf text-xs text-ink"
                 >
                   ✓
                 </span>
@@ -58,7 +58,7 @@ export function Hero() {
             aria-hidden="true"
             className="absolute -bottom-6 left-4 flex items-center gap-3 rounded-full bg-white py-2.5 pr-6 pl-3 shadow-float sm:left-6 lg:-left-8"
           >
-            <span className="grid size-10 place-items-center rounded-full bg-honey font-bold text-ink">
+            <span className="grid size-10 place-items-center rounded-full bg-leaf font-bold text-ink">
               18
             </span>
             <span className="leading-tight">
@@ -70,7 +70,7 @@ export function Hero() {
             aria-hidden="true"
             className="absolute -top-5 -right-4 hidden items-center gap-3 rounded-3xl bg-white px-5 py-3 shadow-float lg:flex"
           >
-            <span className="size-3 animate-pulse rounded-full bg-coral motion-reduce:animate-none" />
+            <span className="size-3 animate-pulse rounded-full bg-brand motion-reduce:animate-none" />
             <span className="leading-tight">
               <span className="block text-xs text-muted">คิวปัจจุบัน</span>
               <span className="block text-2xl font-bold text-ink">#15</span>

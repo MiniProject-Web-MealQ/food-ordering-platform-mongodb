@@ -13,11 +13,11 @@ export function RoleSegmented({ name, legend, value, onChange }) {
   return (
     <fieldset>
       <legend className="sr-only">{legend}</legend>
-      <div className="grid grid-cols-2 gap-1 rounded-full bg-butter p-1.5">
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-mint p-1.5">
         {ROLE_ORDER.map((role) => (
           <label
             key={role}
-            className={`grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-muted transition-colors hover:text-ink has-checked:bg-apricot has-checked:text-ink ${focusRing}`}
+            className={`grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-muted transition-colors hover:text-ink has-checked:bg-brand has-checked:text-white ${focusRing}`}
           >
             <input
               type="radio"
@@ -44,7 +44,7 @@ export function RoleCards({ name, legend, value, onChange }) {
         {ROLE_ORDER.map((role) => (
           <label
             key={role}
-            className={`cursor-pointer rounded-3xl border-2 border-butter bg-linen px-4 py-4 text-ink transition-colors hover:border-honey has-checked:border-apricot has-checked:bg-apricot ${focusRing}`}
+            className={`cursor-pointer rounded-3xl border-2 border-line bg-snow px-4 py-4 text-ink transition-colors hover:border-leaf has-checked:border-brand has-checked:bg-brand has-checked:text-white ${focusRing}`}
           >
             <input
               type="radio"
@@ -55,7 +55,7 @@ export function RoleCards({ name, legend, value, onChange }) {
               className="sr-only"
             />
             <span className="block font-semibold">{ROLE_COPY[role].label}</span>
-            <span className="mt-0.5 block text-sm text-ink/75">{ROLE_COPY[role].description}</span>
+            <span className="mt-0.5 block text-sm opacity-75">{ROLE_COPY[role].description}</span>
           </label>
         ))}
       </div>

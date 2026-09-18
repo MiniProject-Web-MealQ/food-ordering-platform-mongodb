@@ -4,11 +4,11 @@ import GlyphPortal from "@/components/ui/glyph-portal";
 const WORD = "MealQ";
 const FALLBACK_FACE = 'Georgia, "Times New Roman", serif';
 
-// Palette tokens from src/index.css (AGENTS.md §32). Text on apricot/coral stays ink.
+// Palette tokens from src/index.css (AGENTS.md §32). Text on brand/alert stays ink.
 const PORTAL_THEME = {
   "--gp-paper": "#fff",
   "--gp-ink": "var(--color-ink)",
-  "--gp-field": "var(--color-apricot)",
+  "--gp-field": "var(--color-brand)",
   "--gp-foreground": "var(--color-ink)",
 };
 
@@ -86,7 +86,7 @@ export function QueuePortal() {
               alt=""
               className="absolute inset-0 size-full object-cover"
             />
-            <div className="absolute inset-0 bg-apricot/85" />
+            <div className="absolute inset-0 bg-brand/85" />
           </div>
         }
         front={

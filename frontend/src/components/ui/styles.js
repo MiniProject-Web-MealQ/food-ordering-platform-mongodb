@@ -4,19 +4,21 @@ import { cx } from "@/lib/cx";
 export const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
-/** Inline text link: bold dark-apricot text, underlined on hover. */
-export const textLinkClass = `rounded font-semibold text-apricot-ink underline-offset-4 hover:underline ${focusRing}`;
+/** Inline text link: brand-green text, underlined on hover. */
+export const textLinkClass = `rounded font-semibold text-brand-ink underline-offset-4 hover:underline ${focusRing}`;
 
 const BUTTON_VARIANTS = {
   primary:
-    "bg-apricot text-ink hover:bg-coral disabled:bg-butter disabled:text-ink/40 disabled:hover:bg-butter",
-  outline: "border-2 border-honey bg-white text-ink hover:bg-butter",
-  soft: "bg-butter text-ink hover:bg-honey",
-  secondary: "border-2 border-butter bg-linen text-ink hover:bg-butter",
-  dark: "bg-ink text-butter hover:bg-ink/85",
+    "bg-brand text-white hover:bg-brand-dark disabled:bg-haze disabled:text-muted disabled:hover:bg-haze",
+  outline: "border-2 border-brand/35 bg-white text-brand-ink hover:bg-mint",
+  soft: "bg-mint text-brand-ink hover:bg-leaf",
+  secondary: "border-2 border-line bg-snow text-ink hover:bg-haze",
+  dark: "bg-forest text-white hover:bg-forest/90",
+  "danger-outline": "border-2 border-alert/50 bg-white text-danger hover:bg-alert/10",
 };
 
 const BUTTON_SIZES = {
+  sm: "h-9 px-4 text-sm",
   md: "h-11 px-5 text-sm",
   lg: "h-14 px-7 text-base",
 };

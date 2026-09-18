@@ -2,10 +2,10 @@ import { Link } from "react-router";
 import { buttonClasses } from "@/components/ui/styles";
 
 const DISHES = [
-  { emoji: "🍜", tone: "bg-butter", position: "top-0 left-8" },
-  { emoji: "🍛", tone: "bg-honey", position: "top-6 right-4" },
+  { emoji: "🍜", tone: "bg-mint", position: "top-0 left-8" },
+  { emoji: "🍛", tone: "bg-leaf", position: "top-6 right-4" },
   { emoji: "🥗", tone: "bg-white", position: "bottom-0 left-0" },
-  { emoji: "🧋", tone: "bg-butter", position: "right-28 bottom-2" },
+  { emoji: "🧋", tone: "bg-mint", position: "right-28 bottom-2" },
 ];
 
 export function RandomFoodCta() {
@@ -15,7 +15,7 @@ export function RandomFoodCta() {
       aria-labelledby="random-food-title"
       className="mx-auto w-full max-w-7xl scroll-mt-24 px-5 py-6 sm:px-8 lg:py-20"
     >
-      <div className="relative overflow-hidden rounded-4xl bg-apricot px-7 py-8 sm:px-10 sm:py-10 lg:grid lg:grid-cols-[1.3fr_1fr] lg:items-center lg:rounded-[3rem] lg:px-16 lg:py-16">
+      <div className="relative overflow-hidden rounded-4xl bg-brand px-7 py-8 sm:px-10 sm:py-10 lg:grid lg:grid-cols-[1.3fr_1fr] lg:items-center lg:rounded-[3rem] lg:px-16 lg:py-16">
         <div>
           <p className="text-sm font-bold tracking-[0.2em] text-ink/70">RANDOM FOOD</p>
           <h2 id="random-food-title" className="mt-2 text-3xl font-bold text-ink lg:text-5xl">

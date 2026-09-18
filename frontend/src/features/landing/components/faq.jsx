@@ -42,13 +42,13 @@ export function Faq() {
         {QUESTIONS.map((item) => (
           <details
             key={item.question}
-            className="group rounded-4xl bg-white ring-1 ring-line transition-colors open:bg-butter/60 open:ring-honey"
+            className="group rounded-4xl bg-white ring-1 ring-line transition-colors open:bg-mint/60 open:ring-leaf"
           >
             <summary
               className={`flex cursor-pointer list-none items-center justify-between gap-4 rounded-4xl px-6 py-5 font-semibold text-ink lg:px-8 lg:py-6 lg:text-lg [&::-webkit-details-marker]:hidden ${focusRing}`}
             >
               {item.question}
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-butter transition-colors group-open:bg-apricot">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-mint transition-colors group-open:bg-brand">
                 <PlusIcon className="size-4 text-ink transition-transform group-open:rotate-45" />
               </span>
             </summary>

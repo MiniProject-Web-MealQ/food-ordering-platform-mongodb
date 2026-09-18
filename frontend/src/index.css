@@ -1,28 +1,37 @@
 @import "tailwindcss";
 
 /*
- * MealQ design tokens — see AGENTS.md §32 "Brand Color Palette".
- * The four brand colors (butter, honey, apricot, coral) are the main theme, always as flat fills (no gradients).
- * Text on them is `ink`; links use `apricot-ink`; errors use `danger`.
+ * MealQ design tokens — white base, green actions, brown accents.
+ * `brand` is the one action colour (buttons, active states) with `mint`/`leaf` as its tints;
+ * `cocoa` and `forest` are the warm browns for badges, figures and dark cards;
+ * the neutrals (`page`, `cream`, `snow`, `haze`, `line`) are warm greys.
+ * Text on `brand` is white; links use `brand-ink`; errors use `danger`/`alert`; stars use `amber`.
  */
 @theme {
-  --color-butter: #ffedb9;
-  --color-honey: #ffcb56;
-  --color-apricot: #ffa259;
-  --color-coral: #ff7e7e;
+  --color-brand: #1e8e4e;
+  --color-brand-dark: #16713d; /* hover / pressed */
+  --color-brand-ink: #14683a; /* brand text on white (AA) */
+  --color-mint: #e6f2ea; /* tinted surfaces, badges */
+  --color-leaf: #a8d5b9; /* borders on tinted surfaces */
 
-  /* Supporting tones derived from the palette. */
-  --color-apricot-ink: #b8531c; /* apricot dark enough for link text (AA on white/linen) */
-  --color-ink: #3b2a16;
-  --color-muted: #6e5b45;
-  --color-danger: #b23a2e;
-  --color-page: #fff6e5;
-  --color-linen: #fff9ee;
-  --color-oat: #f4eee2;
-  --color-line: #ffedb9;
+  /* Warm browns. */
+  --color-cocoa: #8a5a2b; /* badges, figures, secondary accents */
+  --color-forest: #2b1d13; /* dark cards: order status, random food */
 
-  --shadow-card: 0 20px 50px -24px rgb(110 80 30 / 0.2);
-  --shadow-float: 0 14px 34px -12px rgb(110 80 30 / 0.28);
+  /* Neutrals and feedback. */
+  --color-ink: #241a12;
+  --color-muted: #6a5a4c;
+  --color-danger: #b3261e;
+  --color-alert: #d9544d; /* error fills and unread dots */
+  --color-amber: #dd9a2b; /* rating stars, warnings */
+  --color-page: #fbf8f4;
+  --color-snow: #fdfbf8;
+  --color-cream: #f7f2eb;
+  --color-haze: #f0eae1;
+  --color-line: #e5dcd1;
+
+  --shadow-card: 0 20px 50px -24px rgb(70 45 20 / 0.22);
+  --shadow-float: 0 14px 34px -12px rgb(70 45 20 / 0.28);
 }
 
 /* Self-hosted variable fonts, imported in src/main.jsx. Figtree has no Thai glyphs, so Thai text falls through to Anuphan. */
@@ -39,6 +48,14 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Random-food reel: each new name drops into place. */
+@keyframes reel {
+  from {
+    transform: translateY(-60%);
+    opacity: 0;
+  }
 }
 
 body {
@@ -66,15 +83,15 @@ body {
   padding: 0 1.5rem;
   gap: 0.75rem;
   border-radius: 9999px;
-  background: var(--color-apricot);
-  color: var(--color-ink);
+  background: var(--color-brand);
+  color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
   transition: background-color 0.18s;
 }
 
 [data-mealq-portal] [data-gp-enter]:hover {
-  background: var(--color-coral);
+  background: var(--color-brand-dark);
 }
 
 [data-mealq-portal] [data-gp-enter]:focus-visible {
@@ -82,8 +99,8 @@ body {
   outline-offset: 2px;
   margin: 0;
   padding: 0 1.5rem;
-  background: var(--color-apricot);
-  color: var(--color-ink);
+  background: var(--color-brand);
+  color: #fff;
 }
 
 [data-mealq-portal] [data-gp-content] {

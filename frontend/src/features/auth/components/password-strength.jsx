@@ -8,7 +8,7 @@ const COPY = {
   symbol: { passed: "มีอักขระพิเศษ", missing: "เพิ่มอักขระพิเศษให้แข็งแรงขึ้น" },
 };
 
-const BAR_COLOR = ["bg-butter", "bg-coral", "bg-honey", "bg-honey", "bg-apricot"];
+const BAR_COLOR = ["bg-mint", "bg-alert", "bg-leaf", "bg-leaf", "bg-brand"];
 
 export function PasswordStrength({ id, password }) {
   const checks = checkPassword(password);
@@ -22,7 +22,7 @@ export function PasswordStrength({ id, password }) {
         {checks.map((check, index) => (
           <span
             key={check.id}
-            className={cx("h-1.5 rounded-full", index < score ? BAR_COLOR[score] : "bg-butter")}
+            className={cx("h-1.5 rounded-full", index < score ? BAR_COLOR[score] : "bg-mint")}
           />
         ))}
       </div>

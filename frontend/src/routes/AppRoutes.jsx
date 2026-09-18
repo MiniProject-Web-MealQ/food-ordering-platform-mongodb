@@ -11,14 +11,12 @@
      - Forgot Password
      - Reset Password
 
-  1. Customer
-     - Restaurants
-     - Restaurant Detail
-     - Cart
-     - Checkout
-     - Orders
-     - Order Detail
-     - Profile
+  1. Customer (/customer/...)
+     - Home, Explore, Search
+     - Restaurant, Food detail
+     - Cart, Checkout, Payment
+     - Orders, Order tracking, Order confirmed, Review
+     - Random food, Favorites, Notifications, Profile
 
   2. Merchant
      - Merchant Login
@@ -43,7 +41,6 @@ import {
 // ==================================================
 
 // Layout หลักของฝั่งลูกค้า
-// จะมี Navbar ของ Customer
 import CustomerLayout from "../layouts/CustomerLayout";
 
 // Layout หลักของฝั่งร้านค้า
@@ -65,12 +62,24 @@ import ForgotPasswordPage from "../pages/auth/forgot-password";
 import ResetPasswordPage from "../pages/auth/reset-password";
 import NotFoundPage from "../pages/not-found";
 
+// Layout ย่อยของลูกค้าที่มีแถบเมนูด้านล่าง
+import CustomerTabLayout from "../layouts/CustomerTabLayout";
+
+import Home from "../pages/customer/Home";
 import Restaurants from "../pages/customer/Restaurants";
+import Search from "../pages/customer/Search";
 import RestaurantDetail from "../pages/customer/RestaurantDetail";
+import FoodDetail from "../pages/customer/FoodDetail";
 import Cart from "../pages/customer/Cart";
 import Checkout from "../pages/customer/Checkout";
+import Payment from "../pages/customer/Payment";
+import OrderConfirmed from "../pages/customer/OrderConfirmed";
 import Orders from "../pages/customer/Orders";
 import OrderDetail from "../pages/customer/OrderDetail";
+import Review from "../pages/customer/Review";
+import RandomFood from "../pages/customer/RandomFood";
+import Favorites from "../pages/customer/Favorites";
+import Notifications from "../pages/customer/Notifications";
 import Profile from "../pages/customer/Profile";
 
 
@@ -131,84 +140,36 @@ function AppRoutes() {
           CUSTOMER ROUTES
           ==================================================
 
-          Route ทั้งหมดที่อยู่ด้านใน CustomerLayout
-          จะใช้ Navbar ฝั่งลูกค้าร่วมกัน
+          ทุกหน้าของลูกค้าอยู่ใต้ /customer
+          (เหมือนฝั่งร้านค้าที่อยู่ใต้ /merchant)
 
-          ตัวอย่าง:
-
-          /
-          /restaurants
-          /cart
-          /orders
-          /profile
-
-          หน้าแต่ละหน้าจะถูกแสดงตรง <Outlet />
-          ภายใน CustomerLayout.jsx
+          CustomerLayout      -> ครอบ state ตะกร้า/ออเดอร์ + กรอบแอปมือถือ
+          CustomerTabLayout   -> หน้าที่มีแถบเมนูด้านล่าง
       */}
 
-      <Route element={<CustomerLayout />}>
+      <Route path="/customer" element={<CustomerLayout />}>
 
-        {/* หน้ารายการร้านอาหาร */}
-        <Route
-          path="/restaurants"
-          element={<Restaurants />}
-        />
+        {/* หน้าที่มีแถบเมนูด้านล่าง */}
+        <Route element={<CustomerTabLayout />}>
+          <Route index element={<Home />} />
+          <Route path="explore" element={<Restaurants />} />
+          <Route path="search" element={<Search />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="orders/:id" element={<OrderDetail />} />
+          <Route path="random" element={<RandomFood />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
 
-
-        {/*
-          หน้ารายละเอียดร้านอาหาร
-
-          :id คือ Dynamic Parameter
-
-          ตัวอย่าง:
-          /restaurants/1
-          /restaurants/2
-      */}
-        <Route
-          path="/restaurants/:id"
-          element={<RestaurantDetail />}
-        />
-
-
-        {/* หน้าตะกร้าสินค้า */}
-        <Route
-          path="/cart"
-          element={<Cart />}
-        />
-
-
-        {/* หน้ายืนยันคำสั่งซื้อ */}
-        <Route
-          path="/checkout"
-          element={<Checkout />}
-        />
-
-
-        {/* หน้าประวัติ Order ของลูกค้า */}
-        <Route
-          path="/orders"
-          element={<Orders />}
-        />
-
-
-        {/*
-          หน้ารายละเอียด Order
-
-          ตัวอย่าง:
-          /orders/1001
-          /orders/1002
-      */}
-        <Route
-          path="/orders/:id"
-          element={<OrderDetail />}
-        />
-
-
-        {/* หน้า Profile */}
-        <Route
-          path="/profile"
-          element={<Profile />}
-        />
+        {/* หน้าที่มีปุ่มด้านล่างของตัวเอง (ไม่มีแถบเมนู) */}
+        <Route path="restaurants/:id" element={<RestaurantDetail />} />
+        <Route path="restaurants/:id/menu/:menuId" element={<FoodDetail />} />
+        <Route path="cart" element={<Cart />} />
+        <Route path="checkout" element={<Checkout />} />
+        <Route path="checkout/payment" element={<Payment />} />
+        <Route path="orders/:id/confirmed" element={<OrderConfirmed />} />
+        <Route path="orders/:id/review" element={<Review />} />
+        <Route path="favorites" element={<Favorites />} />
 
       </Route>
 

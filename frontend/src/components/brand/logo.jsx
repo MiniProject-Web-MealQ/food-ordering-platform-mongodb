@@ -7,7 +7,7 @@ export function LogoMark({ className }) {
     <span
       aria-hidden="true"
       className={cx(
-        "grid shrink-0 place-items-center rounded-full bg-apricot font-bold text-white",
+        "grid shrink-0 place-items-center rounded-full bg-brand font-bold text-white",
         className,
       )}
     >
