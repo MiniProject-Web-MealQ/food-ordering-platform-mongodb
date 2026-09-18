@@ -20,7 +20,7 @@
   ไปหาลูกค้าแบบ Realtime
 */
 
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 
 function OrderDetail() {
   // อ่าน Order ID จาก URL

@@ -8,7 +8,7 @@
   POST /api/v1/menu
 */
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 function AddMenu() {
   return (

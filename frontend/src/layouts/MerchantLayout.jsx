@@ -1,7 +1,7 @@
-// นำเข้า Link และ Outlet จาก react-router-dom
+// นำเข้า Link และ Outlet จาก react-router
 // Link ใช้เปลี่ยนหน้าภายในระบบ Merchant
 // Outlet ใช้แสดงหน้าต่าง ๆ เช่น Dashboard, Orders, Menu
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router";
 
 function MerchantLayout() {
   return (

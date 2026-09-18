@@ -12,7 +12,7 @@
   ตอนนี้ข้อมูลเป็น Mock Data
 */
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 function Dashboard() {
   return (

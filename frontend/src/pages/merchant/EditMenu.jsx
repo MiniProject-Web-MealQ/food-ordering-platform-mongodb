@@ -17,7 +17,7 @@
   - เปิด/ปิดการขาย
 */
 
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 
 function EditMenu() {
   const { id } = useParams();

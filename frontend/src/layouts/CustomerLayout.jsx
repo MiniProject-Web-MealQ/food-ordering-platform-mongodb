@@ -1,57 +1,28 @@
-// นำเข้า Link และ Outlet จาก react-router-dom
-// Link ใช้สำหรับเปลี่ยนหน้าโดยไม่ reload เว็บทั้งหมด
-// Outlet คือจุดที่หน้าลูก เช่น Home, Cart, Orders จะถูกนำมาแสดง
-import { Link, Outlet } from "react-router-dom";
+/*
+  CustomerLayout.jsx
+  --------------------------------------------------
+  Layout หลักของฝั่งลูกค้า (/customer/*)
+
+  - ครอบทุกหน้าด้วย CustomerProvider (ตะกร้า ออเดอร์ ร้านโปรด การแจ้งเตือน)
+  - Desktop (lg ขึ้นไป): มี CustomerHeader ด้านบนทุกหน้า
+  - มือถือ/แท็บเล็ต: ไม่มี header กลาง แต่ละหน้ามีหัวของตัวเอง
+
+  หน้าที่มี Bottom Nav (เฉพาะมือถือ/แท็บเล็ต) จะอยู่ใน CustomerTabLayout อีกชั้น
+  หน้าที่มีปุ่มด้านล่างของตัวเอง (ตะกร้า, ชำระเงิน, รายละเอียดเมนู) อยู่ใน Layout นี้โดยตรง
+*/
+import { Outlet } from "react-router";
+import { CustomerHeader } from "@/features/customer/components/customer-header";
+import { CustomerProvider } from "@/features/customer/customer-provider";
 
 function CustomerLayout() {
   return (
-    <div>
-      {/* ส่วนหัวของเว็บฝั่งลูกค้า */}
-      <header>
-        {/* ชื่อเว็บไซต์ */}
-        <h1>MealQ</h1>
-
-        {/* เมนูนำทางหลักของฝั่งลูกค้า */}
-        <nav>
-          {/* ไปหน้า Home */}
-          <Link to="/">Home</Link>{" | "}
-
-          {/* ไปหน้ารายการร้านอาหาร */}
-          <Link to="/restaurants">Restaurants</Link>{" | "}
-
-          {/* ไปหน้าประวัติคำสั่งซื้อ */}
-          <Link to="/orders">Orders</Link>{" | "}
-
-          {/* ไปหน้าตะกร้าสินค้า */}
-          <Link to="/cart">Cart</Link>{" | "}
-
-          {/* ไปหน้า Profile */}
-          <Link to="/profile">Profile</Link>{" | "}
-
-          {/* ไปหน้า Login */}
-          <Link to="/login">Login</Link>
-        </nav>
-      </header>
-
-      {/* เส้นคั่นระหว่าง Navbar กับเนื้อหาหลัก */}
-      <hr />
-
-      {/* พื้นที่แสดงเนื้อหาหลักของแต่ละหน้า */}
-      <main>
-        {/*
-          Outlet จะถูกแทนด้วยหน้าที่ตรงกับ URL
-
-          ตัวอย่าง:
-          /                -> Home.jsx
-          /restaurants     -> Restaurants.jsx
-          /cart            -> Cart.jsx
-          /orders          -> Orders.jsx
-        */}
+    <CustomerProvider>
+      <div className="flex min-h-dvh w-full flex-1 flex-col bg-white">
+        <CustomerHeader />
         <Outlet />
-      </main>
-    </div>
+      </div>
+    </CustomerProvider>
   );
 }
 
-// ส่ง Component นี้ออกไปให้ Router เรียกใช้งาน
 export default CustomerLayout;

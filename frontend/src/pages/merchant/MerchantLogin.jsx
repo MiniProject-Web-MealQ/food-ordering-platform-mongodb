@@ -13,7 +13,7 @@
   - Login สำเร็จ -> /merchant/dashboard
 */
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 function MerchantLogin() {
   return (
