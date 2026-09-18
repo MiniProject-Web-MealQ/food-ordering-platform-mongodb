@@ -87,7 +87,7 @@ function Notifications() {
                       <Link
                         to={`/customer/orders/${notification.orderId}`}
                         onClick={() => dispatch({ type: "notifications/read", id: notification.id })}
-                        className={cx(buttonClasses({ variant: "primary", size: "sm" }), "relative mt-3")}
+                        className={cx(buttonClasses({ variant: "cocoa", size: "sm" }), "relative mt-3")}
                       >
                         ดูออเดอร์
                       </Link>

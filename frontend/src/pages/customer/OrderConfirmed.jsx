@@ -23,7 +23,7 @@ function OrderConfirmed() {
     <main className="flex-1 bg-forest text-white">
       <div className="mx-auto w-full max-w-4xl space-y-5 px-4 pt-12 pb-8 sm:px-6 lg:space-y-8 lg:px-8 lg:pt-16 lg:pb-20">
         <div className="text-center">
-          <span className="mx-auto grid size-20 place-items-center rounded-full bg-brand">
+          <span className="mx-auto grid size-20 place-items-center rounded-full bg-cocoa">
             <CheckIcon className="size-10" strokeWidth={3} />
           </span>
           <h1 className="mt-6 text-3xl font-bold lg:text-5xl">สั่งอาหารสำเร็จ!</h1>
@@ -68,7 +68,7 @@ function OrderConfirmed() {
         </div>
 
         <div className="mx-auto max-w-md space-y-3">
-          <Link to={`/customer/orders/${order.id}`} className={buttonClasses({ variant: "primary", fullWidth: true })}>
+          <Link to={`/customer/orders/${order.id}`} className={buttonClasses({ variant: "cocoa", fullWidth: true })}>
             ติดตามออเดอร์
           </Link>
           <Link

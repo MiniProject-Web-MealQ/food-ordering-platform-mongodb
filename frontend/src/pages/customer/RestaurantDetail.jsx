@@ -218,7 +218,7 @@ function RestaurantDetail() {
             <p className="text-xs text-ink-soft">{cart.itemCount} รายการในตะกร้า</p>
             <p className="text-xl font-bold text-ink">{formatBaht(cart.subtotal)}</p>
           </div>
-          <Link to="/customer/cart" className={buttonClasses({ variant: "primary", size: "md" })}>
+          <Link to="/customer/cart" className={buttonClasses({ variant: "cocoa", size: "md" })}>
             ดูตะกร้า
           </Link>
         </div>

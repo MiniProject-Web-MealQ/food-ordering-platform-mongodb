@@ -259,7 +259,7 @@ function SearchList({
                     aria-hidden="true"
                     className={cx(
                       "flex size-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
-                      item.selected ? "border-brand bg-brand text-white" : "border-line",
+                      item.selected ? "border-cocoa bg-cocoa text-white" : "border-line",
                     )}
                   >
                     {item.selected && <CheckIcon />}

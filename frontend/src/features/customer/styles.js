@@ -13,7 +13,7 @@ export function chipClasses({ selected = false, tone = "light" } = {}) {
       ? "bg-mint text-brand-ink hover:bg-leaf/50"
       : tone === "dark"
       ? selected
-        ? "bg-brand text-white"
+        ? "bg-cocoa text-white"
         : "bg-white/10 text-white/85 hover:bg-white/20"
       : selected
         ? "bg-forest text-white"

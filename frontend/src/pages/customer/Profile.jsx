@@ -86,7 +86,7 @@ function Profile() {
               <Link to="/customer/notifications" className={rowClass}>
                 <span className="font-semibold">การแจ้งเตือน</span>
                 {unread > 0 ? (
-                  <span className="grid size-6 place-items-center rounded-full bg-brand text-xs font-bold text-white">
+                  <span className="grid size-6 place-items-center rounded-full bg-cocoa text-xs font-bold text-white">
                     {unread}
                     <span className="sr-only"> รายการใหม่</span>
                   </span>

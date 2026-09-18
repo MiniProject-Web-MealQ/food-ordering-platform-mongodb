@@ -9,11 +9,14 @@ export const textLinkClass = `rounded font-semibold text-brand-ink underline-off
 
 const BUTTON_VARIANTS = {
   primary:
-    "bg-brand text-white hover:bg-brand-dark disabled:bg-haze disabled:text-ink-soft disabled:hover:bg-haze",
-  outline: "border-2 border-brand/35 bg-white text-brand-ink hover:bg-mint",
-  soft: "bg-mint text-brand-ink hover:bg-leaf",
-  secondary: "border-2 border-line bg-snow text-ink hover:bg-haze",
+    "bg-brand text-ink hover:bg-brand-dark disabled:bg-mint disabled:text-ink/40 disabled:hover:bg-mint",
+  outline: "border-2 border-leaf bg-white text-ink hover:bg-mint",
+  soft: "bg-mint text-ink hover:bg-leaf",
+  secondary: "border-2 border-mint bg-snow text-ink hover:bg-mint",
   dark: "bg-forest text-white hover:bg-forest/90",
+  cocoa:
+    "bg-cocoa text-white hover:bg-cocoa/90 disabled:bg-haze disabled:text-ink-soft disabled:hover:bg-haze",
+  "cocoa-outline": "border-2 border-cocoa/40 bg-white text-cocoa hover:bg-cream",
   "danger-outline": "border-2 border-alert/50 bg-white text-danger hover:bg-alert/10",
 };
 

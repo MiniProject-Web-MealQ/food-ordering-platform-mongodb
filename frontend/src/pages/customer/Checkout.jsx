@@ -110,7 +110,7 @@ function Checkout() {
               <span className="font-bold text-ink">ยอดชำระ</span>
               <span className="text-2xl font-bold text-ink">{formatBaht(priced.total)}</span>
             </p>
-            <button type="submit" className={cx(buttonClasses({ variant: "primary", fullWidth: true }), "mt-5 max-lg:hidden")}>
+            <button type="submit" className={cx(buttonClasses({ variant: "cocoa", fullWidth: true }), "mt-5 max-lg:hidden")}>
               {payLabel}
             </button>
           </section>
@@ -146,7 +146,7 @@ function Checkout() {
       </main>
 
       <div className="sticky bottom-0 z-10 border-t border-haze bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 lg:hidden">
-        <button type="submit" className={buttonClasses({ variant: "primary", fullWidth: true })}>
+        <button type="submit" className={buttonClasses({ variant: "cocoa", fullWidth: true })}>
           {payLabel}
         </button>
       </div>

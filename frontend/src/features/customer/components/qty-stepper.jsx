@@ -30,7 +30,7 @@ export function QtyStepper({ value, onChange, min = 0, max = 20, label, size = "
         onClick={() => onChange(value + 1)}
         disabled={value >= max}
         aria-label="เพิ่มจำนวน"
-        className={cx(stepButton, "bg-brand text-white hover:bg-brand/90", small ? "size-8" : "size-9")}
+        className={cx(stepButton, "bg-cocoa text-white hover:bg-cocoa/90", small ? "size-8" : "size-9")}
       >
         <PlusIcon className="size-4" />
       </button>

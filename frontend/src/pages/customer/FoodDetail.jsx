@@ -199,7 +199,7 @@ function FoodDetail() {
               type="button"
               onClick={handleAdd}
               disabled={!orderable || missing.length > 0}
-              className={cx(buttonClasses({ variant: "primary", fullWidth: true }), "flex-1")}
+              className={cx(buttonClasses({ variant: "cocoa", fullWidth: true }), "flex-1")}
             >
               {cta}
             </button>

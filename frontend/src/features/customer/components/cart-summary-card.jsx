@@ -39,7 +39,7 @@ export function CartSummaryCard({ restaurantId }) {
             <span className="text-ink-soft">ยอดรวมอาหาร</span>
             <span className="text-2xl font-bold text-ink">{formatBaht(cart.subtotal)}</span>
           </p>
-          <Link to="/customer/cart" className={`${buttonClasses({ variant: "primary", fullWidth: true })} mt-4`}>
+          <Link to="/customer/cart" className={`${buttonClasses({ variant: "cocoa", fullWidth: true })} mt-4`}>
             ดูตะกร้า
           </Link>
         </>

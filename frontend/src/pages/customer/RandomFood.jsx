@@ -73,7 +73,7 @@ function SetupView({ filters, setFilter, spinning, reelItem, onSpin }) {
               type="button"
               onClick={onSpin}
               aria-disabled={spinning}
-              className={buttonClasses({ variant: "primary", fullWidth: true })}
+              className={buttonClasses({ variant: "cocoa", fullWidth: true })}
             >
               <span aria-hidden="true">🎲</span> {spinning ? "กำลังสุ่ม…" : "สุ่มอาหาร"}
             </button>
@@ -166,18 +166,18 @@ function ResultView({ item, onRespin }) {
         </div>
       </article>
       <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
-        <button type="button" onClick={onRespin} className={buttonClasses({ variant: "outline" })}>
+        <button type="button" onClick={onRespin} className={buttonClasses({ variant: "cocoa-outline" })}>
           <span aria-hidden="true">🎲</span> สุ่มใหม่
         </button>
         {isOrderable(item) ? (
           <Link
             to={`/customer/restaurants/${item.restaurantId}/menu/${item.id}`}
-            className={buttonClasses({ variant: "primary" })}
+            className={buttonClasses({ variant: "cocoa" })}
           >
             สั่งเลย
           </Link>
         ) : (
-          <button type="button" disabled className={buttonClasses({ variant: "primary" })}>
+          <button type="button" disabled className={buttonClasses({ variant: "cocoa" })}>
             {item.soldOut ? "เมนูหมด" : "ร้านปิดอยู่"}
           </button>
         )}
@@ -209,7 +209,7 @@ function EmptyView({ filters, onWiden, onBack }) {
         </p>
         <div className="flex flex-col items-center gap-2">
           {canWiden && (
-            <button type="button" onClick={() => onWiden(widened)} className={buttonClasses({ variant: "primary", size: "md" })}>
+            <button type="button" onClick={() => onWiden(widened)} className={buttonClasses({ variant: "cocoa", size: "md" })}>
               ขยายงบเป็น {formatBaht(widened)}
             </button>
           )}

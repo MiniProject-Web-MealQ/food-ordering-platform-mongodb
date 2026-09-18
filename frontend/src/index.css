@@ -7,37 +7,36 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * MealQ design tokens — white base, green actions, brown accents.
- * `brand` is the one action colour (buttons, active states) with `mint`/`leaf` as its tints;
- * `cocoa` and `forest` are the warm browns for badges, figures and dark cards;
- * the neutrals (`page`, `cream`, `snow`, `haze`, `line`) are warm greys.
- * Text on `brand` is white; links use `brand-ink`; errors use `danger`/`alert`; stars use `amber`.
+ * MealQ design tokens — warm yellow/orange theme.
+ * `brand` (apricot) is the main action colour with `mint`/`leaf` as its tints, `cocoa` is the
+ * brown used for the app's solid buttons and figures, and `forest` is the dark espresso surface.
+ * Text on `brand` is `ink`; text on `cocoa` is white; links use `brand-ink`; errors use `danger`.
  */
 @theme {
-  --color-brand: #1e8e4e;
-  --color-brand-dark: #16713d; /* hover / pressed */
-  --color-brand-ink: #14683a; /* brand text on white (AA) */
-  --color-mint: #e6f2ea; /* tinted surfaces, badges */
-  --color-leaf: #a8d5b9; /* borders on tinted surfaces */
+  --color-brand: #ffa259; /* apricot */
+  --color-brand-dark: #ff7e7e; /* hover / pressed */
+  --color-brand-ink: #b8531c; /* brand text on white (AA) */
+  --color-mint: #ffedb9; /* butter: tinted surfaces, badges */
+  --color-leaf: #ffcb56; /* honey: borders on tinted surfaces */
 
   /* Warm browns. */
-  --color-cocoa: #8a5a2b; /* badges, figures, secondary accents */
-  --color-forest: #2b1d13; /* dark cards: order status, random food */
+  --color-cocoa: #9a5424; /* solid buttons, figures, secondary accents */
+  --color-forest: #2a1f17; /* dark cards: order status, random food */
 
   /* Neutrals and feedback. */
-  --color-ink: #241a12;
-  --color-ink-soft: #6a5a4c; /* secondary text (shadcn owns --color-muted) */
-  --color-danger: #b3261e;
-  --color-alert: #d9544d; /* error fills and unread dots */
-  --color-amber: #dd9a2b; /* rating stars, warnings */
-  --color-page: #fbf8f4;
-  --color-snow: #fdfbf8;
-  --color-cream: #f7f2eb;
-  --color-haze: #f0eae1;
-  --color-line: #e5dcd1;
+  --color-ink: #3b2a16;
+  --color-ink-soft: #6e5b45; /* secondary text (shadcn owns --color-muted) */
+  --color-danger: #b23a2e;
+  --color-alert: #ff7e7e; /* error fills and unread dots */
+  --color-amber: #e0912a; /* rating stars, warnings */
+  --color-page: #fff6e5;
+  --color-snow: #fff9ee;
+  --color-cream: #faf6ef;
+  --color-haze: #f4eee2;
+  --color-line: #ffedb9;
 
-  --shadow-card: 0 20px 50px -24px rgb(70 45 20 / 0.22);
-  --shadow-float: 0 14px 34px -12px rgb(70 45 20 / 0.28);
+  --shadow-card: 0 20px 50px -24px rgb(110 80 30 / 0.2);
+  --shadow-float: 0 14px 34px -12px rgb(110 80 30 / 0.28);
 }
 
 /* Self-hosted variable fonts, imported in src/main.jsx. Figtree has no Thai glyphs, so Thai text falls through to Anuphan. */

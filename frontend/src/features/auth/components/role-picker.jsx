@@ -17,7 +17,7 @@ export function RoleSegmented({ name, legend, value, onChange }) {
         {ROLE_ORDER.map((role) => (
           <label
             key={role}
-            className={`grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-ink-soft transition-colors hover:text-ink has-checked:bg-brand has-checked:text-white ${focusRing}`}
+            className={`grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-ink-soft transition-colors hover:text-ink has-checked:bg-brand has-checked:text-ink ${focusRing}`}
           >
             <input
               type="radio"
@@ -44,7 +44,7 @@ export function RoleCards({ name, legend, value, onChange }) {
         {ROLE_ORDER.map((role) => (
           <label
             key={role}
-            className={`cursor-pointer rounded-3xl border-2 border-line bg-snow px-4 py-4 text-ink transition-colors hover:border-leaf has-checked:border-brand has-checked:bg-brand has-checked:text-white ${focusRing}`}
+            className={`cursor-pointer rounded-3xl border-2 border-line bg-snow px-4 py-4 text-ink transition-colors hover:border-leaf has-checked:border-brand has-checked:bg-brand has-checked:text-ink ${focusRing}`}
           >
             <input
               type="radio"

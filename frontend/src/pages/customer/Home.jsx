@@ -77,7 +77,7 @@ function Home() {
             <div className="hidden rounded-4xl bg-mint p-8 lg:block">
               <p className="text-2xl font-bold text-ink">ยังไม่มีออเดอร์ที่กำลังทำ</p>
               <p className="mt-1 text-ink-soft">คิดไม่ออกว่าจะกินอะไร ให้เราสุ่มให้ได้เลย</p>
-              <Link to="/customer/random" className={cx(buttonClasses({ variant: "primary", size: "md" }), "mt-5")}>
+              <Link to="/customer/random" className={cx(buttonClasses({ variant: "cocoa", size: "md" }), "mt-5")}>
                 <span aria-hidden="true">🎲</span> สุ่มอาหาร
               </Link>
             </div>

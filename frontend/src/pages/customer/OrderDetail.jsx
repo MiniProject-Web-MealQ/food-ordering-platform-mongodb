@@ -127,7 +127,7 @@ function OrderDetail() {
                       current
                         ? "bg-brand ring-4 ring-mint"
                         : reached
-                          ? "bg-brand text-white"
+                          ? "bg-cocoa text-white"
                           : "bg-haze",
                     )}
                   >

@@ -167,7 +167,7 @@ function Review() {
           />
         </div>
 
-        <button type="submit" disabled={rating === 0} className={buttonClasses({ variant: "primary", fullWidth: true })}>
+        <button type="submit" disabled={rating === 0} className={buttonClasses({ variant: "cocoa", fullWidth: true })}>
           {rating === 0 ? "เลือกจำนวนดาวก่อนส่ง" : "ส่งรีวิว"}
         </button>
       </main>

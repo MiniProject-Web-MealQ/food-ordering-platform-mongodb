@@ -43,7 +43,7 @@ function HistoryCard({ order, onReorder }) {
         >
           {order.review ? `รีวิวแล้ว ★ ${order.review.rating}` : "ให้คะแนน"}
         </Link>
-        <button type="button" onClick={onReorder} className={buttonClasses({ variant: "outline", size: "sm" })}>
+        <button type="button" onClick={onReorder} className={buttonClasses({ variant: "cocoa-outline", size: "sm" })}>
           สั่งอีกครั้ง
         </button>
       </div>

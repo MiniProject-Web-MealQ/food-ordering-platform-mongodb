@@ -103,14 +103,14 @@ function Payment() {
             <button
               type="button"
               onClick={() => setResult(null)}
-              className={buttonClasses({ variant: "primary", size: "md" })}
+              className={buttonClasses({ variant: "cocoa", size: "md" })}
             >
               ลองอีกครั้ง
             </button>
             <button
               type="button"
               onClick={() => navigate("/customer/checkout", { replace: true })}
-              className={buttonClasses({ variant: "outline", size: "md" })}
+              className={buttonClasses({ variant: "cocoa-outline", size: "md" })}
             >
               เปลี่ยนวิธีจ่าย
             </button>

@@ -29,12 +29,12 @@ function SoldOutNotice({ names, restaurantId, onDismiss }) {
               <Link
                 to={`/customer/restaurants/${restaurantId}`}
                 onClick={onDismiss}
-                className={buttonClasses({ variant: "primary", size: "sm" })}
+                className={buttonClasses({ variant: "cocoa", size: "sm" })}
               >
                 หาเมนูใกล้เคียง
               </Link>
             )}
-            <button type="button" onClick={onDismiss} className={buttonClasses({ variant: "outline", size: "sm" })}>
+            <button type="button" onClick={onDismiss} className={buttonClasses({ variant: "cocoa-outline", size: "sm" })}>
               เข้าใจแล้ว
             </button>
           </div>
@@ -125,7 +125,7 @@ function Cart() {
       to="/customer/checkout"
       aria-disabled={!restaurant.isOpen || undefined}
       onClick={(e) => !restaurant.isOpen && e.preventDefault()}
-      className={buttonClasses({ variant: "primary", fullWidth: true })}
+      className={buttonClasses({ variant: "cocoa", fullWidth: true })}
     >
       {restaurant.isOpen ? `ดำเนินการชำระเงิน · ${formatBaht(priced.total)}` : "ร้านปิดอยู่ ยังสั่งไม่ได้"}
     </Link>
@@ -148,7 +148,7 @@ function Cart() {
             <div className="mx-auto max-w-xl space-y-4 rounded-4xl bg-cream px-6 py-10 text-center lg:py-16">
               <p className="text-lg font-bold text-ink lg:text-2xl">ตะกร้ายังว่างอยู่</p>
               <p className="text-ink-soft">เลือกร้านแล้วกด + ที่เมนูที่อยากกิน</p>
-              <Link to="/customer/explore" className={buttonClasses({ variant: "primary", size: "md" })}>
+              <Link to="/customer/explore" className={buttonClasses({ variant: "cocoa", size: "md" })}>
                 ไปค้นหาร้าน
               </Link>
             </div>
