@@ -1,92 +1,61 @@
-/*
-  OrderDetail.jsx
-  --------------------------------------------------
-  หน้ารายละเอียด Order ของร้าน
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router";
+import { getOrder, setOrderStatus } from "@/features/merchant/api";
 
-  ตัวอย่าง URL:
-
-  /merchant/orders/1001
-
-  ภายหลังร้านจะสามารถเปลี่ยนสถานะ:
-
-  pending
-  confirmed
-  preparing
-  ready
-  completed
-  cancelled
-
-  แล้ว Socket.IO จะส่งสถานะใหม่
-  ไปหาลูกค้าแบบ Realtime
-*/
-
-import { Link, useParams } from "react-router-dom";
+const STATUSES = ["confirmed", "preparing", "ready", "completed", "cancelled"];
 
 function OrderDetail() {
-  // อ่าน Order ID จาก URL
   const { id } = useParams();
+  const [order, setOrder] = useState(null);
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getOrder(id).then((result) => {
+      if (!active) return;
+      if (result.ok) setOrder(result.data.order);
+      else setError(result.error.message);
+    });
+    return () => { active = false; };
+  }, [id]);
+
+  async function changeStatus(status) {
+    setPending(true);
+    const result = await setOrderStatus(id, status);
+    setPending(false);
+    if (result.ok) {
+      setOrder(result.data.order);
+      setError("");
+    } else setError(result.error.message);
+  }
+
+  if (error && !order) return <p>{error}</p>;
+  if (!order) return <p>กำลังโหลดออเดอร์...</p>;
 
   return (
     <div>
-      <h1>Order Detail</h1>
-
-      <p>Order #{id}</p>
-
-      <p>
-        Customer: Demo Customer
-      </p>
-
-      <h3>
-        Status: Pending
-      </h3>
-
+      <h1>Order #{order.orderNumber}</h1>
+      <p>Customer: {order.customer?.name} ({order.customer?.email})</p>
+      <h3>Status: {order.status}</h3>
+      <p>Queue: #{order.queueNumber ?? "-"} / Pickup code: {order.pickupCode ?? "-"}</p>
       <hr />
-
       <h3>Items</h3>
-
-      <p>กะเพราไก่ x 1 - 60 บาท</p>
-      <p>ไข่ดาว x 1 - 15 บาท</p>
-
-      <strong>
-        Total: 75 บาท
-      </strong>
-
+      {order.items.map((item, index) => (
+        <p key={`${item.menuId}-${index}`}>{item.name} × {item.quantity} — ฿{item.totalPrice}</p>
+      ))}
+      <strong>Total: ฿{order.totalPrice}</strong>
       <hr />
-
-      {/*
-        ปุ่มเหล่านี้ยังไม่ได้ทำงานจริง
-
-        ภายหลังจะเรียก Backend เช่น:
-        PATCH /api/v1/orders/:id/status
-      */}
-      <button type="button">
-        Confirm
-      </button>
-
-      {" "}
-
-      <button type="button">
-        Preparing
-      </button>
-
-      {" "}
-
-      <button type="button">
-        Ready
-      </button>
-
-      {" "}
-
-      <button type="button">
-        Completed
-      </button>
-
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {STATUSES.map((status) => (
+          <button key={status} type="button" disabled={pending || order.status === status} onClick={() => changeStatus(status)}>
+            {status}
+          </button>
+        ))}
+      </div>
+      {error && <p>{error}</p>}
       <br />
-      <br />
-
-      <Link to="/merchant/orders">
-        กลับไป Orders
-      </Link>
+      <Link to="/merchant/orders">กลับไป Orders</Link>
     </div>
   );
 }

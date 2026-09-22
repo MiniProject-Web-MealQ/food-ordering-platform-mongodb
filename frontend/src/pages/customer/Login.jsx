@@ -14,7 +14,7 @@
   - พาผู้ใช้ไปหน้าที่เหมาะสม
 */
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 function Login() {
   return (

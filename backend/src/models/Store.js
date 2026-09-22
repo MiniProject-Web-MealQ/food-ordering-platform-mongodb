@@ -2,61 +2,33 @@ const mongoose = require("mongoose");
 
 const storeSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true
-    },
-
-    description: {
-      type: String,
-      default: ""
-    },
-
+    client_id: { type: String, unique: true, sparse: true, trim: true },
+    owner_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null, index: true },
+    name: { type: String, required: true },
+    description: { type: String, default: "" },
     address: {
       detail: String,
       province: String,
       district: String,
-      postal_code: String
+      postal_code: String,
     },
-
     phone: String,
-
     rating: {
-      average: {
-        type: Number,
-        default: 0
-      },
-
-      count: {
-        type: Number,
-        default: 0
-      }
+      average: { type: Number, default: 0 },
+      count: { type: Number, default: 0 },
     },
-
     queue: {
-      max_queue: {
-        type: Number,
-        default: 50
-      }
+      max_queue: { type: Number, default: 50 },
     },
-
     opening_hours: {
       open_time: String,
-      close_time: String
+      close_time: String,
     },
-
     cover_image: String,
-
     logo: String,
-
-    is_open: {
-      type: Boolean,
-      default: true
-    }
+    is_open: { type: Boolean, default: true },
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Store", storeSchema);

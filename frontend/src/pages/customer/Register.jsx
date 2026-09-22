@@ -9,7 +9,7 @@
   POST /api/v1/auth/register
 */
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 function Register() {
   return (
