@@ -15,12 +15,11 @@ const server = http.createServer(app);
 const FRONTEND_URL =
   process.env.FRONTEND_URL || "http://localhost:5173";
 
-app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-  })
-);
+app.use(express.json());
+
+const userRoutes = require("./routes/userRoutes");
+
+app.use("/api/users", userRoutes);
 
 app.use(express.json());
 
