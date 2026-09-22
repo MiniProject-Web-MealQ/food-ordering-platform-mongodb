@@ -1,123 +1,36 @@
 /*
   App.jsx
   --------------------------------------------------
-  ไฟล์นี้เป็น Component หลักของ Frontend
-
-  หน้าที่ของ App.jsx ในโปรเจกต์ MealQ คือ:
-  1. รับการทำงานต่อมาจาก main.jsx
-  2. เรียก AppRoutes เพื่อจัดการ Routing ทั้งหมด
-  3. ไม่เก็บรายละเอียด UI ของแต่ละหน้าไว้ที่นี่
-
-  โครงสร้างการทำงานจะเป็น:
+  Component หลักของ Frontend
 
   main.jsx
       ↓
-  App.jsx
+  App.jsx        (สร้าง Router + ScrollRestoration)
       ↓
-  AppRoutes.jsx
+  AppRoutes.jsx  (Route ทั้งหมดของเว็บไซต์ อยู่ที่ไฟล์นี้ไฟล์เดียว)
       ↓
-  CustomerLayout / MerchantLayout
-      ↓
-  Page ต่าง ๆ
-
-  ตัวอย่าง:
-
-  ถ้า URL เป็น:
-  /restaurants
-
-  ระบบจะทำงาน:
-  main.jsx
-      ↓
-  App.jsx
-      ↓
-  AppRoutes.jsx
-      ↓
-  CustomerLayout.jsx
-      ↓
-  Restaurants.jsx
+  Layout / Page ต่าง ๆ
 */
-
-
-// นำ Component AppRoutes เข้ามาใช้งาน
-// AppRoutes เป็นไฟล์ที่เก็บ Route ทั้งหมดของเว็บไซต์
-//
-// ตัวอย่าง Route:
-// /
-// /restaurants
-// /restaurants/1
-// /cart
-// /orders
-// /merchant/dashboard
+import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration } from "react-router";
 import AppRoutes from "./routes/AppRoutes";
 
-
-/*
-  Component หลักของ Application
-
-  App ไม่จำเป็นต้องมี Navbar หรือ Sidebar โดยตรง
-
-  เพราะเราจะแยกออกเป็น:
-
-  CustomerLayout.jsx
-  -> Layout สำหรับลูกค้า
-
-  MerchantLayout.jsx
-  -> Layout สำหรับร้านค้า
-
-  ทำให้โครงสร้างโปรเจกต์อ่านง่าย
-  และคนในทีมสามารถแก้แต่ละส่วนได้ง่ายขึ้น
-*/
-function App() {
+function RootLayout() {
   return (
     <>
-      {/*
-        AppRoutes จะตรวจ URL ปัจจุบันของ Browser
-
-        แล้วเลือกว่าต้องแสดงหน้าอะไร
-
-        เช่น:
-
-        URL:
-        /
-
-        จะแสดง:
-        CustomerLayout
-            ↓
-        Home
-
-
-        URL:
-        /restaurants
-
-        จะแสดง:
-        CustomerLayout
-            ↓
-        Restaurants
-
-
-        URL:
-        /cart
-
-        จะแสดง:
-        CustomerLayout
-            ↓
-        Cart
-
-
-        URL:
-        /merchant/dashboard
-
-        จะแสดง:
-        MerchantLayout
-            ↓
-        Dashboard
-      */}
-
-      <AppRoutes />
+      <ScrollRestoration />
+      <Outlet />
     </>
   );
 }
 
+// ทุก URL ส่งต่อให้ AppRoutes เป็นคนเลือกหน้า
+const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [{ path: "*", element: <AppRoutes /> }],
+  },
+]);
 
-// export App เพื่อให้ main.jsx สามารถ import ไปใช้งานได้
-export default App;
+export default function App() {
+  return <RouterProvider router={router} />;
+}

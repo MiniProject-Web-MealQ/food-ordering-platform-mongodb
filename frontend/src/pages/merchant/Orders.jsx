@@ -1,45 +1,58 @@
-/*
-  Orders.jsx
-  --------------------------------------------------
-  หน้าแสดง Order ทั้งหมดของร้าน
-
-  ภายหลังจะดึงจาก Backend เช่น:
-
-  GET /api/v1/merchant/orders
-
-  และ Socket.IO จะช่วยแจ้ง
-  เมื่อมี Order ใหม่เข้ามา
-*/
-
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router";
+import { getOrders } from "@/features/merchant/api";
+import { connectSocket } from "@/lib/socket";
 
 function Orders() {
+  const [orders, setOrders] = useState([]);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    const result = await getOrders();
+    if (result.ok) {
+      setOrders(result.data.orders);
+      setError("");
+    } else setError(result.error.message);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getOrders().then((result) => {
+      if (!active) return;
+      if (result.ok) {
+        setOrders(result.data.orders);
+        setError("");
+      } else setError(result.error.message);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let socket;
+    connectSocket().then((connected) => {
+      socket = connected;
+      socket.on("order:new", load);
+      socket.on("order:status", load);
+    }).catch(() => {});
+    return () => socket?.disconnect();
+  }, [load]);
+
   return (
     <div>
       <h1>Merchant Orders</h1>
-
-      {/* Order จำลอง */}
-      <div>
-        <p>Order #1001</p>
-        <p>Customer: Demo Customer</p>
-        <p>Status: Pending</p>
-
-        <Link to="/merchant/orders/1001">
-          ดูรายละเอียด
-        </Link>
-      </div>
-
+      {error && <p>{error}</p>}
+      <button type="button" onClick={load}>Refresh</button>
       <hr />
-
-      <div>
-        <p>Order #1000</p>
-        <p>Customer: Customer Two</p>
-        <p>Status: Preparing</p>
-
-        <Link to="/merchant/orders/1000">
-          ดูรายละเอียด
-        </Link>
-      </div>
+      {orders.length === 0 ? <p>ยังไม่มีออเดอร์จากลูกค้า</p> : orders.map((order) => (
+        <div key={order.id} style={{ marginBottom: 18 }}>
+          <strong>#{order.orderNumber}</strong>
+          <p>Customer: {order.customer?.name || "-"}</p>
+          <p>Status: {order.status}</p>
+          <p>Total: ฿{order.totalPrice}</p>
+          <Link to={`/merchant/orders/${order.orderNumber}`}>ดูรายละเอียด</Link>
+          <hr />
+        </div>
+      ))}
     </div>
   );
 }

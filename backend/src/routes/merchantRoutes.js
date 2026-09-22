@@ -1,0 +1,19 @@
+const express = require("express");
+const controller = require("../controllers/merchantController");
+const { requireAuth, requireRole } = require("../middleware/auth");
+const { asyncHandler } = require("../utils/http");
+
+const router = express.Router();
+router.use(requireAuth, requireRole("merchant", "staff", "admin"));
+router.get("/dashboard", asyncHandler(controller.dashboard));
+router.get("/orders", asyncHandler(controller.listOrders));
+router.get("/orders/:id", asyncHandler(controller.getOrder));
+router.patch("/orders/:id/status", asyncHandler(controller.updateOrderStatus));
+router.get("/menu", asyncHandler(controller.listMenu));
+router.post("/menu", asyncHandler(controller.createMenu));
+router.get("/menu/:id", asyncHandler(controller.getMenu));
+router.patch("/menu/:id", asyncHandler(controller.updateMenu));
+router.delete("/menu/:id", asyncHandler(controller.deleteMenu));
+router.get("/store", asyncHandler(controller.getStore));
+router.patch("/store", asyncHandler(controller.updateStore));
+module.exports = router;
