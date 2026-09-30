@@ -18,9 +18,9 @@
 | `/merchant/dashboard` | `Dashboard.jsx` | สรุปวันนี้: ออเดอร์, ยอดขาย, คิวที่กำลังทำ, รอรับ, เมนูขายดี, ออเดอร์ล่าสุด, สวิตช์เปิด/ปิดร้าน |
 | `/merchant/orders` | `Orders.jsx` | กระดานคิว 4 คอลัมน์ (รอรับ / กำลังทำ / พร้อมรับ / เสร็จแล้ว) กดเลื่อนสถานะได้ ค้นหาได้ |
 | `/merchant/orders/:id` | `OrderDetail.jsx` | รายละเอียดออเดอร์ + รหัสรับอาหารของลูกค้า (ตัวใหญ่) + timeline + ยืนยันรหัส 4 หลัก + ยกเลิก (`:id` = `order_number` เช่น `MQ2110`) |
-| `/merchant/menu` | `Menu.jsx` | รายการเมนู ค้นหา กรองหมวด/สถานะ สลับ "มีขาย/หมด" ได้ทันที |
-| `/merchant/menu/new` | `AddMenu.jsx` | ฟอร์มเพิ่มเมนู |
-| `/merchant/menu/:id/edit` | `EditMenu.jsx` | แก้ไขเมนู (ฟอร์มเดียวกับ AddMenu) + ลบเมนู |
+| `/merchant/menu` | `Menu.jsx` | รายการเมนู ค้นหา กรองหมวด/สถานะ สลับ "มีขาย/หมด" ได้ทันที + pop-up เพิ่ม/แก้ไข/ลบเมนู (`?new=1`, `?edit=<_id>`) |
+| `/merchant/menu/new` | `AddMenu.jsx` | ลิงก์เดิม: พาไป `/merchant/menu?new=1` (เปิด pop-up เพิ่มเมนู) |
+| `/merchant/menu/:id/edit` | `EditMenu.jsx` | ลิงก์เดิม: พาไป `/merchant/menu?edit=:id` (เปิด pop-up แก้ไขเมนู) |
 | `/merchant/settings` | `Settings.jsx` | ข้อมูลร้าน, เวลาเปิด-ปิด, จำนวนคิวสูงสุด, สวิตช์เปิด/ปิดร้าน, ออกจากระบบ, ล้างข้อมูลจำลอง |
 
 route ประกาศไว้ที่ [`src/routes/AppRoutes.jsx`](../../routes/AppRoutes.jsx) (งานนี้ไม่ได้แก้ไฟล์นั้น)
@@ -52,6 +52,8 @@ src/features/merchant/     logic และ component เฉพาะฝั่ง
     ├── receive-code-card.jsx  การ์ดแสดงรหัสรับอาหารของลูกค้า
     ├── receive-code-form.jsx  ช่องกรอกรหัส 4 หลัก
     ├── menu-form.jsx          ฟอร์มเพิ่ม/แก้ไขเมนู
+    ├── merchant-dialog.jsx    กรอบ pop-up (ใช้ <dialog> ปิดด้วย Esc/ปุ่ม X/คลิกพื้นหลัง มือถือเป็นเต็มจอ)
+    ├── delete-menu.jsx        ส่วนลบเมนูใน pop-up แก้ไข
     ├── menu-row.jsx           การ์ดเมนู + สวิตช์มีขาย
     ├── stat-card.jsx          ตัวเลขสรุปบน dashboard
     ├── store-open-card.jsx    การ์ดสวิตช์เปิด/ปิดร้าน + คิวในครัว

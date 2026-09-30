@@ -29,7 +29,9 @@ export function MenuRow({ menu, onToggle }) {
             </p>
           </div>
           <Link
-            to={`/merchant/menu/${menu._id}/edit`}
+            to={`/merchant/menu?edit=${encodeURIComponent(menu._id)}`}
+            state={{ fromList: true }}
+            preventScrollReset
             aria-label={`แก้ไข ${menu.name}`}
             className={cx("-mt-1 -mr-1 grid size-9 shrink-0 place-items-center rounded-full text-ink-soft hover:bg-haze hover:text-ink", focusRing)}
           >

@@ -1,12 +1,16 @@
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { buttonClasses } from "@/components/ui/styles";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { chipClasses } from "@/features/customer/styles";
+import { DeleteMenu } from "@/features/merchant/components/delete-menu";
+import { MenuForm } from "@/features/merchant/components/menu-form";
 import { MenuRow } from "@/features/merchant/components/menu-row";
-import { useMerchant } from "@/features/merchant/store";
-import { fieldClass, pageClass } from "@/features/merchant/styles";
+import { MerchantDialog } from "@/features/merchant/components/merchant-dialog";
+import { emptyMenuValues, menuToValues } from "@/features/merchant/menu-form";
+import { actions, useMerchant } from "@/features/merchant/store";
+import { fieldClass, pageClass, panelClass } from "@/features/merchant/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -37,15 +41,98 @@ function ChipGroup({ label, options, value, onChange }) {
   );
 }
 
+/**
+ * Add/edit form in a pop-up over the menu list. Which one is open lives in the URL
+ * (?new=1 or ?edit=<menu _id>), so the list keeps its filters and deep links still work.
+ */
+function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
+  const { state, dispatch } = useMerchant();
+  const menu = mode === "edit" ? state.menus.find((m) => m._id === menuId) : null;
+
+  if (mode === "edit" && !menu) {
+    return (
+      <MerchantDialog eyebrow="จัดการเมนู" title="ไม่พบเมนู" onClose={onClose}>
+        <div className={cx(panelClass, "space-y-4 text-center")}>
+          <p className="text-ink-soft">เมนูนี้อาจถูกลบไปแล้ว</p>
+          <button type="button" onClick={onClose} className={buttonClasses({ variant: "cocoa", size: "md" })}>
+            กลับไปหน้าเมนู
+          </button>
+        </div>
+      </MerchantDialog>
+    );
+  }
+
+  if (mode === "new") {
+    return (
+      <MerchantDialog
+        eyebrow="จัดการเมนู"
+        title="เพิ่มเมนู"
+        subtitle="เมนูใหม่จะแสดงให้ลูกค้าเห็นทันทีที่บันทึก"
+        onClose={onClose}
+      >
+        <MenuForm
+          initialValues={emptyMenuValues()}
+          menus={state.menus}
+          submitLabel="บันทึกเมนู"
+          onCancel={onClose}
+          onSubmit={(fields) => {
+            dispatch(actions.addMenu(fields));
+            onDone(`เพิ่มเมนู “${fields.name}” แล้ว`);
+          }}
+        />
+      </MerchantDialog>
+    );
+  }
+
+  return (
+    <MerchantDialog eyebrow="จัดการเมนู" title="แก้ไขเมนู" subtitle={menu.name} onClose={onClose}>
+      <MenuForm
+        key={menu._id}
+        initialValues={menuToValues(menu)}
+        menus={state.menus}
+        editingId={menu._id}
+        submitLabel="บันทึกการแก้ไข"
+        onCancel={onClose}
+        onSubmit={(fields) => {
+          dispatch({ type: "menu/update", menuId: menu._id, changes: fields });
+          onDone(`บันทึก “${fields.name}” แล้ว`);
+        }}
+      />
+      <DeleteMenu
+        menu={menu}
+        onDelete={() => {
+          dispatch({ type: "menu/remove", menuId: menu._id });
+          onDone(`ลบ “${menu.name}” แล้ว`);
+        }}
+      />
+    </MerchantDialog>
+  );
+}
+
 function Menu() {
-  usePageTitle("จัดการเมนู");
   const { state, dispatch } = useMerchant();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(ALL);
   const [availability, setAvailability] = useState(ALL);
-  // Add/Edit/Delete pages come back here with a confirmation message in the location state.
-  const [notice, setNotice] = useState(() => location.state?.notice ?? "");
+  const [notice, setNotice] = useState("");
+
+  const editId = searchParams.get("edit");
+  const dialogMode = searchParams.has("new") ? "new" : editId ? "edit" : null;
+  usePageTitle(dialogMode === "new" ? "เพิ่มเมนู" : dialogMode === "edit" ? "แก้ไขเมนู" : "จัดการเมนู");
+
+  function closeDialog() {
+    // Opened from this list: step back so the browser Back button does not reopen it.
+    if (location.state?.fromList) navigate(-1);
+    else setSearchParams({}, { replace: true, preventScrollReset: true });
+  }
+
+  function finishDialog(message) {
+    setNotice(message);
+    closeDialog();
+  }
 
   const menus = state.menus.toSorted((a, b) => a.category.localeCompare(b.category, "th") || a.name.localeCompare(b.name, "th"));
   const categories = [...new Set(menus.map((m) => m.category))];
@@ -78,7 +165,12 @@ function Menu() {
         title="เมนูของร้าน"
         subtitle={`ทั้งหมด ${menus.length} เมนู · หมด ${soldOutCount} เมนู`}
         action={
-          <Link to="/merchant/menu/new" className={cx(buttonClasses({ variant: "cocoa", size: "sm" }), "mt-1")}>
+          <Link
+            to="/merchant/menu?new=1"
+            state={{ fromList: true }}
+            preventScrollReset
+            className={cx(buttonClasses({ variant: "cocoa", size: "sm" }), "mt-1")}
+          >
             <Plus aria-hidden="true" className="size-4" />
             เพิ่มเมนู
           </Link>
@@ -132,11 +224,26 @@ function Menu() {
               ล้างตัวกรอง
             </button>
           ) : (
-            <Link to="/merchant/menu/new" className={buttonClasses({ variant: "cocoa", size: "sm" })}>
+            <Link
+              to="/merchant/menu?new=1"
+              state={{ fromList: true }}
+              preventScrollReset
+              className={buttonClasses({ variant: "cocoa", size: "sm" })}
+            >
               เพิ่มเมนู
             </Link>
           )}
         </div>
+      )}
+
+      {dialogMode && (
+        <MenuEditorDialog
+          key={`${dialogMode}-${editId ?? ""}`}
+          mode={dialogMode}
+          menuId={editId}
+          onClose={closeDialog}
+          onDone={finishDialog}
+        />
       )}
     </div>
   );
