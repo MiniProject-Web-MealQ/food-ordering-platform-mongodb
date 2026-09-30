@@ -14,8 +14,8 @@ function navLabel(item, pending) {
 }
 
 /**
- * Desktop navigation. lg: a slim icon rail so the queue board keeps four usable columns;
- * xl: the full sidebar with store name and labels beside the icons.
+ * เมนูนำทางบนจอใหญ่ lg: แถบไอคอนแคบ ๆ เพื่อให้กระดานคิวมีที่พอสำหรับ 4 คอลัมน์
+ * xl: sidebar เต็ม มีชื่อร้านและชื่อเมนูข้างไอคอน
  */
 export function MerchantSidebar() {
   const { pathname } = useLocation();
@@ -87,7 +87,7 @@ export function MerchantSidebar() {
   );
 }
 
-/** Phone/tablet header: brand, store name and whether it is taking orders. */
+/** แถบบนของมือถือ/แท็บเล็ต: โลโก้ ชื่อร้าน และสถานะเปิดรับออเดอร์ */
 export function MerchantTopBar() {
   const { state } = useMerchant();
 
@@ -104,7 +104,7 @@ export function MerchantTopBar() {
   );
 }
 
-/** Phone/tablet tab bar. Desktop uses <MerchantSidebar>. */
+/** แถบเมนูด้านล่างของมือถือ/แท็บเล็ต (จอใหญ่ใช้ <MerchantSidebar> แทน) */
 export function MerchantBottomNav() {
   const { pathname } = useLocation();
   const { state } = useMerchant();

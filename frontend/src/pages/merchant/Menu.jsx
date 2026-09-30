@@ -44,8 +44,8 @@ function ChipGroup({ label, options, value, onChange }) {
 }
 
 /**
- * Add/edit form in a pop-up over the menu list. Which one is open lives in the URL
- * (?new=1 or ?edit=<menu _id>), so the list keeps its filters and deep links still work.
+ * ฟอร์มเพิ่ม/แก้ไขเมนูใน pop-up บนหน้ารายการเมนู ว่าเปิดอันไหนอยู่เก็บไว้ใน URL
+ * (?new=1 หรือ ?edit=<menu _id>) รายการเมนูจึงไม่เสียตัวกรอง และลิงก์ตรงยังใช้ได้
  */
 function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
   const { state } = useMerchant();
@@ -132,7 +132,7 @@ function Menu() {
   usePageTitle(dialogMode === "new" ? "เพิ่มเมนู" : dialogMode === "edit" ? "แก้ไขเมนู" : "จัดการเมนู");
 
   function closeDialog() {
-    // Opened from this list: step back so the browser Back button does not reopen it.
+    // ถ้าเปิดจากหน้ารายการนี้ ให้ย้อนกลับ ปุ่ม Back ของเบราว์เซอร์จะได้ไม่เปิด pop-up ซ้ำ
     if (location.state?.fromList) navigate(-1);
     else setSearchParams({}, { replace: true, preventScrollReset: true });
   }
@@ -146,7 +146,7 @@ function Menu() {
     (a, b) => categoryLabel(a.category).localeCompare(categoryLabel(b.category), "th") || a.name.localeCompare(b.name, "th"),
   );
   const categories = [...new Set(menus.map((m) => m.category))];
-  // A category that was renamed or emptied away falls back to "all" instead of showing nothing.
+  // ถ้าหมวดที่เลือกไว้ไม่มีเมนูเหลือแล้ว ให้กลับไป "ทุกหมวด" แทนการแสดงรายการว่าง
   const activeCategory = categories.includes(category) ? category : ALL;
   const soldOutCount = menus.filter((m) => !m.is_available).length;
 

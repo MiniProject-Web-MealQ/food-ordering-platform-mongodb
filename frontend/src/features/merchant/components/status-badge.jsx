@@ -24,7 +24,7 @@ export function OrderStatusBadge({ status, className }) {
   );
 }
 
-/** `compact` shows only "เปิด"/"ปิด" for the slim desktop rail; screen readers still get the full text. */
+/** `compact` แสดงแค่ "เปิด"/"ปิด" สำหรับแถบไอคอนแคบบนจอใหญ่ แต่โปรแกรมอ่านหน้าจอยังได้ข้อความเต็ม */
 export function StoreStatusPill({ isOpen, compact = false, className }) {
   const label = isOpen ? "เปิดรับออเดอร์" : "ปิดร้านอยู่";
   return (
@@ -48,7 +48,7 @@ export function StoreStatusPill({ isOpen, compact = false, className }) {
   );
 }
 
-/** Small count bubble for nav items. Hidden from screen readers; callers put the count in the label. */
+/** วงกลมตัวเลขเล็ก ๆ บนเมนู ซ่อนจากโปรแกรมอ่านหน้าจอ (ผู้เรียกใส่จำนวนไว้ใน label แล้ว) */
 export function CountBubble({ count, className }) {
   if (!count) return null;
   return (

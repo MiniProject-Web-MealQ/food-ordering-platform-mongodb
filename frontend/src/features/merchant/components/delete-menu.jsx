@@ -12,7 +12,7 @@ export function DeleteMenu({ menu, onDelete }) {
     setBusy(true);
     setError("");
     const result = await onDelete();
-    // On success the pop-up closes; only a failure needs to update this section.
+    // ถ้าสำเร็จ pop-up จะปิดเอง จึงอัปเดตส่วนนี้เฉพาะตอนล้มเหลว
     if (!result.ok) {
       setBusy(false);
       setError(result.error.message);

@@ -4,14 +4,14 @@ import { nextStep } from "./status";
 import { isSessionLost, sessionLost, useMerchant } from "./store";
 
 /**
- * Every change goes to the API first; the store only updates with what the server sent back.
- * Each function resolves to the api-client result ({ ok, data } or { ok: false, error }),
- * so pages can show error.message when a request fails.
+ * ทุกการแก้ไขส่งไป API ก่อน แล้ว store ค่อยอัปเดตตามข้อมูลที่ server ส่งกลับ
+ * ทุกฟังก์ชันคืนผลจาก api-client ({ ok, data } หรือ { ok: false, error })
+ * หน้าต่าง ๆ จึงแสดง error.message ได้เมื่อเรียกไม่สำเร็จ
  */
 export function useMerchantActions() {
   const { dispatch } = useMerchant();
 
-  /** Waits for a request; if the merchant session is gone, sends the app back to the login page. */
+  /** รอผลการเรียก API ถ้า session ร้านหลุดไปแล้ว ให้กลับไปหน้า login */
   async function settle(request) {
     const result = await request;
     if (isSessionLost(result)) dispatch(sessionLost);
@@ -44,7 +44,7 @@ export function useMerchantActions() {
     cancel(order) {
       return saveOrder(api.setOrderStatus(order.order_number, "cancelled"));
     },
-    /** The receive code is checked by the page first: the API does not verify it yet. */
+    /** หน้าจอตรวจรหัสรับอาหารก่อนเรียกฟังก์ชันนี้ เพราะ API ยังไม่ตรวจให้ */
     complete(order) {
       return saveOrder(api.setOrderStatus(order.order_number, "completed"));
     },
@@ -56,7 +56,7 @@ export function useMerchantActions() {
       return saveMenu(api.updateMenu(menu._id, { isAvailable }));
     },
     async addMenu(fields) {
-      // TODO(api): POST /merchant/menu always creates the menu as available; turn it off afterwards if asked.
+      // TODO(api): POST /merchant/menu สร้างเมนูเป็น "มีขาย" เสมอ ถ้าต้องการปิดขายต้องแก้ตามหลังอีกครั้ง
       const created = await saveMenu(api.createMenu(menuToApi(fields)));
       if (!created.ok || fields.is_available) return created;
       return saveMenu(api.updateMenu(created.data.menu.id, { isAvailable: false }));

@@ -8,7 +8,7 @@ import { OrderStatusBadge } from "./status-badge";
 
 const MINUTE = 60 * 1000;
 
-/** How long the card has been in its current state, and whether that is long enough to flag. */
+/** การ์ดอยู่ในสถานะปัจจุบันมานานแค่ไหน และนานพอจะขึ้นเตือนหรือยัง */
 function timing(order, queue, now) {
   switch (order.status) {
     case "pending":
@@ -49,7 +49,7 @@ export function OrderCard({ order, queue, now, busy = false, onAdvance }) {
         </h3>
         <OrderStatusBadge status={order.status} />
       </div>
-      {/* Wraps onto two lines in the narrow lg columns instead of truncating the customer name. */}
+      {/* ในคอลัมน์แคบของจอ lg ให้ขึ้นบรรทัดใหม่ แทนการตัดชื่อลูกค้า */}
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-xs">
         <p className="text-ink-soft">
           {order.order_number} · {order.customer.name}

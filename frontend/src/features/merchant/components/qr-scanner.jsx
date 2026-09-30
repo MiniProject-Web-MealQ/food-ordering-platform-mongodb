@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { buttonClasses } from "@/components/ui/styles";
 import { cx } from "@/lib/cx";
 
-/** Frames are shrunk to this width before decoding: plenty for a phone-sized QR, cheap on tablets. */
+/** ย่อภาพจากกล้องให้กว้างเท่านี้ก่อนอ่าน QR: ชัดพอสำหรับ QR บนจอมือถือ และไม่หนักเครื่องแท็บเล็ต */
 const DECODE_WIDTH = 640;
 const SCAN_EVERY_MS = 150;
-/** After a rejected code, ignore the same QR for a moment so the message stays readable. */
+/** หลังปฏิเสธ QR ไปแล้ว ให้ข้าม QR เดิมสักพัก ข้อความเตือนจะได้ไม่กะพริบจนอ่านไม่ทัน */
 const REPEAT_PAUSE_MS = 2000;
 
 function cameraErrorMessage(error) {
@@ -36,8 +36,8 @@ function decode(context, source, width, height) {
 }
 
 /**
- * Live camera QR scanner with a pick-a-photo fallback.
- * `onDetected(text)` returns false to keep scanning (e.g. the QR belongs to another order).
+ * ตัวสแกน QR จากกล้องแบบสด มีทางสำรองให้เลือกรูปแทน
+ * `onDetected(text)` คืนค่า false เพื่อสแกนต่อ (เช่น QR เป็นของออเดอร์อื่น)
  */
 export function QrScanner({ onDetected }) {
   const videoRef = useRef(null);

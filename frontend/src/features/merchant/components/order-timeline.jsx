@@ -11,7 +11,7 @@ const STEP_LABEL = {
   completed: "ลูกค้ารับอาหารแล้ว",
 };
 
-/** Only the times the backend models keep: order_date, queue.called_at and receive_time. */
+/** แสดงเฉพาะเวลาที่ model ของ backend เก็บไว้: order_date, queue.called_at และ receive_time */
 function stepTime(step, order, queue) {
   if (step === "pending") return order.order_date;
   if (step === "ready") return queue?.called_at;

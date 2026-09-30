@@ -44,7 +44,7 @@ function Orders() {
     );
   }
 
-  /** Scanning at the counter: open the matching ready order with its code already filled in. */
+  /** สแกนที่เคาน์เตอร์: เปิดออเดอร์ที่พร้อมรับและตรงกับ QR โดยใส่รหัสไว้ให้แล้ว */
   function handleScan(text) {
     const scan = parsePickupQr(text);
     const { entry, message } = matchPickupScan(all, scan);

@@ -1,9 +1,9 @@
 import { QUEUE_STATUS_FOR_ORDER } from "./status";
 
 /**
- * The merchant API answers in camelCase (see storeView/menuView in publicController.js and
- * orderView in orderController.js). The app keeps the backend models' snake_case names, so every
- * response goes through these functions and every request body is built by the *ToApi ones.
+ * API ของร้านค้าตอบกลับเป็น camelCase (ดู storeView/menuView ใน publicController.js และ
+ * orderView ใน orderController.js) แต่แอปเก็บชื่อแบบ snake_case ตาม model ของ backend
+ * ข้อมูลที่ได้จาก API ทุกก้อนจึงต้องผ่านฟังก์ชันในไฟล์นี้ และ body ที่ส่งไปสร้างด้วยฟังก์ชัน *ToApi
  */
 
 function time(value) {
@@ -45,10 +45,9 @@ export function menuFromApi(menu) {
 }
 
 /**
- * One API order becomes an Order and its Queue ticket, as the models store them.
- * TODO(api): the API does not return Queue.called_at / completed_at or Order.receive_time, so they are
- * taken from updatedAt, which is exact for the latest step (the time the order became ready
- * or was handed over) and unknown for earlier ones.
+ * แปลงออเดอร์ 1 รายการจาก API เป็น Order + ตั๋วคิว (Queue) ตามที่ model เก็บ
+ * TODO(api): API ไม่ส่ง Queue.called_at / completed_at และ Order.receive_time มาให้ จึงใช้ updatedAt แทน
+ * ซึ่งถูกต้องเฉพาะขั้นล่าสุด (ตอนออเดอร์พร้อมรับ หรือตอนส่งอาหารแล้ว) ขั้นก่อนหน้าจะไม่รู้เวลา
  */
 export function orderFromApi(order) {
   const updatedAt = time(order.updatedAt);
@@ -103,7 +102,7 @@ export function menuToApi(fields) {
   return body;
 }
 
-/** PATCH /merchant/store only accepts name, description, phone, isOpen and openingHours. */
+/** PATCH /merchant/store รับแค่ name, description, phone, isOpen และ openingHours */
 export function storeToApi(changes) {
   const body = {};
   if (changes.name !== undefined) body.name = changes.name;

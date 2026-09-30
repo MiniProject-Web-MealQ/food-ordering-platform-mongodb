@@ -33,7 +33,7 @@ function CancelPanel({ queueLabel, busy, onConfirm, onBack }) {
       <p id="cancel-title" className="font-semibold text-danger">
         ยกเลิกคิว {queueLabel}?
       </p>
-      {/* TODO(api): there is no refund in the API yet, so the copy says it has to be done by hand. */}
+      {/* TODO(api): API ยังไม่มีระบบคืนเงิน ข้อความจึงบอกให้ร้านคืนเงินเอง */}
       <p className="text-sm text-ink">
         ยกเลิกแล้วย้อนกลับไม่ได้ ระบบยังไม่คืนเงินให้อัตโนมัติ ต้องคืนเงินให้ลูกค้าเอง
       </p>
@@ -216,14 +216,14 @@ function OrderDetail() {
           </section>
         </div>
 
-        {/* Code and actions come first on phones: that is what staff need at the counter. */}
+        {/* บนมือถือแสดงรหัสและปุ่มจัดการก่อน เพราะเป็นสิ่งที่พนักงานต้องใช้ที่เคาน์เตอร์ */}
         <div className="space-y-4 max-lg:order-first lg:sticky lg:top-6">
           <ReceiveCodeCard code={queue.receive_code} status={order.status} />
           <section aria-labelledby="action-title" className={panelClass}>
             <h2 id="action-title" className="mb-3 text-lg font-bold text-ink">
               จัดการออเดอร์
             </h2>
-            {/* Keyed by status so a half-finished cancel confirmation does not carry over to the next step. */}
+            {/* ใช้สถานะเป็น key เพื่อไม่ให้หน้ายืนยันยกเลิกที่ค้างอยู่ติดไปขั้นถัดไป */}
             <ActionPanel
               key={order.status}
               order={order}

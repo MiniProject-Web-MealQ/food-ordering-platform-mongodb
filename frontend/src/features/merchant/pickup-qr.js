@@ -1,12 +1,11 @@
 import { ORDER_STATUS_LABEL } from "./status";
 
 /**
- * What a customer's pickup QR may contain. The customer app does not show a scannable QR yet
- * (features/customer/components/pickup-code.jsx draws a decorative pattern), so the scanner
- * accepts the formats it is likely to adopt:
- *   "MEALQ:<order_number>:<receive_code>"   e.g. MEALQ:MQ599608373:9667  (preferred)
- *   "<receive_code>"                         e.g. 9667
- *   JSON with orderNumber + pickupCode / receiveCode / code
+ * ข้อความที่อาจอยู่ใน QR รับอาหารของลูกค้า ตอนนี้แอปลูกค้ายังไม่มี QR ที่สแกนได้จริง
+ * (features/customer/components/pickup-code.jsx วาดลายตกแต่ง) ตัวสแกนจึงรับหลายรูปแบบที่น่าจะถูกเลือกใช้:
+ *   "MEALQ:<order_number>:<receive_code>"   เช่น MEALQ:MQ599608373:9667  (แนะนำ)
+ *   "<receive_code>"                         เช่น 9667
+ *   JSON ที่มี orderNumber + pickupCode / receiveCode / code
  */
 export function parsePickupQr(text) {
   const value = String(text ?? "").trim();
@@ -18,14 +17,14 @@ export function parsePickupQr(text) {
     const code = String(data?.pickupCode ?? data?.receiveCode ?? data?.receive_code ?? data?.code ?? "");
     if (/^\d{4}$/.test(code)) return { orderNumber: data.orderNumber ?? data.order_number ?? null, code };
   } catch {
-    // Not JSON: fall through.
+    // ไม่ใช่ JSON: ข้ามไป
   }
   return null;
 }
 
 /**
- * Matches a scan against the board. Resolves to { entry } for a ready order,
- * or { message } explaining why the scan cannot be used.
+ * เทียบผลสแกนกับออเดอร์บนกระดาน คืน { entry } ถ้าเจอออเดอร์ที่พร้อมรับ
+ * หรือ { message } ที่อธิบายว่าทำไมใช้ QR นี้ไม่ได้
  */
 export function matchPickupScan(entries, scan) {
   if (!scan) return { message: "QR นี้ไม่ใช่รหัสรับอาหารของ MealQ" };

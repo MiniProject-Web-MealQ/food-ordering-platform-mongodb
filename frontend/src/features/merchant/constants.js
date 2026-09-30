@@ -1,6 +1,6 @@
 /**
- * Menu category codes. They must match MENU_CATEGORIES in features/customer/mock-data.js
- * and the values the backend seed stores, because the customer app groups menus by these codes.
+ * รหัสหมวดเมนู ต้องตรงกับ MENU_CATEGORIES ใน features/customer/mock-data.js
+ * และค่าที่ seed ของ backend เก็บไว้ เพราะแอปลูกค้าจัดกลุ่มเมนูด้วยรหัสเหล่านี้
  */
 export const MENU_CATEGORIES = [
   { value: "single", label: "อาหารจานเดียว" },
@@ -9,7 +9,7 @@ export const MENU_CATEGORIES = [
   { value: "dessert", label: "ของหวาน" },
 ];
 
-/** Thai label for a category code; unknown codes (made outside this app) show as-is. */
+/** ชื่อภาษาไทยของรหัสหมวด ถ้าเป็นรหัสที่ไม่รู้จัก (สร้างจากที่อื่น) แสดงตามเดิม */
 export function categoryLabel(code) {
   return MENU_CATEGORIES.find((c) => c.value === code)?.label ?? code;
 }
@@ -21,5 +21,5 @@ export const PAYMENT_METHOD_LABEL = {
   wallet: "MealQ Wallet",
 };
 
-/** Account created by `npm run seed` in backend/. Shown on the login page in dev builds only. */
+/** บัญชีที่ `npm run seed` ใน backend/ สร้างไว้ แสดงในหน้า login เฉพาะตอน dev */
 export const SEED_MERCHANT = { email: "merchant@mealq.local", password: "Merchant123!" };

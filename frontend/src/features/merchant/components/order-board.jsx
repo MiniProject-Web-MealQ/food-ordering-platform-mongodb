@@ -5,15 +5,15 @@ import { BOARD_COLUMNS } from "../status";
 import { OrderCard } from "./order-card";
 
 /**
- * Queue board. lg+: all four status columns side by side.
- * Below lg: one column at a time, picked with tabs that show each column's count.
+ * กระดานคิว จอ lg ขึ้นไป: แสดงทั้ง 4 คอลัมน์สถานะเรียงกัน
+ * ต่ำกว่า lg: แสดงทีละคอลัมน์ เลือกด้วยแท็บที่บอกจำนวนของแต่ละคอลัมน์
  */
 export function OrderBoard({ entries, now, busyId, onAdvance }) {
   const [tab, setTab] = useState(BOARD_COLUMNS[0].id);
 
   const columns = BOARD_COLUMNS.map((column) => {
     const inColumn = entries.filter(({ order }) => column.statuses.includes(order.status));
-    // Finished orders read newest first; everything still in progress oldest first.
+    // ออเดอร์ที่จบแล้วเรียงใหม่สุดก่อน ส่วนที่ยังทำอยู่เรียงเก่าสุดก่อน
     return { ...column, entries: column.id === "done" ? inColumn.toReversed() : inColumn };
   });
 

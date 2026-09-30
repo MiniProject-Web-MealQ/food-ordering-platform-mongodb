@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer, useState } from "react";
 import { connectSocket } from "@/lib/socket";
 import { initialState, loadEverything, loadOrders, MerchantContext, reducer } from "./store";
 
-/** Re-read orders this often even when the socket is quiet, in case it dropped. */
+/** ดึงออเดอร์ซ้ำทุกช่วงเวลานี้ แม้ socket จะเงียบ เผื่อ socket หลุด */
 const POLL_MS = 30000;
 
 export function MerchantProvider({ children }) {
@@ -25,7 +25,7 @@ export function MerchantProvider({ children }) {
     setLoadCount((count) => count + 1);
   }, []);
 
-  // Live updates: the backend emits "order:new" and "order:status" to this store's socket room.
+  // อัปเดตแบบ realtime: backend ส่ง "order:new" และ "order:status" มาที่ห้อง socket ของร้านนี้
   useEffect(() => {
     if (!signedIn) return undefined;
     let active = true;
@@ -43,14 +43,14 @@ export function MerchantProvider({ children }) {
           return;
         }
         socket = connected;
-        // Catch up on anything that arrived before (or while) the socket was connecting.
+        // ดึงออเดอร์ที่อาจเข้ามาก่อน (หรือระหว่าง) ที่ socket กำลังเชื่อมต่อ
         socket.on("connect", refresh);
         if (socket.connected) refresh();
         socket.on("order:new", refresh);
         socket.on("order:status", refresh);
       })
       .catch(() => {
-        // Polling below still keeps the board current without realtime.
+        // ถึงไม่มี realtime การดึงซ้ำด้านล่างก็ยังทำให้กระดานเป็นข้อมูลล่าสุด
       });
 
     const timer = setInterval(refresh, POLL_MS);

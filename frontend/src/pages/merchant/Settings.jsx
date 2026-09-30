@@ -12,7 +12,7 @@ import { useMerchantActions } from "@/features/merchant/use-merchant-actions";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
 
-/** Field order, used to move focus to the first invalid field on submit. */
+/** ลำดับช่องกรอก ใช้ย้าย focus ไปช่องแรกที่ผิดตอนกดบันทึก */
 const FIELD_IDS = {
   name: "store-name",
   phone: "store-phone",
@@ -146,7 +146,7 @@ function StoreInfoForm() {
             </p>
           )}
         </div>
-        {/* TODO(api): PATCH /merchant/store does not accept address yet, so it is shown read-only. */}
+        {/* TODO(api): PATCH /merchant/store ยังไม่รับ address จึงแสดงให้ดูอย่างเดียว */}
         <div className="rounded-2xl bg-cream px-4 py-3 text-sm">
           <p className="font-semibold text-ink">จุดรับอาหาร</p>
           <p className="text-ink-soft">{pickupPoint || "ยังไม่ได้ตั้ง"}</p>

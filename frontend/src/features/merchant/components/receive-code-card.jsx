@@ -9,7 +9,7 @@ const HINT = {
   cancelled: "ออเดอร์ถูกยกเลิก รหัสนี้ใช้ไม่ได้แล้ว",
 };
 
-/** The 4-digit receive_code the customer was given, shown large so staff can compare it at the counter. */
+/** รหัสรับอาหาร 4 หลัก (receive_code) ที่ลูกค้าได้รับ แสดงตัวใหญ่ให้พนักงานเทียบที่เคาน์เตอร์ได้ง่าย */
 export function ReceiveCodeCard({ code, status }) {
   const spent = status === "completed" || status === "cancelled";
 

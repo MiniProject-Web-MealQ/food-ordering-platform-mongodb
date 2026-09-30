@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-/** Current time that re-renders every `intervalMs`, for "ordered 8 minutes ago" labels. */
+/** เวลาปัจจุบันที่ render ใหม่ทุก `intervalMs` ใช้กับข้อความแบบ "สั่งมา 8 นาที" */
 export function useNow(intervalMs = 30000) {
   const [now, setNow] = useState(() => Date.now());
 

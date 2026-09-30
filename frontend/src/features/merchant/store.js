@@ -3,9 +3,9 @@ import { menuFromApi, ordersFromApi, storeFromApi } from "./adapters";
 import { getMenus, getOrders, getSession, getStore } from "./api";
 
 /**
- * Merchant state mirrors what the API returned (converted to the models' snake_case by adapters.js).
- * The reducer never talks to the server: loaders below and use-merchant-actions.js make the
- * requests and dispatch their results.
+ * state ของร้านเก็บตามที่ API ส่งกลับมา (แปลงเป็น snake_case ตาม model ด้วย adapters.js)
+ * reducer ไม่เรียก server เอง ฟังก์ชันโหลดข้อมูลด้านล่างและ use-merchant-actions.js
+ * เป็นคนเรียก API แล้ว dispatch ผลลัพธ์
  *
  * status: "loading" → "ready" | "signed-out" | "error"
  */
@@ -72,8 +72,8 @@ export function useMerchant() {
 }
 
 /**
- * 401 = no/expired session, 403 = the cookie now belongs to a non-merchant account
- * (typically someone signed in as a customer in the same browser).
+ * 401 = ไม่มี session หรือหมดอายุ, 403 = cookie ตอนนี้เป็นของบัญชีที่ไม่ใช่ร้านค้า
+ * (ส่วนใหญ่เพราะมีคน login เป็นลูกค้าในเบราว์เซอร์เดียวกัน)
  */
 export function isSessionLost(result) {
   return !result.ok && (result.status === 401 || result.status === 403);
@@ -86,11 +86,11 @@ function failure(result) {
   return { type: "load/failed", error: result.error };
 }
 
-/** Everything the merchant pages need, fetched in one go. Resolves to the action to dispatch. */
+/** โหลดข้อมูลทั้งหมดที่หน้าร้านต้องใช้ในครั้งเดียว คืน action ที่ต้อง dispatch */
 export async function loadEverything() {
   const me = await getSession();
   if (!me.ok) return failure(me);
-  // A customer session is not a merchant session: send them to the merchant login.
+  // session ของลูกค้าใช้เข้าหน้าร้านไม่ได้: ส่งไปหน้า login ร้านค้า
   if (me.data?.user?.role !== "MERCHANT") return sessionLost;
 
   const [store, menus, orders] = await Promise.all([getStore(), getMenus(), getOrders()]);
@@ -106,7 +106,7 @@ export async function loadEverything() {
   };
 }
 
-/** Re-reads the order list (new orders, changes made on another device). Null when it failed. */
+/** โหลดรายการออเดอร์ใหม่ (ออเดอร์ใหม่ หรือที่แก้จากเครื่องอื่น) คืน null ถ้าโหลดไม่สำเร็จ */
 export async function loadOrders() {
   const result = await getOrders();
   if (!result.ok) return isSessionLost(result) ? sessionLost : null;

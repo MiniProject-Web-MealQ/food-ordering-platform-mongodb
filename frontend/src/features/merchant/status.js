@@ -1,9 +1,9 @@
 /**
- * Order and queue statuses, named exactly as backend/src/models/Order.js and Queue.js store them.
+ * สถานะออเดอร์และคิว ใช้ชื่อตรงตามที่ backend/src/models/Order.js และ Queue.js เก็บ
  *
- * Order: pending → confirmed → preparing → ready → completed, or cancelled before it is ready.
- * NOTE: the customer app still uses its own set (PLACED/PAID/QUEUED/PREPARING/READY/PICKED_UP);
- * both sides must agree on one set when they move onto the real API.
+ * Order: pending → confirmed → preparing → ready → completed หรือ cancelled ก่อนถึง ready
+ * หมายเหตุ: แอปลูกค้ายังใช้สถานะอีกชุด (PLACED/PAID/QUEUED/PREPARING/READY/PICKED_UP)
+ * ทั้งสองฝั่งต้องตกลงใช้ชุดเดียวกัน
  */
 
 export const ORDER_STATUS_LABEL = {
@@ -15,7 +15,7 @@ export const ORDER_STATUS_LABEL = {
   cancelled: "ยกเลิกแล้ว",
 };
 
-/** Mirrors STATUS_QUEUE_MAP in backend/src/controllers/merchantController.js. */
+/** ตรงกับ STATUS_QUEUE_MAP ใน backend/src/controllers/merchantController.js */
 export const QUEUE_STATUS_FOR_ORDER = {
   pending: "waiting",
   confirmed: "waiting",
@@ -25,12 +25,12 @@ export const QUEUE_STATUS_FOR_ORDER = {
   cancelled: "cancelled",
 };
 
-/** The happy path, in order. Used by the timeline on the order detail page. */
+/** ลำดับสถานะปกติ ใช้กับ timeline ในหน้ารายละเอียดออเดอร์ */
 export const ORDER_STEPS = ["pending", "confirmed", "preparing", "ready", "completed"];
 
 export const ACTIVE_STATUSES = ["pending", "confirmed", "preparing", "ready"];
 
-/** Statuses the kitchen still has to work on; these count toward store.queue.max_queue. */
+/** สถานะที่ครัวยังต้องทำ นับรวมเป็นคิวตาม store.queue.max_queue */
 export const IN_KITCHEN_STATUSES = ["pending", "confirmed", "preparing"];
 
 const NEXT_STEP = {
@@ -39,7 +39,7 @@ const NEXT_STEP = {
   preparing: { status: "ready", label: "อาหารพร้อม · เรียกคิว" },
 };
 
-/** The one-tap move for a card, or null when the next step needs more than a tap (ready needs the code). */
+/** ขั้นถัดไปที่กดปุ่มเดียวบนการ์ดได้ หรือ null ถ้าขั้นถัดไปต้องทำมากกว่านั้น (ready ต้องใช้รหัส) */
 export function nextStep(status) {
   return NEXT_STEP[status] ?? null;
 }
@@ -48,7 +48,7 @@ export function canCancel(status) {
   return IN_KITCHEN_STATUSES.includes(status);
 }
 
-/** Queue board columns. The kitchen treats "accepted" and "cooking" as one lane. */
+/** คอลัมน์ของกระดานคิว ครัวนับ "รับแล้ว" กับ "กำลังทำ" เป็นคอลัมน์เดียวกัน */
 export const BOARD_COLUMNS = [
   { id: "new", label: "รอรับ", statuses: ["pending"], empty: "ยังไม่มีออเดอร์ใหม่" },
   { id: "cooking", label: "กำลังทำ", statuses: ["confirmed", "preparing"], empty: "ไม่มีออเดอร์ที่กำลังทำ" },

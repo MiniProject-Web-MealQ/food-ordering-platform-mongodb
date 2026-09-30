@@ -4,8 +4,8 @@ import { focusRing } from "@/components/ui/styles";
 import { cx } from "@/lib/cx";
 
 /**
- * Modal built on <dialog>.showModal(): the browser traps focus, makes the page behind inert and
- * closes on Escape. Phones get a full-screen sheet; larger screens a centred card with a scrolling body.
+ * pop-up ที่สร้างจาก <dialog>.showModal(): เบราว์เซอร์กัก focus ไว้ในกล่อง ทำให้หน้าด้านหลังกดไม่ได้
+ * และปิดด้วยปุ่ม Esc ได้เอง มือถือแสดงเต็มจอ จอใหญ่เป็นกล่องกลางจอที่เลื่อนเนื้อหาข้างในได้
  */
 export function MerchantDialog({ eyebrow, title, subtitle, onClose, children }) {
   const ref = useRef(null);
@@ -13,7 +13,7 @@ export function MerchantDialog({ eyebrow, title, subtitle, onClose, children }) 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog.open) dialog.showModal();
-    // Stop the page behind from scrolling while the dialog is open.
+    // ล็อกไม่ให้หน้าด้านหลังเลื่อนระหว่างที่ pop-up เปิดอยู่
     const root = document.documentElement;
     const previousOverflow = root.style.overflow;
     root.style.overflow = "hidden";
@@ -32,7 +32,7 @@ export function MerchantDialog({ eyebrow, title, subtitle, onClose, children }) 
         onClose();
       }}
       onClick={(event) => {
-        // Only the backdrop hits the <dialog> itself; the content fills the box.
+        // คลิกที่ <dialog> ตรง ๆ ได้เฉพาะพื้นหลังมืด เพราะเนื้อหาเต็มกล่องพอดี
         if (event.target === event.currentTarget) onClose();
       }}
       className={cx(

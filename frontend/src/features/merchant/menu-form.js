@@ -1,4 +1,4 @@
-/** Form values are strings (as typed); toMenuFields() converts them to the Menu model's fields. */
+/** ค่าในฟอร์มเป็นข้อความตามที่พิมพ์ toMenuFields() แปลงเป็น field ตาม Menu model */
 
 export const MENU_LIMITS = {
   nameMax: 60,
@@ -27,7 +27,7 @@ function isWholeNumber(value) {
   return /^\d+$/.test(value.trim());
 }
 
-/** Returns { field: message } for every invalid field; an empty object means the form can be saved. */
+/** คืน { field: ข้อความ } ของทุกช่องที่ผิด ถ้าได้ object ว่างแปลว่าบันทึกได้ */
 export function validateMenu(values, menus, editingId = null) {
   const errors = {};
   const name = values.name.trim();
@@ -69,8 +69,8 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_SIDE = 480;
 
 /**
- * Shrinks the picked photo to a small JPEG data URL, which is saved as-is in Menu.image.
- * TODO(api): switch to an upload endpoint that returns an image URL once the backend has one.
+ * ย่อรูปที่เลือกเป็น JPEG data URL ขนาดเล็ก แล้วเก็บลง Menu.image ตรง ๆ
+ * TODO(api): เปลี่ยนไปใช้ endpoint อัปโหลดรูปที่คืน URL เมื่อ backend มีให้
  */
 export async function readMenuImage(file) {
   if (!file.type.startsWith("image/")) throw new Error("เลือกได้เฉพาะไฟล์รูปภาพ");

@@ -3,8 +3,8 @@ import { MerchantDialog } from "./merchant-dialog";
 import { QrScanner } from "./qr-scanner";
 
 /**
- * Pop-up camera scanner for a customer's pickup QR. `onScan(text)` returns { message } to show
- * why the QR cannot be used (the camera keeps scanning), or anything else to accept it.
+ * pop-up กล้องสำหรับสแกน QR รับอาหารของลูกค้า `onScan(text)` คืน { message } เพื่อบอกว่าทำไม
+ * QR นี้ใช้ไม่ได้ (กล้องจะสแกนต่อ) หรือคืนค่าอื่นเพื่อรับ QR นี้
  */
 export function ScanPickupDialog({ subtitle, onScan, onClose }) {
   const [message, setMessage] = useState("");

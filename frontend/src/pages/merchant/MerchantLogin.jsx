@@ -23,7 +23,7 @@ const BOARD_PREVIEW = [
   { label: "พร้อมรับ", count: 2 },
 ];
 
-/** Brand panel beside the form on large screens. Decorative only. */
+/** แผงแบรนด์ข้างฟอร์มบนจอใหญ่ มีไว้ตกแต่งเท่านั้น */
 function MerchantShowcase() {
   return (
     <aside className="relative hidden overflow-hidden bg-mint lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:p-12 xl:p-16">
@@ -72,7 +72,7 @@ function MerchantLogin() {
 
   const destination = location.state?.from ?? "/merchant/dashboard";
 
-  // Already signed in as a merchant (cookie session): skip the form.
+  // ถ้า login เป็นร้านค้าอยู่แล้ว (มี session ใน cookie) ให้ข้ามฟอร์มไปเลย
   useEffect(() => {
     let active = true;
     getSession().then((result) => {
@@ -106,7 +106,7 @@ function MerchantLogin() {
       return;
     }
     if (result.data.role !== "MERCHANT") {
-      // The API let a customer in: close that session so the merchant pages do not pick it up.
+      // API ให้บัญชีลูกค้าผ่าน: ปิด session นั้น หน้าร้านจะได้ไม่เอาไปใช้
       await logout();
       setPending(false);
       setError({ title: "บัญชีนี้เป็นบัญชีลูกค้า ใช้เข้าหน้าร้านค้าไม่ได้", invalid: true });
@@ -171,7 +171,7 @@ function MerchantLogin() {
             </Button>
           </form>
 
-          {/* Dev builds only: the account `npm run seed` creates in backend/. */}
+          {/* แสดงเฉพาะตอน dev: บัญชีที่ `npm run seed` ใน backend/ สร้างไว้ */}
           {import.meta.env.DEV && (
             <div className="rounded-3xl bg-cream p-4 text-sm text-ink-soft ring-1 ring-haze">
               <p className="font-semibold text-ink">บัญชีทดสอบ (หลังรัน npm run seed)</p>

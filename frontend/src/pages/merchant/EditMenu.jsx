@@ -1,8 +1,8 @@
 import { Navigate, useParams } from "react-router";
 
 /**
- * /merchant/menu/:id/edit is kept as a deep link: editing now happens in a pop-up
- * over the menu list (see Menu.jsx), so this route just opens it there.
+ * เก็บ /merchant/menu/:id/edit ไว้เป็นลิงก์ตรง: ตอนนี้การแก้ไขเมนูทำใน pop-up บนหน้ารายการเมนู
+ * (ดู Menu.jsx) route นี้จึงแค่พาไปเปิด pop-up ที่นั่น
  */
 function EditMenu() {
   const { id } = useParams();

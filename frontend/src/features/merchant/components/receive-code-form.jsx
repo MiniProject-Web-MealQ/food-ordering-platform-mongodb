@@ -6,9 +6,9 @@ import { parsePickupQr } from "../pickup-qr";
 import { ScanPickupDialog } from "./scan-pickup-dialog";
 
 /**
- * The customer shows a 4-digit receive_code at the counter; the merchant scans their QR or types
- * the code to hand the food over. The check runs here because the backend does not verify it yet.
- * `scannedCode` pre-fills a code already scanned from the queue board.
+ * ลูกค้าแสดงรหัสรับอาหาร 4 หลักที่เคาน์เตอร์ ร้านสแกน QR หรือพิมพ์รหัสเพื่อส่งอาหาร
+ * ตรวจรหัสที่หน้าจอนี้ เพราะ backend ยังไม่ตรวจให้
+ * `scannedCode` คือรหัสที่สแกนมาแล้วจากกระดานคิว ใส่ไว้ในช่องให้เลย
  */
 export function ReceiveCodeForm({ expectedCode, orderNumber, scannedCode = "", autoFocus = false, onConfirm }) {
   const [code, setCode] = useState(scannedCode);
@@ -22,7 +22,7 @@ export function ReceiveCodeForm({ expectedCode, orderNumber, scannedCode = "", a
       setError("กรอกรหัสให้ครบ 4 หลัก");
       return;
     }
-    // TODO(api): the backend should check the code (e.g. POST /merchant/orders/:id/receive { receiveCode }).
+    // TODO(api): backend ควรเป็นคนตรวจรหัส (เช่น POST /merchant/orders/:id/receive { receiveCode })
     if (value !== expectedCode) {
       setError("รหัสไม่ตรงกับออเดอร์นี้ ให้ลูกค้าเปิดรหัสในแอปอีกครั้ง");
       return;
@@ -30,14 +30,14 @@ export function ReceiveCodeForm({ expectedCode, orderNumber, scannedCode = "", a
     setSaving(true);
     setError("");
     const result = await onConfirm();
-    // On success the order becomes "completed" and this form unmounts.
+    // ถ้าสำเร็จ ออเดอร์จะเป็น "completed" และฟอร์มนี้จะหายไปเอง
     if (!result.ok) {
       setSaving(false);
       setError(`บันทึกไม่สำเร็จ: ${result.error.message}`);
     }
   }
 
-  /** A scan that matches this order hands the food over straight away, like typing the code. */
+  /** สแกนแล้วตรงกับออเดอร์นี้ ให้ยืนยันรับอาหารทันที เหมือนพิมพ์รหัสเอง */
   function handleScan(text) {
     const scan = parsePickupQr(text);
     if (!scan) return { message: "QR นี้ไม่ใช่รหัสรับอาหารของ MealQ" };
@@ -81,7 +81,7 @@ export function ReceiveCodeForm({ expectedCode, orderNumber, scannedCode = "", a
           inputMode="numeric"
           autoComplete="off"
           maxLength={4}
-          // Staff arrive here from the board's "ยืนยันรับอาหาร" button to type the code straight away.
+          // พนักงานมาหน้านี้จากปุ่ม "ยืนยันรับอาหาร" บนกระดาน จะได้พิมพ์รหัสได้ทันที
           autoFocus={autoFocus && !scannedCode}
           value={code}
           placeholder="••••"
@@ -113,7 +113,7 @@ export function ReceiveCodeForm({ expectedCode, orderNumber, scannedCode = "", a
           fullWidth
           disabled={saving}
           aria-busy={saving}
-          // A code scanned on the board lands here pre-filled: one tap to confirm.
+          // รหัสที่สแกนจากกระดานถูกใส่ไว้แล้ว กดยืนยันครั้งเดียวจบ
           autoFocus={Boolean(scannedCode)}
         >
           {saving ? "กำลังบันทึก…" : "ยืนยันรับอาหาร"}

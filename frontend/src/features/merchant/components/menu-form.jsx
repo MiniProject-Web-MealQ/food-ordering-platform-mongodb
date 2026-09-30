@@ -11,7 +11,7 @@ import { MENU_LIMITS, readMenuImage, toMenuFields, validateMenu } from "../menu-
 import { MENU_CATEGORIES } from "../constants";
 import { fieldClass, panelClass } from "../styles";
 
-/** Field order, used to move focus to the first invalid field on submit. */
+/** ลำดับช่องกรอก ใช้ย้าย focus ไปช่องแรกที่ผิดตอนกดบันทึก */
 const FIELD_IDS = { name: "menu-name", category: "menu-category", price: "menu-price", cook_time: "menu-cook-time", description: "menu-description" };
 
 function Unit({ children }) {
@@ -19,8 +19,8 @@ function Unit({ children }) {
 }
 
 /**
- * Shared by the add and edit pop-ups. `onSubmit` receives Menu model fields (snake_case, numbers parsed)
- * and resolves to the API result; a failed request is shown above the form.
+ * ใช้ร่วมกันใน pop-up เพิ่มเมนูและแก้ไขเมนู `onSubmit` ได้รับ field ตาม Menu model (snake_case, แปลงตัวเลขแล้ว)
+ * และคืนผลจาก API ถ้าบันทึกไม่สำเร็จจะแสดง error เหนือฟอร์ม
  */
 export function MenuForm({ initialValues, menus, editingId = null, submitLabel, onSubmit, onCancel }) {
   const [values, setValues] = useState(initialValues);
@@ -33,7 +33,7 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
 
   const errors = validateMenu(values, menus, editingId);
   const errorCount = Object.keys(errors).length;
-  // Keep a category this app does not know (set elsewhere) selectable instead of silently changing it.
+  // หมวดที่แอปนี้ไม่รู้จัก (ตั้งจากที่อื่น) ยังเลือกได้ ไม่เปลี่ยนให้เองแบบเงียบ ๆ
   const categoryOptions = MENU_CATEGORIES.some((c) => c.value === initialValues.category) || !initialValues.category
     ? MENU_CATEGORIES
     : [...MENU_CATEGORIES, { value: initialValues.category, label: initialValues.category }];
@@ -84,7 +84,7 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
     setSaving(true);
     setSaveError("");
     const result = await onSubmit(toMenuFields(values));
-    // On success the pop-up closes and this form unmounts, so only failures update state.
+    // ถ้าสำเร็จ pop-up จะปิดและฟอร์มนี้หายไป จึงอัปเดต state เฉพาะตอนล้มเหลว
     if (result && !result.ok) {
       setSaving(false);
       setSaveError(result.error.message);

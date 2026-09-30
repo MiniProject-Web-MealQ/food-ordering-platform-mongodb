@@ -1,12 +1,12 @@
 import { ACTIVE_STATUSES, IN_KITCHEN_STATUSES } from "./status";
 
-/** Read-only helpers over merchant state. Pages call these instead of filtering state themselves. */
+/** ฟังก์ชันอ่านข้อมูลจาก state ของร้าน (ไม่แก้ state) หน้าต่าง ๆ เรียกใช้แทนการกรอง state เอง */
 
 export function queueFor(state, orderId) {
   return state.queues.find((q) => q.order_id === orderId) ?? null;
 }
 
-/** Looks an order up by its _id or its order_number (URLs use the order number, like the API). */
+/** หาออเดอร์จาก _id หรือ order_number (URL ใช้เลขออเดอร์เหมือน API) */
 export function findOrder(state, id) {
   return state.orders.find((o) => o._id === id || o.order_number === id) ?? null;
 }
@@ -19,7 +19,7 @@ export function todaysOrders(state, now) {
   return state.orders.filter((o) => isSameDay(o.order_date, now));
 }
 
-/** Orders still on the board today, oldest first so the kitchen works top to bottom. */
+/** ออเดอร์ที่ยังอยู่บนกระดานวันนี้ เรียงเก่าสุดก่อน ครัวจะได้ทำจากบนลงล่าง */
 export function boardOrders(state, now) {
   return state.orders
     .filter((o) => ACTIVE_STATUSES.includes(o.status) || isSameDay(o.order_date, now))
@@ -35,7 +35,7 @@ export function pendingCount(state) {
   return state.orders.filter((o) => o.status === "pending").length;
 }
 
-/** Numbers for the dashboard. Revenue counts every paid order that was not cancelled. */
+/** ตัวเลขสำหรับหน้าภาพรวม ยอดขายนับทุกออเดอร์ที่จ่ายแล้วและไม่ถูกยกเลิก */
 export function todaySummary(state, now) {
   const today = todaysOrders(state, now);
   const kept = today.filter((o) => o.status !== "cancelled");
@@ -60,7 +60,7 @@ export function todaySummary(state, now) {
   };
 }
 
-/** Matches a queue number ("12" or "#12"), an order number, a customer name or a menu name. */
+/** ค้นหาจากเลขคิว ("12" หรือ "#12") เลขออเดอร์ ชื่อลูกค้า หรือชื่อเมนู */
 export function matchesOrderSearch({ order, queue }, query) {
   const q = query.trim().toLowerCase().replace(/^#/, "");
   if (!q) return true;

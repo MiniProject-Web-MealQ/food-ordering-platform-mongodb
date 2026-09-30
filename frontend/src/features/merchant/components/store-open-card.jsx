@@ -4,7 +4,7 @@ import { inKitchenCount } from "../orders";
 import { useMerchant } from "../store";
 import { useMerchantActions } from "../use-merchant-actions";
 
-/** Dark card with the open/closed switch and how many orders are in the kitchen. */
+/** การ์ดสีเข้มที่มีสวิตช์เปิด/ปิดร้าน และจำนวนออเดอร์ที่อยู่ในครัว */
 export function StoreOpenCard({ id = "store-open" }) {
   const { state } = useMerchant();
   const { setStoreOpen } = useMerchantActions();
