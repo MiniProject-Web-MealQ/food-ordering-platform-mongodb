@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { buttonClasses } from "@/components/ui/styles";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { OrderTimeline } from "@/features/merchant/components/order-timeline";
+import { ReceiveCodeCard } from "@/features/merchant/components/receive-code-card";
 import { ReceiveCodeForm } from "@/features/merchant/components/receive-code-form";
 import { OrderStatusBadge } from "@/features/merchant/components/status-badge";
 import { formatBaht, formatClock, formatElapsed, formatQueue, paymentLabel } from "@/features/merchant/format";
@@ -96,8 +97,6 @@ function ActionPanel({ order, queue, now, focusCode, handedOver, onHandedOver })
               onHandedOver();
             }}
           />
-          {/* MOCK: shown only so the demo can be tested without the customer app. Remove with the real API. */}
-          <p className="text-xs text-ink-soft">(ข้อมูลจำลอง) รหัสของออเดอร์นี้คือ {queue.receive_code}</p>
         </>
       ) : (
         <Button variant="cocoa" fullWidth onClick={() => dispatch(actions.advance(order._id))}>
@@ -195,21 +194,25 @@ function OrderDetail() {
           </section>
         </div>
 
-        <section aria-labelledby="action-title" className={cx(panelClass, "lg:sticky lg:top-6")}>
-          <h2 id="action-title" className="mb-3 text-lg font-bold text-ink">
-            จัดการออเดอร์
-          </h2>
-          {/* Keyed by status so a half-finished cancel confirmation does not carry over to the next step. */}
-          <ActionPanel
-            key={order.status}
-            order={order}
-            queue={queue}
-            now={now}
-            focusCode={Boolean(location.state?.focusCode)}
-            handedOver={handedOver}
-            onHandedOver={() => setHandedOver(true)}
-          />
-        </section>
+        {/* Code and actions come first on phones: that is what staff need at the counter. */}
+        <div className="space-y-4 max-lg:order-first lg:sticky lg:top-6">
+          <ReceiveCodeCard code={queue.receive_code} status={order.status} />
+          <section aria-labelledby="action-title" className={panelClass}>
+            <h2 id="action-title" className="mb-3 text-lg font-bold text-ink">
+              จัดการออเดอร์
+            </h2>
+            {/* Keyed by status so a half-finished cancel confirmation does not carry over to the next step. */}
+            <ActionPanel
+              key={order.status}
+              order={order}
+              queue={queue}
+              now={now}
+              focusCode={Boolean(location.state?.focusCode)}
+              handedOver={handedOver}
+              onHandedOver={() => setHandedOver(true)}
+            />
+          </section>
+        </div>
       </div>
     </div>
   );

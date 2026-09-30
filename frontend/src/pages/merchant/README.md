@@ -17,7 +17,7 @@
 | `/merchant` | – | redirect ไป `/merchant/dashboard` |
 | `/merchant/dashboard` | `Dashboard.jsx` | สรุปวันนี้: ออเดอร์, ยอดขาย, คิวที่กำลังทำ, รอรับ, เมนูขายดี, ออเดอร์ล่าสุด, สวิตช์เปิด/ปิดร้าน |
 | `/merchant/orders` | `Orders.jsx` | กระดานคิว 4 คอลัมน์ (รอรับ / กำลังทำ / พร้อมรับ / เสร็จแล้ว) กดเลื่อนสถานะได้ ค้นหาได้ |
-| `/merchant/orders/:id` | `OrderDetail.jsx` | รายละเอียดออเดอร์ + timeline + ยืนยันรหัส 4 หลัก + ยกเลิก (`:id` = `order_number` เช่น `MQ2110`) |
+| `/merchant/orders/:id` | `OrderDetail.jsx` | รายละเอียดออเดอร์ + รหัสรับอาหารของลูกค้า (ตัวใหญ่) + timeline + ยืนยันรหัส 4 หลัก + ยกเลิก (`:id` = `order_number` เช่น `MQ2110`) |
 | `/merchant/menu` | `Menu.jsx` | รายการเมนู ค้นหา กรองหมวด/สถานะ สลับ "มีขาย/หมด" ได้ทันที |
 | `/merchant/menu/new` | `AddMenu.jsx` | ฟอร์มเพิ่มเมนู |
 | `/merchant/menu/:id/edit` | `EditMenu.jsx` | แก้ไขเมนู (ฟอร์มเดียวกับ AddMenu) + ลบเมนู |
@@ -49,6 +49,7 @@ src/features/merchant/     logic และ component เฉพาะฝั่ง
     ├── order-board.jsx        กระดานคิว (หลายคอลัมน์ / แท็บ)
     ├── order-card.jsx         การ์ดออเดอร์บนกระดาน
     ├── order-timeline.jsx     timeline สถานะในหน้ารายละเอียด
+    ├── receive-code-card.jsx  การ์ดแสดงรหัสรับอาหารของลูกค้า
     ├── receive-code-form.jsx  ช่องกรอกรหัส 4 หลัก
     ├── menu-form.jsx          ฟอร์มเพิ่ม/แก้ไขเมนู
     ├── menu-row.jsx           การ์ดเมนู + สวิตช์มีขาย
