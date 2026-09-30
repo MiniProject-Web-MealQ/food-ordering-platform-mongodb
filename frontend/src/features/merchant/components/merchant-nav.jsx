@@ -6,6 +6,7 @@ import { cx } from "@/lib/cx";
 import { isMerchantNavActive, MERCHANT_NAV_ITEMS } from "../nav-items";
 import { pendingCount } from "../orders";
 import { useMerchant } from "../store";
+import { useMerchantActions } from "../use-merchant-actions";
 import { CountBubble, StoreStatusPill } from "./status-badge";
 
 function navLabel(item, pending) {
@@ -18,7 +19,8 @@ function navLabel(item, pending) {
  */
 export function MerchantSidebar() {
   const { pathname } = useLocation();
-  const { state, dispatch } = useMerchant();
+  const { state } = useMerchant();
+  const { logout } = useMerchantActions();
   const pending = pendingCount(state);
 
   return (
@@ -71,7 +73,7 @@ export function MerchantSidebar() {
       <div className="border-t border-haze p-3 xl:p-4">
         <button
           type="button"
-          onClick={() => dispatch({ type: "session/logout" })}
+          onClick={logout}
           className={cx(
             "flex w-full flex-col items-center gap-1 rounded-2xl px-2 py-3 text-xs font-semibold text-ink-soft transition-colors hover:bg-cream hover:text-ink xl:flex-row xl:gap-3 xl:px-4 xl:text-sm",
             focusRing,

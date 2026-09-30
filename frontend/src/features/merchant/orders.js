@@ -35,10 +35,6 @@ export function pendingCount(state) {
   return state.orders.filter((o) => o.status === "pending").length;
 }
 
-export function isQueueFull(state) {
-  return inKitchenCount(state) >= state.store.queue.max_queue;
-}
-
 /** Numbers for the dashboard. Revenue counts every paid order that was not cancelled. */
 export function todaySummary(state, now) {
   const today = todaysOrders(state, now);

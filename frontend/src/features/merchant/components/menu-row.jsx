@@ -4,12 +4,14 @@ import { ImagePlaceholder } from "@/components/ui/image-placeholder";
 import { focusRing } from "@/components/ui/styles";
 import { ToggleSwitch } from "@/features/customer/components/toggle-switch";
 import { cx } from "@/lib/cx";
+import { categoryLabel } from "../constants";
 import { formatBaht } from "../format";
 
-export function MenuRow({ menu, onToggle }) {
+export function MenuRow({ menu, busy = false, onToggle }) {
   return (
     <article
       aria-labelledby={`menu-${menu._id}-name`}
+      aria-busy={busy}
       className={cx("flex gap-3 rounded-3xl bg-white p-3 ring-1 ring-haze", !menu.is_available && "bg-cream")}
     >
       {menu.image ? (
@@ -25,7 +27,7 @@ export function MenuRow({ menu, onToggle }) {
               {menu.name}
             </h3>
             <p className="truncate text-xs text-ink-soft">
-              {menu.category} · ทำ ~{menu.cook_time} นาที · ขายแล้ว {menu.sold_quantity.toLocaleString("th-TH")}
+              {categoryLabel(menu.category)} · ทำ ~{menu.cook_time} นาที · ขายแล้ว {menu.sold_quantity.toLocaleString("th-TH")}
             </p>
           </div>
           <Link
@@ -53,7 +55,9 @@ export function MenuRow({ menu, onToggle }) {
                 </span>
               }
               checked={menu.is_available}
-              onChange={(checked) => onToggle(menu, checked)}
+              onChange={(checked) => {
+                if (!busy) onToggle(menu, checked);
+              }}
             />
           </div>
         </div>

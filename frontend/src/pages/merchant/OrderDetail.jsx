@@ -11,7 +11,8 @@ import { OrderStatusBadge } from "@/features/merchant/components/status-badge";
 import { formatBaht, formatClock, formatElapsed, formatQueue, paymentLabel } from "@/features/merchant/format";
 import { findOrder, queueFor } from "@/features/merchant/orders";
 import { canCancel, nextStep } from "@/features/merchant/status";
-import { actions, useMerchant } from "@/features/merchant/store";
+import { useMerchant } from "@/features/merchant/store";
+import { useMerchantActions } from "@/features/merchant/use-merchant-actions";
 import { pageClass, panelClass } from "@/features/merchant/styles";
 import { useNow } from "@/features/merchant/use-now";
 import { cx } from "@/lib/cx";
@@ -26,17 +27,25 @@ function SummaryRow({ label, value, strong = false }) {
   );
 }
 
-function CancelPanel({ queueLabel, onConfirm, onBack }) {
+function CancelPanel({ queueLabel, busy, onConfirm, onBack }) {
   return (
     <div role="group" aria-labelledby="cancel-title" className="space-y-3 rounded-2xl bg-alert/10 p-4">
       <p id="cancel-title" className="font-semibold text-danger">
         ยกเลิกคิว {queueLabel}?
       </p>
-      {/* MOCK: refunds are not in the API yet; the copy describes the intended behaviour. */}
-      <p className="text-sm text-ink">ลูกค้าจะได้รับแจ้งเตือนและได้เงินคืนเต็มจำนวน ยกเลิกแล้วย้อนกลับไม่ได้</p>
+      {/* TODO(api): there is no refund in the API yet, so the copy says it has to be done by hand. */}
+      <p className="text-sm text-ink">
+        ยกเลิกแล้วย้อนกลับไม่ได้ ระบบยังไม่คืนเงินให้อัตโนมัติ ต้องคืนเงินให้ลูกค้าเอง
+      </p>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={onConfirm} className={buttonClasses({ variant: "danger-outline", size: "md" })}>
-          ยืนยันยกเลิก
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={busy}
+          aria-busy={busy}
+          className={buttonClasses({ variant: "danger-outline", size: "md" })}
+        >
+          {busy ? "กำลังยกเลิก…" : "ยืนยันยกเลิก"}
         </button>
         <button type="button" onClick={onBack} className={buttonClasses({ variant: "cocoa-outline", size: "md" })}>
           ไม่ยกเลิก
@@ -47,17 +56,28 @@ function CancelPanel({ queueLabel, onConfirm, onBack }) {
 }
 
 function ActionPanel({ order, queue, now, focusCode, handedOver, onHandedOver }) {
-  const { dispatch } = useMerchant();
+  const actions = useMerchantActions();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const step = nextStep(order.status);
   const queueLabel = formatQueue(queue.queue_number);
+
+  async function run(request) {
+    setBusy(true);
+    setError("");
+    const result = await request();
+    setBusy(false);
+    if (!result.ok) setError(result.error.message);
+    return result;
+  }
 
   if (order.status === "completed") {
     return (
       <div className="space-y-4">
         {handedOver ? (
           <Alert tone="success" title={`ส่งอาหารคิว ${queueLabel} เรียบร้อย`}>
-            ยอดขายและจำนวนที่ขายได้อัปเดตแล้ว
+            บันทึกลงระบบแล้ว ลูกค้าเห็นสถานะ “รับอาหารแล้ว” ในแอป
           </Alert>
         ) : (
           <p className="text-sm text-ink">ลูกค้ารับอาหารแล้วเมื่อ {formatClock(order.receive_time)}</p>
@@ -84,6 +104,7 @@ function ActionPanel({ order, queue, now, focusCode, handedOver, onHandedOver })
 
   return (
     <div className="space-y-4">
+      {error && <Alert tone="error" title="บันทึกไม่สำเร็จ">{error}</Alert>}
       {order.status === "ready" ? (
         <>
           <p className="text-sm text-ink-soft">
@@ -92,15 +113,16 @@ function ActionPanel({ order, queue, now, focusCode, handedOver, onHandedOver })
           <ReceiveCodeForm
             expectedCode={queue.receive_code}
             autoFocus={focusCode}
-            onConfirm={() => {
-              dispatch(actions.complete(order._id));
-              onHandedOver();
+            onConfirm={async () => {
+              const result = await actions.complete(order);
+              if (result.ok) onHandedOver();
+              return result;
             }}
           />
         </>
       ) : (
-        <Button variant="cocoa" fullWidth onClick={() => dispatch(actions.advance(order._id))}>
-          {step.label}
+        <Button variant="cocoa" fullWidth disabled={busy} aria-busy={busy} onClick={() => run(() => actions.advance(order))}>
+          {busy && !confirmingCancel ? "กำลังบันทึก…" : step.label}
         </Button>
       )}
 
@@ -108,10 +130,8 @@ function ActionPanel({ order, queue, now, focusCode, handedOver, onHandedOver })
         (confirmingCancel ? (
           <CancelPanel
             queueLabel={queueLabel}
-            onConfirm={() => {
-              dispatch(actions.cancel(order._id));
-              setConfirmingCancel(false);
-            }}
+            busy={busy}
+            onConfirm={() => run(() => actions.cancel(order))}
             onBack={() => setConfirmingCancel(false)}
           />
         ) : (

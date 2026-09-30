@@ -30,7 +30,7 @@ function timing(order, queue, now) {
 
 const LATE_LABEL = { pending: "รอนานแล้ว", ready: "ลูกค้ายังไม่มารับ" };
 
-export function OrderCard({ order, queue, now, onAdvance }) {
+export function OrderCard({ order, queue, now, busy = false, onAdvance }) {
   const step = nextStep(order.status);
   const { text, late } = timing(order, queue, now);
   const detailPath = `/merchant/orders/${order.order_number}`;
@@ -89,9 +89,11 @@ export function OrderCard({ order, queue, now, onAdvance }) {
         <button
           type="button"
           onClick={() => onAdvance(order, step)}
+          disabled={busy}
+          aria-busy={busy}
           className={cx(buttonClasses({ variant: "cocoa", size: "md", fullWidth: true }), "mt-3 whitespace-normal")}
         >
-          {step.label}
+          {busy ? "กำลังบันทึก…" : step.label}
           <span className="sr-only"> คิว {queueLabel}</span>
         </button>
       )}

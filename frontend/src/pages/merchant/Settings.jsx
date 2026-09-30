@@ -1,4 +1,4 @@
-import { LogOut, RotateCcw } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -6,31 +6,28 @@ import { buttonClasses } from "@/components/ui/styles";
 import { TextField } from "@/components/ui/text-field";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { StoreOpenCard } from "@/features/merchant/components/store-open-card";
-import { inKitchenCount } from "@/features/merchant/orders";
-import { actions, useMerchant } from "@/features/merchant/store";
+import { useMerchant } from "@/features/merchant/store";
 import { fieldClass, pageClass, panelClass } from "@/features/merchant/styles";
+import { useMerchantActions } from "@/features/merchant/use-merchant-actions";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
 
+/** Field order, used to move focus to the first invalid field on submit. */
 const FIELD_IDS = {
   name: "store-name",
   phone: "store-phone",
-  address: "store-address",
   description: "store-description",
   open_time: "store-open-time",
   close_time: "store-close-time",
-  max_queue: "store-max-queue",
 };
 
 function storeToValues(store) {
   return {
     name: store.name,
     phone: store.phone ?? "",
-    address: store.address?.detail ?? "",
     description: store.description ?? "",
     open_time: store.opening_hours.open_time,
     close_time: store.opening_hours.close_time,
-    max_queue: String(store.queue.max_queue),
   };
 }
 
@@ -39,13 +36,10 @@ function validate(values) {
   if (!values.name.trim()) errors.name = "กรอกชื่อร้าน";
   else if (values.name.trim().length > 60) errors.name = "ชื่อร้านยาวได้ไม่เกิน 60 ตัวอักษร";
   if (!/^0\d{8,9}$/.test(values.phone.replace(/[\s-]/g, ""))) errors.phone = "เบอร์โทรต้องขึ้นต้นด้วย 0 และมี 9–10 หลัก";
-  if (!values.address.trim()) errors.address = "กรอกจุดรับอาหาร";
   if (values.description.trim().length > 200) errors.description = "คำอธิบายยาวได้ไม่เกิน 200 ตัวอักษร";
   if (!values.open_time) errors.open_time = "เลือกเวลาเปิด";
   if (!values.close_time) errors.close_time = "เลือกเวลาปิด";
   else if (values.open_time && values.close_time <= values.open_time) errors.close_time = "เวลาปิดต้องหลังเวลาเปิด";
-  const maxQueue = Number(values.max_queue);
-  if (!/^\d+$/.test(values.max_queue) || maxQueue < 1 || maxQueue > 200) errors.max_queue = "จำนวนคิวสูงสุดต้องเป็น 1–200";
   return errors;
 }
 
@@ -74,44 +68,44 @@ function TimeField({ id, label, value, error, onChange }) {
 }
 
 function StoreInfoForm() {
-  const { state, dispatch } = useMerchant();
+  const { state } = useMerchant();
+  const { updateStore } = useMerchantActions();
   const [values, setValues] = useState(() => storeToValues(state.store));
   const [submitted, setSubmitted] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState(null);
 
   const errors = validate(values);
   const shown = submitted ? errors : {};
   const errorCount = Object.keys(errors).length;
-  const inKitchen = inKitchenCount(state);
+  const pickupPoint = state.store.address?.detail;
 
   function set(field) {
     return (event) => {
       setValues((current) => ({ ...current, [field]: event.target.value }));
-      setSaved(false);
+      setResult(null);
     };
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (saving) return;
     setSubmitted(true);
     if (errorCount > 0) {
       const first = Object.keys(FIELD_IDS).find((field) => errors[field]);
       document.getElementById(FIELD_IDS[first])?.focus();
       return;
     }
-    dispatch({
-      type: "store/update",
-      changes: {
-        name: values.name.trim(),
-        phone: values.phone.trim(),
-        address: { ...state.store.address, detail: values.address.trim() },
-        description: values.description.trim(),
-        opening_hours: { open_time: values.open_time, close_time: values.close_time },
-        queue: { ...state.store.queue, max_queue: Number(values.max_queue) },
-      },
+    setSaving(true);
+    const saved = await updateStore({
+      name: values.name.trim(),
+      phone: values.phone.trim(),
+      description: values.description.trim(),
+      opening_hours: { open_time: values.open_time, close_time: values.close_time },
     });
-    setSaved(true);
-    setSubmitted(false);
+    setSaving(false);
+    setResult(saved);
+    if (saved.ok) setSubmitted(false);
   }
 
   return (
@@ -122,28 +116,17 @@ function StoreInfoForm() {
         </h2>
         {submitted && errorCount > 0 && <Alert tone="error" title={`ยังบันทึกไม่ได้ มี ${errorCount} ช่องที่ต้องแก้`} />}
         <TextField id={FIELD_IDS.name} label="ชื่อร้าน" value={values.name} error={shown.name} onChange={set("name")} required />
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextField
-            id={FIELD_IDS.phone}
-            label="เบอร์โทรร้าน"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={values.phone}
-            error={shown.phone}
-            onChange={set("phone")}
-            required
-          />
-          <TextField
-            id={FIELD_IDS.address}
-            label="จุดรับอาหาร"
-            placeholder="เช่น อาคาร 12 ชั้น 1 ช่อง 4"
-            value={values.address}
-            error={shown.address}
-            onChange={set("address")}
-            required
-          />
-        </div>
+        <TextField
+          id={FIELD_IDS.phone}
+          label="เบอร์โทรร้าน"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={values.phone}
+          error={shown.phone}
+          onChange={set("phone")}
+          required
+        />
         <div className="space-y-2">
           <label htmlFor={FIELD_IDS.description} className="block text-sm font-semibold text-ink">
             คำอธิบายร้าน <span className="font-normal text-ink-soft">(ไม่บังคับ)</span>
@@ -163,32 +146,32 @@ function StoreInfoForm() {
             </p>
           )}
         </div>
+        {/* TODO(api): PATCH /merchant/store does not accept address yet, so it is shown read-only. */}
+        <div className="rounded-2xl bg-cream px-4 py-3 text-sm">
+          <p className="font-semibold text-ink">จุดรับอาหาร</p>
+          <p className="text-ink-soft">{pickupPoint || "ยังไม่ได้ตั้ง"}</p>
+          <p className="mt-1 text-xs text-ink-soft">ยังแก้จากหน้านี้ไม่ได้ ติดต่อผู้ดูแลระบบหากต้องการเปลี่ยน</p>
+        </div>
       </section>
 
       <section aria-labelledby="store-hours-title" className={cx(panelClass, "space-y-5")}>
         <h2 id="store-hours-title" className="text-lg font-bold text-ink">
-          เวลาเปิด-ปิด และคิว
+          เวลาเปิด-ปิด
         </h2>
         <div className="grid gap-5 sm:grid-cols-2">
           <TimeField id={FIELD_IDS.open_time} label="เวลาเปิด" value={values.open_time} error={shown.open_time} onChange={set("open_time")} />
           <TimeField id={FIELD_IDS.close_time} label="เวลาปิด" value={values.close_time} error={shown.close_time} onChange={set("close_time")} />
         </div>
-        <TextField
-          id={FIELD_IDS.max_queue}
-          label="จำนวนคิวสูงสุด"
-          inputMode="numeric"
-          value={values.max_queue}
-          error={shown.max_queue}
-          onChange={set("max_queue")}
-          hint={`ลูกค้าจะสั่งไม่ได้เมื่อคิวในครัวครบจำนวนนี้ (ตอนนี้มี ${inKitchen} คิว)`}
-          trailing={<span className="pr-4 text-sm font-medium text-ink-soft">คิว</span>}
-          required
-        />
       </section>
 
-      {saved && <Alert tone="success" title="บันทึกข้อมูลร้านแล้ว" />}
-      <Button type="submit" variant="cocoa" className="w-full sm:w-auto">
-        บันทึกการตั้งค่า
+      {result?.ok && <Alert tone="success" title="บันทึกข้อมูลร้านแล้ว" />}
+      {result && !result.ok && (
+        <Alert tone="error" title="บันทึกไม่สำเร็จ">
+          {result.error.message}
+        </Alert>
+      )}
+      <Button type="submit" variant="cocoa" className="w-full sm:w-auto" disabled={saving} aria-busy={saving}>
+        {saving ? "กำลังบันทึก…" : "บันทึกการตั้งค่า"}
       </Button>
     </form>
   );
@@ -196,22 +179,14 @@ function StoreInfoForm() {
 
 function Settings() {
   usePageTitle("ตั้งค่าร้าน");
-  const { state, dispatch } = useMerchant();
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [formKey, setFormKey] = useState(0);
-
-  function resetDemo() {
-    dispatch(actions.resetDemo());
-    setConfirmReset(false);
-    // Remount the form so it shows the restored store details.
-    setFormKey((key) => key + 1);
-  }
+  const { state } = useMerchant();
+  const { logout } = useMerchantActions();
 
   return (
     <div className={pageClass}>
       <PageHeader title="ตั้งค่าร้าน" subtitle={state.store.name} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
-        <StoreInfoForm key={formKey} />
+        <StoreInfoForm />
 
         <div className="space-y-4 lg:sticky lg:top-6">
           <StoreOpenCard id="settings-store-open" />
@@ -223,41 +198,10 @@ function Settings() {
             <p className="text-sm text-ink-soft">
               เข้าสู่ระบบเป็น <span className="font-semibold break-all text-ink">{state.session.email}</span>
             </p>
-            <button
-              type="button"
-              onClick={() => dispatch({ type: "session/logout" })}
-              className={buttonClasses({ variant: "cocoa-outline", size: "md", fullWidth: true })}
-            >
+            <button type="button" onClick={logout} className={buttonClasses({ variant: "cocoa-outline", size: "md", fullWidth: true })}>
               <LogOut aria-hidden="true" className="size-4" />
               ออกจากระบบ
             </button>
-          </section>
-
-          {/* MOCK: only useful while the data lives in localStorage. */}
-          <section aria-labelledby="demo-title" className={cx(panelClass, "space-y-3")}>
-            <h2 id="demo-title" className="text-lg font-bold text-ink">
-              ข้อมูลจำลอง
-            </h2>
-            <p className="text-sm text-ink-soft">ล้างออเดอร์ เมนู และข้อมูลร้านกลับเป็นค่าเริ่มต้น (ยังอยู่ในระบบต่อ)</p>
-            {confirmReset ? (
-              <div role="group" aria-label="ยืนยันล้างข้อมูลจำลอง" className="flex flex-wrap gap-2">
-                <button type="button" onClick={resetDemo} className={buttonClasses({ variant: "danger-outline", size: "md" })}>
-                  ยืนยันล้างข้อมูล
-                </button>
-                <button type="button" onClick={() => setConfirmReset(false)} className={buttonClasses({ variant: "cocoa-outline", size: "md" })}>
-                  ไม่ล้าง
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmReset(true)}
-                className={buttonClasses({ variant: "danger-outline", size: "md", fullWidth: true })}
-              >
-                <RotateCcw aria-hidden="true" className="size-4" />
-                ล้างข้อมูลจำลอง
-              </button>
-            )}
           </section>
         </div>
       </div>

@@ -2,7 +2,6 @@
 
 export const MENU_LIMITS = {
   nameMax: 60,
-  categoryMax: 30,
   descriptionMax: 200,
   priceMax: 5000,
   cookTimeMax: 120,
@@ -36,9 +35,7 @@ export function validateMenu(values, menus, editingId = null) {
   else if (name.length > MENU_LIMITS.nameMax) errors.name = `ชื่อเมนูยาวได้ไม่เกิน ${MENU_LIMITS.nameMax} ตัวอักษร`;
   else if (menus.some((m) => m._id !== editingId && m.name.trim() === name)) errors.name = "มีเมนูชื่อนี้อยู่แล้ว";
 
-  const category = values.category.trim();
-  if (!category) errors.category = "เลือกหรือพิมพ์หมวดหมู่";
-  else if (category.length > MENU_LIMITS.categoryMax) errors.category = `หมวดหมู่ยาวได้ไม่เกิน ${MENU_LIMITS.categoryMax} ตัวอักษร`;
+  if (!values.category) errors.category = "เลือกหมวดหมู่";
 
   const price = Number(values.price);
   if (!values.price.trim()) errors.price = "กรอกราคา";
@@ -59,7 +56,7 @@ export function validateMenu(values, menus, editingId = null) {
 export function toMenuFields(values) {
   return {
     name: values.name.trim(),
-    category: values.category.trim(),
+    category: values.category,
     price: Number(values.price),
     cook_time: Number(values.cook_time),
     description: values.description.trim(),
@@ -72,8 +69,8 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_SIDE = 480;
 
 /**
- * MOCK: shrinks the picked photo to a small JPEG data URL so it fits in localStorage.
- * Replace with an upload endpoint that returns the stored image URL for Menu.image.
+ * Shrinks the picked photo to a small JPEG data URL, which is saved as-is in Menu.image.
+ * TODO(api): switch to an upload endpoint that returns an image URL once the backend has one.
  */
 export async function readMenuImage(file) {
   if (!file.type.startsWith("image/")) throw new Error("เลือกได้เฉพาะไฟล์รูปภาพ");

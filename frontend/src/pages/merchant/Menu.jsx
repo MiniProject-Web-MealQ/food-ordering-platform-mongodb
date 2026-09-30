@@ -9,7 +9,9 @@ import { MenuForm } from "@/features/merchant/components/menu-form";
 import { MenuRow } from "@/features/merchant/components/menu-row";
 import { MerchantDialog } from "@/features/merchant/components/merchant-dialog";
 import { emptyMenuValues, menuToValues } from "@/features/merchant/menu-form";
-import { actions, useMerchant } from "@/features/merchant/store";
+import { categoryLabel } from "@/features/merchant/constants";
+import { useMerchant } from "@/features/merchant/store";
+import { useMerchantActions } from "@/features/merchant/use-merchant-actions";
 import { fieldClass, pageClass, panelClass } from "@/features/merchant/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -46,7 +48,8 @@ function ChipGroup({ label, options, value, onChange }) {
  * (?new=1 or ?edit=<menu _id>), so the list keeps its filters and deep links still work.
  */
 function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
-  const { state, dispatch } = useMerchant();
+  const { state } = useMerchant();
+  const actions = useMerchantActions();
   const menu = mode === "edit" ? state.menus.find((m) => m._id === menuId) : null;
 
   if (mode === "edit" && !menu) {
@@ -75,9 +78,10 @@ function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
           menus={state.menus}
           submitLabel="บันทึกเมนู"
           onCancel={onClose}
-          onSubmit={(fields) => {
-            dispatch(actions.addMenu(fields));
-            onDone(`เพิ่มเมนู “${fields.name}” แล้ว`);
+          onSubmit={async (fields) => {
+            const result = await actions.addMenu(fields);
+            if (result.ok) onDone(`เพิ่มเมนู “${fields.name}” แล้ว`);
+            return result;
           }}
         />
       </MerchantDialog>
@@ -93,16 +97,18 @@ function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
         editingId={menu._id}
         submitLabel="บันทึกการแก้ไข"
         onCancel={onClose}
-        onSubmit={(fields) => {
-          dispatch({ type: "menu/update", menuId: menu._id, changes: fields });
-          onDone(`บันทึก “${fields.name}” แล้ว`);
+        onSubmit={async (fields) => {
+          const result = await actions.updateMenu(menu._id, fields);
+          if (result.ok) onDone(`บันทึก “${fields.name}” แล้ว`);
+          return result;
         }}
       />
       <DeleteMenu
         menu={menu}
-        onDelete={() => {
-          dispatch({ type: "menu/remove", menuId: menu._id });
-          onDone(`ลบ “${menu.name}” แล้ว`);
+        onDelete={async () => {
+          const result = await actions.removeMenu(menu._id);
+          if (result.ok) onDone(`ลบ “${menu.name}” แล้ว`);
+          return result;
         }}
       />
     </MerchantDialog>
@@ -110,14 +116,16 @@ function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
 }
 
 function Menu() {
-  const { state, dispatch } = useMerchant();
+  const { state } = useMerchant();
+  const { setMenuAvailable } = useMerchantActions();
+  const [busyId, setBusyId] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(ALL);
   const [availability, setAvailability] = useState(ALL);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(null);
 
   const editId = searchParams.get("edit");
   const dialogMode = searchParams.has("new") ? "new" : editId ? "edit" : null;
@@ -130,11 +138,13 @@ function Menu() {
   }
 
   function finishDialog(message) {
-    setNotice(message);
+    setNotice({ text: message });
     closeDialog();
   }
 
-  const menus = state.menus.toSorted((a, b) => a.category.localeCompare(b.category, "th") || a.name.localeCompare(b.name, "th"));
+  const menus = state.menus.toSorted(
+    (a, b) => categoryLabel(a.category).localeCompare(categoryLabel(b.category), "th") || a.name.localeCompare(b.name, "th"),
+  );
   const categories = [...new Set(menus.map((m) => m.category))];
   // A category that was renamed or emptied away falls back to "all" instead of showing nothing.
   const activeCategory = categories.includes(category) ? category : ALL;
@@ -148,9 +158,15 @@ function Menu() {
       (!q || m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q)),
   );
 
-  function toggle(menu, isAvailable) {
-    dispatch({ type: "menu/setAvailable", menuId: menu._id, isAvailable });
-    setNotice(isAvailable ? `เปิดขาย “${menu.name}” แล้ว` : `ปิดขาย “${menu.name}” แล้ว ลูกค้าจะเห็นว่าหมด`);
+  async function toggle(menu, isAvailable) {
+    setBusyId(menu._id);
+    const result = await setMenuAvailable(menu, isAvailable);
+    setBusyId(null);
+    if (!result.ok) {
+      setNotice({ text: `เปลี่ยนสถานะ “${menu.name}” ไม่สำเร็จ: ${result.error.message}`, error: true });
+      return;
+    }
+    setNotice({ text: isAvailable ? `เปิดขาย “${menu.name}” แล้ว` : `ปิดขาย “${menu.name}” แล้ว ลูกค้าจะเห็นว่าหมด` });
   }
 
   function clearFilters() {
@@ -198,21 +214,28 @@ function Menu() {
           onChange={setCategory}
           options={[
             { value: ALL, label: "ทุกหมวด", count: menus.length },
-            ...categories.map((c) => ({ value: c, label: c, count: menus.filter((m) => m.category === c).length })),
+            ...categories.map((c) => ({ value: c, label: categoryLabel(c), count: menus.filter((m) => m.category === c).length })),
           ]}
         />
         <ChipGroup label="กรองตามสถานะ" value={availability} onChange={setAvailability} options={AVAILABILITY} />
       </div>
 
-      <p role="status" className={cx("text-sm", notice ? "rounded-2xl bg-mint px-4 py-2 font-medium text-ink" : "sr-only")}>
-        {notice}
+      <p
+        role="status"
+        className={cx(
+          "text-sm",
+          !notice && "sr-only",
+          notice && (notice.error ? "rounded-2xl bg-alert/10 px-4 py-2 font-medium text-danger" : "rounded-2xl bg-mint px-4 py-2 font-medium text-ink"),
+        )}
+      >
+        {notice?.text}
       </p>
 
       {shown.length > 0 ? (
         <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {shown.map((menu) => (
             <li key={menu._id}>
-              <MenuRow menu={menu} onToggle={toggle} />
+              <MenuRow menu={menu} busy={busyId === menu._id} onToggle={toggle} />
             </li>
           ))}
         </ul>

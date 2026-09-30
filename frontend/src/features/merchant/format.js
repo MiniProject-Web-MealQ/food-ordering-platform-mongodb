@@ -1,4 +1,4 @@
-import { PAYMENT_METHOD_LABEL } from "./mock-data";
+import { PAYMENT_METHOD_LABEL } from "./constants";
 
 export { formatBaht, formatClock } from "@/features/customer/format";
 

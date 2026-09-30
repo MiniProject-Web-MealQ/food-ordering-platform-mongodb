@@ -3,13 +3,12 @@ import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
-import { chipClasses } from "@/features/customer/styles";
 import { buttonClasses } from "@/components/ui/styles";
 import { TextField } from "@/components/ui/text-field";
 import { ToggleSwitch } from "@/features/customer/components/toggle-switch";
 import { cx } from "@/lib/cx";
 import { MENU_LIMITS, readMenuImage, toMenuFields, validateMenu } from "../menu-form";
-import { MENU_CATEGORY_SUGGESTIONS } from "../mock-data";
+import { MENU_CATEGORIES } from "../constants";
 import { fieldClass, panelClass } from "../styles";
 
 /** Field order, used to move focus to the first invalid field on submit. */
@@ -19,17 +18,25 @@ function Unit({ children }) {
   return <span className="pr-4 text-sm font-medium text-ink-soft">{children}</span>;
 }
 
-/** Shared by AddMenu and EditMenu. `onSubmit` receives Menu model fields (snake_case, numbers parsed). */
+/**
+ * Shared by the add and edit pop-ups. `onSubmit` receives Menu model fields (snake_case, numbers parsed)
+ * and resolves to the API result; a failed request is shown above the form.
+ */
 export function MenuForm({ initialValues, menus, editingId = null, submitLabel, onSubmit, onCancel }) {
   const [values, setValues] = useState(initialValues);
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [imageError, setImageError] = useState("");
   const [imageLoading, setImageLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const errors = validateMenu(values, menus, editingId);
   const errorCount = Object.keys(errors).length;
-  const categories = [...new Set([...menus.map((m) => m.category), ...MENU_CATEGORY_SUGGESTIONS])];
+  // Keep a category this app does not know (set elsewhere) selectable instead of silently changing it.
+  const categoryOptions = MENU_CATEGORIES.some((c) => c.value === initialValues.category) || !initialValues.category
+    ? MENU_CATEGORIES
+    : [...MENU_CATEGORIES, { value: initialValues.category, label: initialValues.category }];
 
   function errorFor(field) {
     return submitted || touched[field] ? errors[field] : undefined;
@@ -65,15 +72,23 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (saving) return;
     setSubmitted(true);
     if (errorCount > 0) {
       const first = Object.keys(FIELD_IDS).find((field) => errors[field]);
       document.getElementById(FIELD_IDS[first])?.focus();
       return;
     }
-    onSubmit(toMenuFields(values));
+    setSaving(true);
+    setSaveError("");
+    const result = await onSubmit(toMenuFields(values));
+    // On success the pop-up closes and this form unmounts, so only failures update state.
+    if (result && !result.ok) {
+      setSaving(false);
+      setSaveError(result.error.message);
+    }
   }
 
   const descriptionError = errorFor("description");
@@ -84,36 +99,43 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
         {submitted && errorCount > 0 && (
           <Alert tone="error" title={`ยังบันทึกไม่ได้ มี ${errorCount} ช่องที่ต้องแก้`} />
         )}
+        {saveError && <Alert tone="error" title="บันทึกไม่สำเร็จ">{saveError}</Alert>}
 
         <TextField label="ชื่อเมนู" placeholder="เช่น ข้าวกะเพราหมูกรอบ" required {...fieldProps("name")} />
 
         <div className="space-y-2">
-          <TextField
-            label="หมวดหมู่"
-            placeholder="เลือกด้านล่างหรือพิมพ์หมวดใหม่"
-            list="menu-category-options"
-            autoComplete="off"
+          <label htmlFor={FIELD_IDS.category} className="block text-sm font-semibold text-ink">
+            หมวดหมู่
+          </label>
+          <select
+            id={FIELD_IDS.category}
+            name="category"
             required
-            {...fieldProps("category")}
-          />
-          <datalist id="menu-category-options">
-            {categories.map((category) => (
-              <option key={category} value={category} />
+            value={values.category}
+            onChange={(e) => set("category", e.target.value)}
+            onBlur={() => setTouched((current) => ({ ...current, category: true }))}
+            aria-invalid={Boolean(errorFor("category")) || undefined}
+            aria-describedby={errorFor("category") ? "menu-category-error" : "menu-category-hint"}
+            className={cx(fieldClass, "h-14 rounded-full px-6")}
+          >
+            <option value="" disabled>
+              เลือกหมวดหมู่
+            </option>
+            {categoryOptions.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
             ))}
-          </datalist>
-          <div role="group" aria-label="เลือกหมวดหมู่ที่มีอยู่" className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                aria-pressed={values.category === category}
-                onClick={() => set("category", category)}
-                className={cx(chipClasses({ selected: values.category === category }), "h-8 px-3 text-xs")}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+          </select>
+          {errorFor("category") ? (
+            <p id="menu-category-error" className="px-1 text-sm font-medium text-danger">
+              {errorFor("category")}
+            </p>
+          ) : (
+            <p id="menu-category-hint" className="px-1 text-sm text-ink-soft">
+              ลูกค้าใช้หมวดนี้กรองเมนูในแอป
+            </p>
+          )}
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -230,8 +252,8 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
         </div>
 
         <div className="flex flex-col gap-2">
-          <Button type="submit" variant="cocoa" fullWidth disabled={imageLoading}>
-            {submitLabel}
+          <Button type="submit" variant="cocoa" fullWidth disabled={imageLoading || saving} aria-busy={saving}>
+            {saving ? "กำลังบันทึก…" : submitLabel}
           </Button>
           <Button variant="cocoa-outline" fullWidth onClick={onCancel}>
             ยกเลิก

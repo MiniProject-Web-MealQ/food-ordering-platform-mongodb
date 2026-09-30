@@ -9,19 +9,27 @@ import { cx } from "@/lib/cx";
 export function ReceiveCodeForm({ expectedCode, autoFocus = false, onConfirm }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (saving) return;
     if (!/^\d{4}$/.test(code)) {
       setError("กรอกรหัสให้ครบ 4 หลัก");
       return;
     }
-    // MOCK: replace with a server-side check (e.g. POST /merchant/orders/:id/receive { receiveCode }).
+    // TODO(api): the backend should check the code (e.g. POST /merchant/orders/:id/receive { receiveCode }).
     if (code !== expectedCode) {
       setError("รหัสไม่ตรงกับออเดอร์นี้ ให้ลูกค้าเปิดรหัสในแอปอีกครั้ง");
       return;
     }
-    onConfirm();
+    setSaving(true);
+    const result = await onConfirm();
+    // On success the order becomes "completed" and this form unmounts.
+    if (!result.ok) {
+      setSaving(false);
+      setError(`บันทึกไม่สำเร็จ: ${result.error.message}`);
+    }
   }
 
   return (
@@ -56,8 +64,8 @@ export function ReceiveCodeForm({ expectedCode, autoFocus = false, onConfirm }) 
           {error}
         </p>
       )}
-      <Button type="submit" variant="cocoa" fullWidth>
-        ยืนยันรับอาหาร
+      <Button type="submit" variant="cocoa" fullWidth disabled={saving} aria-busy={saving}>
+        {saving ? "กำลังบันทึก…" : "ยืนยันรับอาหาร"}
       </Button>
     </form>
   );

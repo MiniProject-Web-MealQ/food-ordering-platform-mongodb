@@ -8,7 +8,7 @@ import { OrderCard } from "./order-card";
  * Queue board. lg+: all four status columns side by side.
  * Below lg: one column at a time, picked with tabs that show each column's count.
  */
-export function OrderBoard({ entries, now, onAdvance }) {
+export function OrderBoard({ entries, now, busyId, onAdvance }) {
   const [tab, setTab] = useState(BOARD_COLUMNS[0].id);
 
   const columns = BOARD_COLUMNS.map((column) => {
@@ -60,7 +60,7 @@ export function OrderBoard({ entries, now, onAdvance }) {
               <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 {column.entries.map(({ order, queue }) => (
                   <li key={order._id}>
-                    <OrderCard order={order} queue={queue} now={now} onAdvance={onAdvance} />
+                    <OrderCard order={order} queue={queue} now={now} busy={busyId === order._id} onAdvance={onAdvance} />
                   </li>
                 ))}
               </ul>

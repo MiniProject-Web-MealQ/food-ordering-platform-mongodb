@@ -14,3 +14,6 @@ export const deleteMenu = (id) => deleteJson(`/merchant/menu/${encodeURIComponen
 
 export const getStore = () => getJson("/merchant/store");
 export const updateStore = (input) => patchJson("/merchant/store", input);
+
+export const getSession = () => getJson("/auth/me");
+export const logout = () => postJson("/auth/logout", {});

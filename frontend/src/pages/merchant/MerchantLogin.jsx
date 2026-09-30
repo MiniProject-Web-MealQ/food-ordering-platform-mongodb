@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Logo, LogoMark } from "@/components/brand/logo";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PasswordField } from "@/components/ui/password-field";
 import { focusRing, textLinkClass } from "@/components/ui/styles";
 import { TextField } from "@/components/ui/text-field";
-import { DEMO_ACCOUNT } from "@/features/merchant/mock-data";
-import { readSession, signIn } from "@/features/merchant/store";
+import { login } from "@/features/auth/api";
+import { getSession, logout } from "@/features/merchant/api";
+import { SEED_MERCHANT } from "@/features/merchant/constants";
 import { usePageTitle } from "@/lib/use-page-title";
 
 const HIGHLIGHTS = [
@@ -64,34 +65,59 @@ function MerchantLogin() {
   usePageTitle("เข้าสู่ระบบร้านค้า");
   const navigate = useNavigate();
   const location = useLocation();
-  const [alreadySignedIn] = useState(() => Boolean(readSession()));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [pending, setPending] = useState(false);
 
   const destination = location.state?.from ?? "/merchant/dashboard";
 
-  if (alreadySignedIn) return <Navigate to={destination} replace />;
+  // Already signed in as a merchant (cookie session): skip the form.
+  useEffect(() => {
+    let active = true;
+    getSession().then((result) => {
+      if (active && result.ok && result.data?.user?.role === "MERCHANT") navigate(destination, { replace: true });
+    });
+    return () => {
+      active = false;
+    };
+  }, [destination, navigate]);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (pending) return;
     if (!email.trim() || !password) {
       setError({ title: "กรอกอีเมลและรหัสผ่านให้ครบ" });
       return;
     }
-    // MOCK: replace with login() from features/auth/api.js using portal "MERCHANT".
-    const matches = email.trim().toLowerCase() === DEMO_ACCOUNT.email && password === DEMO_ACCOUNT.password;
-    if (!matches) {
-      setError({ title: "อีเมลหรือรหัสผ่านไม่ถูกต้อง", invalid: true });
+    setPending(true);
+    setError(null);
+    const result = await login({ email, password, rememberMe: true, portal: "MERCHANT" });
+    if (!result.ok) {
+      setPending(false);
+      const { code, message } = result.error;
+      const title =
+        code === "INVALID_CREDENTIALS"
+          ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+          : code === "ROLE_MISMATCH"
+            ? "บัญชีนี้เป็นบัญชีลูกค้า ใช้เข้าหน้าร้านค้าไม่ได้"
+            : message;
+      setError({ title, invalid: code === "INVALID_CREDENTIALS" || code === "ROLE_MISMATCH" });
       return;
     }
-    signIn({ email: DEMO_ACCOUNT.email, name: DEMO_ACCOUNT.name, signed_in_at: Date.now() });
+    if (result.data.role !== "MERCHANT") {
+      // The API let a customer in: close that session so the merchant pages do not pick it up.
+      await logout();
+      setPending(false);
+      setError({ title: "บัญชีนี้เป็นบัญชีลูกค้า ใช้เข้าหน้าร้านค้าไม่ได้", invalid: true });
+      return;
+    }
     navigate(destination, { replace: true });
   }
 
-  function fillDemo() {
-    setEmail(DEMO_ACCOUNT.email);
-    setPassword(DEMO_ACCOUNT.password);
+  function fillSeedAccount() {
+    setEmail(SEED_MERCHANT.email);
+    setPassword(SEED_MERCHANT.password);
     setError(null);
   }
 
@@ -134,28 +160,38 @@ function MerchantLogin() {
               invalid={error?.invalid}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <Button type="submit" variant="cocoa" fullWidth>
-              เข้าสู่ระบบ
+            <Button type="submit" variant="cocoa" fullWidth disabled={pending} aria-busy={pending}>
+              {pending ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}
             </Button>
           </form>
 
-          {/* MOCK: demo credentials; remove once merchant accounts come from the API. */}
-          <div className="rounded-3xl bg-cream p-4 text-sm text-ink-soft ring-1 ring-haze">
-            <p className="font-semibold text-ink">บัญชีทดลอง (ร้านป้าแดง)</p>
-            <p className="mt-1 break-all">
-              {DEMO_ACCOUNT.email} · {DEMO_ACCOUNT.password}
-            </p>
-            <button type="button" onClick={fillDemo} className={`mt-2 ${textLinkClass}`}>
-              กรอกให้อัตโนมัติ
-            </button>
-          </div>
+          {/* Dev builds only: the account `npm run seed` creates in backend/. */}
+          {import.meta.env.DEV && (
+            <div className="rounded-3xl bg-cream p-4 text-sm text-ink-soft ring-1 ring-haze">
+              <p className="font-semibold text-ink">บัญชีทดสอบ (หลังรัน npm run seed)</p>
+              <p className="mt-1 break-all">
+                {SEED_MERCHANT.email} · {SEED_MERCHANT.password}
+              </p>
+              <button type="button" onClick={fillSeedAccount} className={`mt-2 ${textLinkClass}`}>
+                กรอกให้อัตโนมัติ
+              </button>
+            </div>
+          )}
 
-          <p className="text-center text-sm text-ink-soft">
-            ไม่ใช่ร้านค้า?{" "}
-            <Link to="/login" className={textLinkClass}>
-              เข้าสู่ระบบลูกค้า
-            </Link>
-          </p>
+          <div className="space-y-2 text-center text-sm text-ink-soft">
+            <p>
+              ยังไม่มีบัญชีร้าน?{" "}
+              <Link to="/register?role=merchant" className={textLinkClass}>
+                สมัครเปิดร้าน
+              </Link>
+            </p>
+            <p>
+              ไม่ใช่ร้านค้า?{" "}
+              <Link to="/login" className={textLinkClass}>
+                เข้าสู่ระบบลูกค้า
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </main>
