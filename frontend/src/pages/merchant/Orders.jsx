@@ -1,11 +1,13 @@
-import { RefreshCw, Search } from "lucide-react";
+import { RefreshCw, ScanLine, Search } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { buttonClasses, textLinkClass } from "@/components/ui/styles";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { OrderBoard } from "@/features/merchant/components/order-board";
+import { ScanPickupDialog } from "@/features/merchant/components/scan-pickup-dialog";
 import { formatQueue } from "@/features/merchant/format";
 import { boardOrders, inKitchenCount, matchesOrderSearch, queueFor } from "@/features/merchant/orders";
+import { matchPickupScan, parsePickupQr } from "@/features/merchant/pickup-qr";
 import { ORDER_STATUS_LABEL } from "@/features/merchant/status";
 import { loadOrders, useMerchant } from "@/features/merchant/store";
 import { useMerchantActions } from "@/features/merchant/use-merchant-actions";
@@ -23,6 +25,8 @@ function Orders() {
   const [notice, setNotice] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const navigate = useNavigate();
 
   const all = boardOrders(state, now);
   const entries = all.filter((entry) => matchesOrderSearch(entry, query));
@@ -40,6 +44,16 @@ function Orders() {
     );
   }
 
+  /** Scanning at the counter: open the matching ready order with its code already filled in. */
+  function handleScan(text) {
+    const scan = parsePickupQr(text);
+    const { entry, message } = matchPickupScan(all, scan);
+    if (!entry) return { message };
+    setScanning(false);
+    navigate(`/merchant/orders/${entry.order.order_number}`, { state: { scannedCode: scan.code } });
+    return null;
+  }
+
   async function refresh() {
     setRefreshing(true);
     const action = await loadOrders();
@@ -54,16 +68,26 @@ function Orders() {
         title="กระดานคิว"
         subtitle={`อยู่ในครัว ${inKitchenCount(state)} คิว · ออเดอร์ใหม่เข้ามาเองอัตโนมัติ`}
         action={
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={refreshing}
-            aria-busy={refreshing}
-            className={cx(buttonClasses({ variant: "cocoa-outline", size: "sm" }), "mt-1 disabled:opacity-50")}
-          >
-            <RefreshCw aria-hidden="true" className={cx("size-4", refreshing && "animate-spin")} />
-            <span className="max-sm:sr-only">โหลดล่าสุด</span>
-          </button>
+          <div className="mt-1 flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={() => setScanning(true)}
+              className={buttonClasses({ variant: "cocoa", size: "sm" })}
+            >
+              <ScanLine aria-hidden="true" className="size-4" />
+              สแกนรับอาหาร
+            </button>
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={refreshing}
+              aria-busy={refreshing}
+              className={cx(buttonClasses({ variant: "cocoa-outline", size: "sm" }), "disabled:opacity-50")}
+            >
+              <RefreshCw aria-hidden="true" className={cx("size-4", refreshing && "animate-spin")} />
+              <span className="max-sm:sr-only">โหลดล่าสุด</span>
+            </button>
+          </div>
         }
       />
 
@@ -107,6 +131,14 @@ function Orders() {
         </p>
       ) : (
         <OrderBoard entries={entries} now={now} busyId={busyId} onAdvance={advance} />
+      )}
+
+      {scanning && (
+        <ScanPickupDialog
+          subtitle="สแกนแล้วจะเปิดออเดอร์ที่ตรงกับ QR ให้ยืนยัน"
+          onScan={handleScan}
+          onClose={() => setScanning(false)}
+        />
       )}
     </div>
   );

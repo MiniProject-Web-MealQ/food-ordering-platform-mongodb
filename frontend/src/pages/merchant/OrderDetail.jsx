@@ -55,7 +55,7 @@ function CancelPanel({ queueLabel, busy, onConfirm, onBack }) {
   );
 }
 
-function ActionPanel({ order, queue, now, focusCode, handedOver, onHandedOver }) {
+function ActionPanel({ order, queue, now, focusCode, scannedCode, handedOver, onHandedOver }) {
   const actions = useMerchantActions();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -112,6 +112,8 @@ function ActionPanel({ order, queue, now, focusCode, handedOver, onHandedOver })
           </p>
           <ReceiveCodeForm
             expectedCode={queue.receive_code}
+            orderNumber={order.order_number}
+            scannedCode={scannedCode}
             autoFocus={focusCode}
             onConfirm={async () => {
               const result = await actions.complete(order);
@@ -228,6 +230,7 @@ function OrderDetail() {
               queue={queue}
               now={now}
               focusCode={Boolean(location.state?.focusCode)}
+              scannedCode={location.state?.scannedCode ?? ""}
               handedOver={handedOver}
               onHandedOver={() => setHandedOver(true)}
             />
