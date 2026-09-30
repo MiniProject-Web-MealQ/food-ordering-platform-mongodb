@@ -137,6 +137,12 @@ function MerchantLogin() {
 
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {error && <Alert tone="error" title={error.title} />}
+            {!error && location.state?.reason === "session-lost" && (
+              <Alert tone="error" title="ต้องเข้าสู่ระบบร้านค้าอีกครั้ง">
+                เบราว์เซอร์นี้ถูก login เป็นบัญชีอื่น (เช่น บัญชีลูกค้า) หรือ session หมดอายุ
+                ถ้าจะลองคู่กับฝั่งลูกค้า ให้เปิดคนละเบราว์เซอร์ หรือใช้หน้าต่าง Incognito
+              </Alert>
+            )}
             <TextField
               id="merchant-email"
               name="email"

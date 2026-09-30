@@ -43,7 +43,7 @@ export function reducer(state, action) {
         queues: action.queues,
       };
     case "load/signedOut":
-      return { ...initialState, status: "signed-out" };
+      return { ...initialState, status: "signed-out", reason: action.reason ?? null };
     case "load/failed":
       return { ...state, status: "error", error: action.error };
     case "orders/loaded":
@@ -71,8 +71,18 @@ export function useMerchant() {
   return context;
 }
 
+/**
+ * 401 = no/expired session, 403 = the cookie now belongs to a non-merchant account
+ * (typically someone signed in as a customer in the same browser).
+ */
+export function isSessionLost(result) {
+  return !result.ok && (result.status === 401 || result.status === 403);
+}
+
+export const sessionLost = { type: "load/signedOut", reason: "session-lost" };
+
 function failure(result) {
-  if (result.status === 401 || result.status === 403) return { type: "load/signedOut" };
+  if (isSessionLost(result)) return sessionLost;
   return { type: "load/failed", error: result.error };
 }
 
@@ -81,7 +91,7 @@ export async function loadEverything() {
   const me = await getSession();
   if (!me.ok) return failure(me);
   // A customer session is not a merchant session: send them to the merchant login.
-  if (me.data?.user?.role !== "MERCHANT") return { type: "load/signedOut" };
+  if (me.data?.user?.role !== "MERCHANT") return sessionLost;
 
   const [store, menus, orders] = await Promise.all([getStore(), getMenus(), getOrders()]);
   const failed = [store, menus, orders].find((result) => !result.ok);
@@ -99,6 +109,6 @@ export async function loadEverything() {
 /** Re-reads the order list (new orders, changes made on another device). Null when it failed. */
 export async function loadOrders() {
   const result = await getOrders();
-  if (!result.ok) return result.status === 401 ? { type: "load/signedOut" } : null;
+  if (!result.ok) return isSessionLost(result) ? sessionLost : null;
   return { type: "orders/loaded", ...ordersFromApi(result.data.orders) };
 }

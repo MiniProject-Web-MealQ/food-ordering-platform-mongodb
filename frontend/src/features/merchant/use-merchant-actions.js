@@ -1,7 +1,7 @@
 import { menuFromApi, menuToApi, orderFromApi, storeFromApi, storeToApi } from "./adapters";
 import * as api from "./api";
 import { nextStep } from "./status";
-import { useMerchant } from "./store";
+import { isSessionLost, sessionLost, useMerchant } from "./store";
 
 /**
  * Every change goes to the API first; the store only updates with what the server sent back.
@@ -11,20 +11,27 @@ import { useMerchant } from "./store";
 export function useMerchantActions() {
   const { dispatch } = useMerchant();
 
-  async function saveOrder(request) {
+  /** Waits for a request; if the merchant session is gone, sends the app back to the login page. */
+  async function settle(request) {
     const result = await request;
+    if (isSessionLost(result)) dispatch(sessionLost);
+    return result;
+  }
+
+  async function saveOrder(request) {
+    const result = await settle(request);
     if (result.ok) dispatch({ type: "order/saved", ...orderFromApi(result.data.order) });
     return result;
   }
 
   async function saveStore(changes) {
-    const result = await api.updateStore(storeToApi(changes));
+    const result = await settle(api.updateStore(storeToApi(changes)));
     if (result.ok) dispatch({ type: "store/saved", store: storeFromApi(result.data.store) });
     return result;
   }
 
   async function saveMenu(request) {
-    const result = await request;
+    const result = await settle(request);
     if (result.ok) dispatch({ type: "menu/saved", menu: menuFromApi(result.data.menu) });
     return result;
   }
@@ -58,7 +65,7 @@ export function useMerchantActions() {
       return saveMenu(api.updateMenu(menuId, menuToApi(fields)));
     },
     async removeMenu(menuId) {
-      const result = await api.deleteMenu(menuId);
+      const result = await settle(api.deleteMenu(menuId));
       if (result.ok) dispatch({ type: "menu/removed", menuId });
       return result;
     },

@@ -39,7 +39,13 @@ function MerchantShell() {
   }
 
   if (state.status === "signed-out") {
-    return <Navigate to="/merchant/login" replace state={{ from: location.pathname + location.search }} />;
+    return (
+      <Navigate
+        to="/merchant/login"
+        replace
+        state={{ from: location.pathname + location.search, reason: state.reason }}
+      />
+    );
   }
 
   if (state.status === "error") {
