@@ -1,37 +1,31 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { createMenu } from "@/features/merchant/api";
+import { useNavigate } from "react-router";
+import { PageHeader } from "@/features/customer/components/page-header";
+import { MenuForm } from "@/features/merchant/components/menu-form";
+import { emptyMenuValues } from "@/features/merchant/menu-form";
+import { actions, useMerchant } from "@/features/merchant/store";
+import { pageClass } from "@/features/merchant/styles";
+import { usePageTitle } from "@/lib/use-page-title";
 
 function AddMenu() {
+  usePageTitle("เพิ่มเมนู");
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", price: "", category: "single", description: "" });
-  const [error, setError] = useState("");
+  const { state, dispatch } = useMerchant();
 
-  function set(key, value) { setForm((current) => ({ ...current, [key]: value })); }
-
-  async function submit(event) {
-    event.preventDefault();
-    const result = await createMenu({ ...form, price: Number(form.price) });
-    if (!result.ok) return setError(result.error.message);
-    navigate("/merchant/menu");
+  function handleSubmit(fields) {
+    dispatch(actions.addMenu(fields));
+    navigate("/merchant/menu", { state: { notice: `เพิ่มเมนู “${fields.name}” แล้ว` } });
   }
 
   return (
-    <div>
-      <h1>Add Menu</h1>
-      {error && <p>{error}</p>}
-      <form onSubmit={submit}>
-        <label htmlFor="menu-name">ชื่ออาหาร</label><br />
-        <input id="menu-name" value={form.name} onChange={(e) => set("name", e.target.value)} required /><br /><br />
-        <label htmlFor="menu-price">ราคา</label><br />
-        <input id="menu-price" type="number" min="0" value={form.price} onChange={(e) => set("price", e.target.value)} required /><br /><br />
-        <label htmlFor="menu-category">หมวด</label><br />
-        <input id="menu-category" value={form.category} onChange={(e) => set("category", e.target.value)} /><br /><br />
-        <label htmlFor="menu-description">รายละเอียด</label><br />
-        <textarea id="menu-description" value={form.description} onChange={(e) => set("description", e.target.value)} /><br /><br />
-        <button type="submit">Save Menu</button>
-      </form>
-      <br /><Link to="/merchant/menu">กลับไป Menu</Link>
+    <div className={pageClass}>
+      <PageHeader title="เพิ่มเมนู" subtitle="เมนูใหม่จะแสดงให้ลูกค้าเห็นทันทีที่บันทึก" fallback="/merchant/menu" />
+      <MenuForm
+        initialValues={emptyMenuValues()}
+        menus={state.menus}
+        submitLabel="บันทึกเมนู"
+        onSubmit={handleSubmit}
+        onCancel={() => navigate("/merchant/menu")}
+      />
     </div>
   );
 }
