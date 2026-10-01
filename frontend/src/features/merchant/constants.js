@@ -21,5 +21,10 @@ export const PAYMENT_METHOD_LABEL = {
   wallet: "MealQ Wallet",
 };
 
-/** บัญชีที่ `npm run seed` ใน backend/ สร้างไว้ แสดงในหน้า login เฉพาะตอน dev */
-export const SEED_MERCHANT = { email: "merchant@mealq.local", password: "Merchant123!" };
+/**
+ * บัญชีที่ `npm run seed` ใน backend/ สร้างไว้ ใช้กับลิงก์ "ใช้บัญชีทดสอบ" ในหน้า login
+ * เป็น null ตอน build จริง (npm run build) ทำให้อีเมลและรหัสผ่านถูกตัดออกจากไฟล์เว็บที่ปล่อยใช้งาน
+ */
+export const SEED_MERCHANT = import.meta.env.DEV
+  ? { email: "merchant@mealq.local", password: "Merchant123!" }
+  : null;

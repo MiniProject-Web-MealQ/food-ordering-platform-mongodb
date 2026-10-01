@@ -116,6 +116,7 @@ function MerchantLogin() {
   }
 
   function fillSeedAccount() {
+    if (!SEED_MERCHANT) return;
     setEmail(SEED_MERCHANT.email);
     setPassword(SEED_MERCHANT.password);
     setError(null);
@@ -171,19 +172,6 @@ function MerchantLogin() {
             </Button>
           </form>
 
-          {/* แสดงเฉพาะตอน dev: บัญชีที่ `npm run seed` ใน backend/ สร้างไว้ */}
-          {import.meta.env.DEV && (
-            <div className="rounded-3xl bg-cream p-4 text-sm text-ink-soft ring-1 ring-haze">
-              <p className="font-semibold text-ink">บัญชีทดสอบ (หลังรัน npm run seed)</p>
-              <p className="mt-1 break-all">
-                {SEED_MERCHANT.email} · {SEED_MERCHANT.password}
-              </p>
-              <button type="button" onClick={fillSeedAccount} className={`mt-2 ${textLinkClass}`}>
-                กรอกให้อัตโนมัติ
-              </button>
-            </div>
-          )}
-
           <div className="space-y-2 text-center text-sm text-ink-soft">
             <p>
               ยังไม่มีบัญชีร้าน?{" "}
@@ -197,6 +185,18 @@ function MerchantLogin() {
                 เข้าสู่ระบบลูกค้า
               </Link>
             </p>
+            {/* แสดงเฉพาะตอน dev (npm run dev): กรอกบัญชีที่ `npm run seed` สร้างไว้ ไม่มีในเว็บที่ build จริง */}
+            {SEED_MERCHANT && (
+              <p className="pt-2">
+                <button
+                  type="button"
+                  onClick={fillSeedAccount}
+                  className={`rounded text-xs text-ink-soft underline underline-offset-4 hover:text-ink ${focusRing}`}
+                >
+                  ใช้บัญชีทดสอบ
+                </button>
+              </p>
+            )}
           </div>
         </div>
       </div>

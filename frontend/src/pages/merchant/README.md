@@ -29,7 +29,7 @@ npm run dev                   # http://localhost:5173
 
 | บทบาท | อีเมล / รหัสผ่าน | เข้าที่ |
 |---|---|---|
-| ร้านค้า (ร้านป้าแดง) | `merchant@mealq.local` / `Merchant123!` | http://localhost:5173/merchant/login (มีปุ่ม "กรอกให้อัตโนมัติ" ตอน dev) |
+| ร้านค้า (ร้านป้าแดง) | `merchant@mealq.local` / `Merchant123!` | http://localhost:5173/merchant/login (ตอน `npm run dev` มีลิงก์ "ใช้บัญชีทดสอบ" ด้านล่างฟอร์ม ไม่มีในเว็บที่ build จริง) |
 | ลูกค้า | `customer@mealq.local` / `Customer123!` | http://localhost:5173/login |
 
 **ลองทั้ง flow:** เปิดลูกค้ากับร้านค้าคนละเบราว์เซอร์ (หรือหน้าต่าง Incognito) เพราะ session เป็น cookie ตัวเดียวกัน
