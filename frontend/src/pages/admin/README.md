@@ -97,6 +97,8 @@ dispatch(actions.setStoreStatus("pa-daeng", "suspended", "เหตุผล"));
 
 ## 4. ถ้าหลังบ้านจะทำให้ใช้งานจริง ต้องเพิ่มอะไร
 
+> รายละเอียดเต็ม (request / response / error ของทุก endpoint) อยู่ใน **[docs/admin-api.md](../../../../docs/admin-api.md)** — ข้อนี้เป็นแค่สรุป
+
 ทุกจุดที่จำลองมีคอมเมนต์ `MOCK:` บอก endpoint ที่ควรมาแทน หาได้ด้วย `grep -rn "MOCK" src/features/admin src/pages/admin`
 
 **4.1 login แยก admin**
