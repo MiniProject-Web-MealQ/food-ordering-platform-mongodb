@@ -4,13 +4,16 @@ import { Link } from "react-router";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { textLinkClass } from "@/components/ui/styles";
+import { PasswordField } from "@/components/ui/password-field";
 import { TextField } from "@/components/ui/text-field";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { RoleBadge, UserStatusBadge } from "@/features/admin/components/badges";
 import { DataList } from "@/features/admin/components/data-list";
+import { PasswordChecklist } from "@/features/admin/components/password-checklist";
 import { FilterRow, SearchField, SelectField } from "@/features/admin/components/fields";
 import { formatDate } from "@/features/admin/format";
 import { ROLE_LABEL, USER_STATUS_LABEL } from "@/features/admin/labels";
+import { validateNewPassword } from "@/features/admin/password";
 import { actions, useAdmin } from "@/features/admin/store";
 import { MerchantDialog } from "@/features/merchant/components/merchant-dialog";
 import { pageClass } from "@/features/merchant/styles";
@@ -18,7 +21,7 @@ import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
 
 function AddAdminDialog({ users, onAdd, onClose }) {
-  const [values, setValues] = useState({ name: "", email: "", phone: "" });
+  const [values, setValues] = useState({ name: "", email: "", phone: "", password: "", confirm: "" });
   const [submitted, setSubmitted] = useState(false);
 
   const errors = {};
@@ -26,6 +29,7 @@ function AddAdminDialog({ users, onAdd, onClose }) {
   if (!/^\S+@\S+\.\S+$/.test(values.email.trim())) errors.email = "อีเมลไม่ถูกต้อง";
   else if (users.some((u) => u.email.toLowerCase() === values.email.trim().toLowerCase())) errors.email = "อีเมลนี้มีบัญชีอยู่แล้ว";
   if (values.phone && !/^0\d{8,9}$/.test(values.phone.replace(/[\s-]/g, ""))) errors.phone = "เบอร์โทรไม่ถูกต้อง";
+  Object.assign(errors, validateNewPassword(values.password, values.confirm));
   const shown = submitted ? errors : {};
 
   function set(field) {
@@ -36,7 +40,7 @@ function AddAdminDialog({ users, onAdd, onClose }) {
     event.preventDefault();
     setSubmitted(true);
     if (Object.keys(errors).length) return;
-    onAdd({ name: values.name.trim(), email: values.email.trim().toLowerCase(), phone: values.phone.trim() });
+    onAdd({ name: values.name.trim(), email: values.email.trim().toLowerCase(), phone: values.phone.trim(), password: values.password });
   }
 
   return (
@@ -46,8 +50,31 @@ function AddAdminDialog({ users, onAdd, onClose }) {
         <TextField id="new-admin-name" label="ชื่อ" value={values.name} error={shown.name} onChange={set("name")} required />
         <TextField id="new-admin-email" label="อีเมล" type="email" value={values.email} error={shown.email} onChange={set("email")} required />
         <TextField id="new-admin-phone" label="เบอร์โทร (ไม่บังคับ)" type="tel" value={values.phone} error={shown.phone} onChange={set("phone")} />
-        {/* MOCK: ระบบจริงควรส่งลิงก์ตั้งรหัสผ่านไปที่อีเมลนี้ */}
-        <p className="text-xs text-ink-soft">ระบบจะส่งลิงก์ตั้งรหัสผ่านไปที่อีเมลนี้ (ข้อมูลจำลอง: ใช้รหัสผ่านทดสอบเดียวกับบัญชี admin อื่น)</p>
+        <div className="space-y-2">
+          <PasswordField
+            id="new-admin-password"
+            label="รหัสผ่านเริ่มต้น"
+            autoComplete="new-password"
+            value={values.password}
+            error={shown.password}
+            aria-describedby="new-admin-password-rules"
+            onChange={set("password")}
+            required
+          />
+          <PasswordChecklist id="new-admin-password-rules" password={values.password} />
+        </div>
+        <PasswordField
+          id="new-admin-confirm"
+          label="ยืนยันรหัสผ่าน"
+          autoComplete="new-password"
+          value={values.confirm}
+          error={shown.confirm}
+          onChange={set("confirm")}
+          required
+        />
+        <p className="rounded-2xl bg-cream px-3 py-2 text-xs text-ink-soft">
+          ส่งรหัสนี้ให้ผู้ดูแลคนใหม่ทางช่องทางที่ปลอดภัย เมื่อเขา login ครั้งแรก ระบบจะบังคับให้เปลี่ยนเป็นรหัสของตัวเอง
+        </p>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" variant="cocoa" size="md">
             เพิ่มผู้ดูแล

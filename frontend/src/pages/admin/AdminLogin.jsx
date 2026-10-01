@@ -33,8 +33,9 @@ function AdminLogin() {
       return;
     }
     // MOCK: เทียบกับรายชื่อผู้ใช้ในข้อมูลจำลอง รอ POST /auth/login { portal: "ADMIN" }
+    // บัญชีที่เก็บไว้จากเวอร์ชันก่อนยังไม่มี password จึงใช้รหัสเริ่มต้นแทน
     const user = loadState().users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (!user || (user.role === "admin" && password !== DEMO_ADMIN_PASSWORD)) {
+    if (!user || (user.role === "admin" && password !== (user.password ?? DEMO_ADMIN_PASSWORD))) {
       setError({ title: "อีเมลหรือรหัสผ่านไม่ถูกต้อง", invalid: true });
       return;
     }
@@ -46,8 +47,15 @@ function AdminLogin() {
       setError({ title: "บัญชีนี้ถูกระงับ", detail: "ติดต่อผู้ดูแลระบบคนอื่นเพื่อเปิดใช้งาน" });
       return;
     }
-    signIn({ user_id: user._id, name: user.name, email: user.email, signed_in_at: Date.now() });
-    navigate(destination, { replace: true });
+    signIn({
+      user_id: user._id,
+      name: user.name,
+      email: user.email,
+      signed_in_at: Date.now(),
+      must_change_password: Boolean(user.must_change_password),
+    });
+    // บัญชีที่เพิ่งถูกสร้างต้องตั้งรหัสผ่านของตัวเองก่อนใช้งานหน้าอื่น
+    navigate(user.must_change_password ? "/admin/account" : destination, { replace: true });
   }
 
   function fillDevAccount() {

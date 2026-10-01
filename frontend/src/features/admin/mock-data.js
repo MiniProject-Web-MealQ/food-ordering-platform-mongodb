@@ -11,7 +11,10 @@ const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-/** MOCK: บัญชีผู้ดูแลที่ login ได้ (รหัสผ่านเดียวกันทุกบัญชี admin) รอ POST /auth/login portal ADMIN */
+/**
+ * MOCK: รหัสผ่านเริ่มต้นของบัญชี admin ที่ seed ไว้ รอ POST /auth/login portal ADMIN
+ * admin ที่เพิ่มทีหลังใช้รหัสที่ผู้เพิ่มตั้งให้ (เก็บใน users[].password แบบไม่เข้ารหัส ใช้ทดสอบเท่านั้น)
+ */
 export const DEMO_ADMIN_PASSWORD = "Admin123!";
 
 /** สุ่มแบบกำหนด seed ได้ (mulberry32) ใช้แทน Math.random เพื่อให้ข้อมูลชุดเดิมทุกครั้ง */
@@ -81,8 +84,8 @@ export function createSeedState(now) {
 
   // ---- ผู้ใช้ ----
   const users = [
-    { _id: "u-admin-1", name: "ผู้ดูแลระบบ MealQ", email: "admin@mealq.local", phone: "02-000-0001", role: "admin", status: "active", created_at: now - 120 * DAY },
-    { _id: "u-admin-2", name: "สมชาย ผู้ดูแล", email: "somchai.admin@mealq.local", phone: "02-000-0002", role: "admin", status: "active", created_at: now - 60 * DAY },
+    { _id: "u-admin-1", name: "ผู้ดูแลระบบ MealQ", email: "admin@mealq.local", phone: "02-000-0001", role: "admin", status: "active", created_at: now - 120 * DAY, password: DEMO_ADMIN_PASSWORD, must_change_password: false },
+    { _id: "u-admin-2", name: "สมชาย ผู้ดูแล", email: "somchai.admin@mealq.local", phone: "02-000-0002", role: "admin", status: "active", created_at: now - 60 * DAY, password: DEMO_ADMIN_PASSWORD, must_change_password: false },
   ];
   const customers = CUSTOMER_NAMES.map((name, i) => ({
     _id: `u-c-${i + 1}`,

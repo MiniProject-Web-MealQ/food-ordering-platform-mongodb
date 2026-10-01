@@ -1,4 +1,4 @@
-import { LogOut, Menu as MenuIcon, ShieldCheck } from "lucide-react";
+import { KeyRound, LogOut, Menu as MenuIcon, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { focusRing } from "@/components/ui/styles";
@@ -84,10 +84,17 @@ export function AdminSidebar() {
       <div className="border-t border-white/10 p-4">
         <p className="truncate px-1 text-sm font-semibold">{state.session.name}</p>
         <p className="truncate px-1 text-xs text-white/70">{state.session.email}</p>
+        <Link
+          to="/admin/account"
+          className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        >
+          <KeyRound aria-hidden="true" className="size-5" />
+          บัญชีของฉัน / เปลี่ยนรหัสผ่าน
+        </Link>
         <button
           type="button"
           onClick={() => dispatch({ type: "session/logout" })}
-          className="mt-3 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <LogOut aria-hidden="true" className="size-5" />
           ออกจากระบบ
@@ -127,10 +134,18 @@ export function AdminTopBar() {
           <nav aria-label="เมนูผู้ดูแลระบบ" className="rounded-3xl bg-forest p-3">
             <NavList onNavigate={() => setOpen(false)} />
           </nav>
+          <Link
+            to="/admin/account"
+            onClick={() => setOpen(false)}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border-2 border-cocoa/40 bg-white py-3 text-sm font-semibold text-cocoa hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            <KeyRound aria-hidden="true" className="size-4" />
+            บัญชีของฉัน / เปลี่ยนรหัสผ่าน
+          </Link>
           <button
             type="button"
             onClick={() => dispatch({ type: "session/logout" })}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border-2 border-cocoa/40 bg-white py-3 text-sm font-semibold text-cocoa hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border-2 border-cocoa/40 bg-white py-3 text-sm font-semibold text-cocoa hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             <LogOut aria-hidden="true" className="size-4" />
             ออกจากระบบ

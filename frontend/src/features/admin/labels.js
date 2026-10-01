@@ -52,6 +52,7 @@ export const ACTIVITY_LABEL = {
   "user.role": "เปลี่ยนประเภทบัญชี",
   "user.resetPassword": "ส่งลิงก์ตั้งรหัสผ่านใหม่",
   "user.addAdmin": "เพิ่มผู้ดูแลระบบ",
+  "user.changePassword": "เปลี่ยนรหัสผ่าน",
   "order.cancel": "ยกเลิกออเดอร์แทนร้าน",
   "order.refund": "บันทึกการคืนเงิน",
   "promotion.create": "สร้างคูปอง",

@@ -162,10 +162,28 @@ export function reducer(state, action) {
       return log(state, action, { action: "user.resetPassword", target_type: "user", target_id: user._id, target_label: user.name, detail: `ส่งไปที่ ${user.email}` });
     }
 
-    // MOCK: POST /admin/users { name, email, phone, role: "admin" }
+    // MOCK: PATCH /auth/password { currentPassword, newPassword } (ตรวจรหัสเดิมที่หน้าจอก่อนแล้ว)
+    case "user/changePassword": {
+      const user = state.users.find((u) => u._id === action.userId);
+      if (!user) return state;
+      const next = {
+        ...state,
+        users: patch(state.users, user._id, { password: action.password, must_change_password: false }),
+        session: state.session?.user_id === user._id ? { ...state.session, must_change_password: false } : state.session,
+      };
+      return log(next, action, { action: "user.changePassword", target_type: "user", target_id: user._id, target_label: user.name, detail: null });
+    }
+
+    // MOCK: POST /admin/users { name, email, phone, password, role: "admin" }
     case "user/addAdmin": {
       const next = { ...state, users: [action.user, ...state.users] };
-      return log(next, action, { action: "user.addAdmin", target_type: "user", target_id: action.user._id, target_label: action.user.name, detail: action.user.email });
+      return log(next, action, {
+        action: "user.addAdmin",
+        target_type: "user",
+        target_id: action.user._id,
+        target_label: action.user.name,
+        detail: `${action.user.email} · ต้องเปลี่ยนรหัสผ่านตอน login ครั้งแรก`,
+      });
     }
 
     // MOCK: PATCH /admin/orders/:id/cancel { reason }
@@ -301,9 +319,21 @@ export const actions = {
   setUserStatus: (userId, status, reason) => ({ type: "user/setStatus", userId, status, reason, at: Date.now(), logId: uid("a") }),
   setUserRole: (userId, role) => ({ type: "user/setRole", userId, role, at: Date.now(), logId: uid("a") }),
   resetPassword: (userId) => ({ type: "user/resetPassword", userId, at: Date.now(), logId: uid("a") }),
-  addAdmin: ({ name, email, phone }) => ({
+  changePassword: (userId, password) => ({ type: "user/changePassword", userId, password, at: Date.now(), logId: uid("a") }),
+  addAdmin: ({ name, email, phone, password }) => ({
     type: "user/addAdmin",
-    user: { _id: uid("u-admin"), name, email, phone, role: "admin", status: "active", created_at: Date.now() },
+    user: {
+      _id: uid("u-admin"),
+      name,
+      email,
+      phone,
+      role: "admin",
+      status: "active",
+      created_at: Date.now(),
+      // MOCK: เก็บรหัสผ่านแบบไม่เข้ารหัสเพื่อจำลอง login เท่านั้น ระบบจริงต้องเก็บเป็น password_hash ที่ backend
+      password,
+      must_change_password: true,
+    },
     at: Date.now(),
     logId: uid("a"),
   }),

@@ -115,6 +115,7 @@ import AdminWallets from "../pages/admin/Wallets";
 import AdminReports from "../pages/admin/Reports";
 import AdminSettings from "../pages/admin/Settings";
 import AdminActivity from "../pages/admin/Activity";
+import AdminAccount from "../pages/admin/Account";
 
 
 function AppRoutes() {
@@ -334,6 +335,7 @@ function AppRoutes() {
         <Route path="reports" element={<AdminReports />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="activity" element={<AdminActivity />} />
+        <Route path="account" element={<AdminAccount />} />
       </Route>
 
 
