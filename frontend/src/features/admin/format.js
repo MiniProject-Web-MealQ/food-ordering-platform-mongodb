@@ -8,7 +8,7 @@ const dateTimeFormat = new Intl.DateTimeFormat("th-TH", {
   minute: "2-digit",
   hour12: false,
 });
-const dayFormat = new Intl.DateTimeFormat("th-TH", { weekday: "short", day: "numeric" });
+const weekdayFormat = new Intl.DateTimeFormat("th-TH", { weekday: "narrow" });
 const monthFormat = new Intl.DateTimeFormat("th-TH", { month: "short", year: "2-digit" });
 
 /** 1 ต.ค. 69 */
@@ -21,9 +21,9 @@ export function formatDateTime(ts) {
   return ts ? dateTimeFormat.format(ts) : "–";
 }
 
-/** พ. 1 (ใช้เป็นป้ายแกนกราฟรายวัน) */
-export function formatDay(ts) {
-  return dayFormat.format(ts);
+/** ตัวย่อวันในสัปดาห์ เช่น "พฤ" (ใช้เป็นป้ายแกนกราฟรายวัน คู่กับวันที่บรรทัดล่าง) */
+export function formatWeekday(ts) {
+  return weekdayFormat.format(ts);
 }
 
 /** ต.ค. 69 */

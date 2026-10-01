@@ -14,7 +14,7 @@ function niceCeiling(value) {
  * - แท่งสี cocoa ปลายมน 4px เว้นช่องระหว่างแท่ง เส้นตารางจาง ๆ 3 เส้น
  * - ชี้เมาส์หรือกด Tab ไปที่แท่งเพื่อดูค่า แสดงตัวเลขบนแท่งเฉพาะค่าสูงสุดและแท่งล่าสุด
  * - มีปุ่มสลับเป็นตาราง สำหรับคนที่อ่านกราฟไม่สะดวก
- * data: [{ key, label, longLabel?, value }]
+ * data: [{ key, label, sublabel?, longLabel?, value }]  (sublabel = ป้ายบรรทัดที่สองใต้แกน เช่น วันที่)
  */
 export function BarChart({ title, data, formatValue = (v) => String(v), valueHeader = "ค่า", height = "h-44" }) {
   const [asTable, setAsTable] = useState(false);
@@ -25,8 +25,9 @@ export function BarChart({ title, data, formatValue = (v) => String(v), valueHea
   const dense = data.length > 10;
 
   return (
-    <figure aria-labelledby={titleId} className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+    // min-w-0: ให้กราฟหดตามจอแคบได้ ไม่ดันความกว้างของ grid ที่ครอบอยู่
+    <figure aria-labelledby={titleId} className="min-w-0 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <figcaption id={titleId} className="text-lg font-bold text-ink">
           {title}
         </figcaption>
@@ -117,7 +118,12 @@ export function BarChart({ title, data, formatValue = (v) => String(v), valueHea
           <ul aria-hidden="true" className="mt-1.5 ml-16 flex gap-0.5 sm:gap-1">
             {data.map((d, i) => (
               <li key={d.key} className="flex-1 truncate text-center text-[11px] text-ink-soft">
-                {dense && i % 2 === 1 ? "" : d.label}
+                {dense && i % 2 === 1 ? "" : (
+                  <>
+                    {d.label}
+                    {d.sublabel && <span className="block">{d.sublabel}</span>}
+                  </>
+                )}
               </li>
             ))}
           </ul>

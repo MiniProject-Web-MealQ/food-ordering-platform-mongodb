@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { focusRing, textLinkClass } from "@/components/ui/styles";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { BarChart } from "@/features/admin/components/bar-chart";
-import { formatBaht, formatClock, formatDay, formatPercent } from "@/features/admin/format";
+import { formatBaht, formatClock, formatPercent, formatWeekday } from "@/features/admin/format";
 import { attention, byId, dailySeries, menuRanking, storeRanking, todayStats, totals } from "@/features/admin/stats";
 import { useAdmin } from "@/features/admin/store";
 import { StatCard } from "@/features/merchant/components/stat-card";
@@ -97,26 +97,26 @@ function Dashboard() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-        <section className={panelClass}>
+        <section className={cx(panelClass, "min-w-0")}>
           <BarChart
             title="ยอดขาย 7 วันล่าสุด"
             valueHeader="ยอดขาย"
             formatValue={formatBaht}
-            data={series.map((d) => ({ key: d.date, label: formatDay(d.date), longLabel: longDate.format(d.date), value: d.revenue }))}
+            data={series.map((d) => ({ key: d.date, label: formatWeekday(d.date), sublabel: String(new Date(d.date).getDate()), longLabel: longDate.format(d.date), value: d.revenue }))}
           />
         </section>
-        <section className={panelClass}>
+        <section className={cx(panelClass, "min-w-0")}>
           <BarChart
             title="จำนวนออเดอร์ 7 วันล่าสุด"
             valueHeader="ออเดอร์"
             formatValue={(v) => v.toLocaleString("th-TH")}
-            data={series.map((d) => ({ key: d.date, label: formatDay(d.date), longLabel: longDate.format(d.date), value: d.orders }))}
+            data={series.map((d) => ({ key: d.date, label: formatWeekday(d.date), sublabel: String(new Date(d.date).getDate()), longLabel: longDate.format(d.date), value: d.orders }))}
           />
         </section>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-        <section aria-labelledby="top-stores-title" className={panelClass}>
+        <section aria-labelledby="top-stores-title" className={cx(panelClass, "min-w-0")}>
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <h2 id="top-stores-title" className="text-lg font-bold text-ink">
               5 ร้านขายดี
@@ -133,7 +133,7 @@ function Dashboard() {
             )}
           />
         </section>
-        <section aria-labelledby="top-menus-title" className={panelClass}>
+        <section aria-labelledby="top-menus-title" className={cx(panelClass, "min-w-0")}>
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <h2 id="top-menus-title" className="text-lg font-bold text-ink">
               5 เมนูขายดีทั้งระบบ
@@ -152,7 +152,7 @@ function Dashboard() {
         </section>
       </div>
 
-      <section aria-labelledby="todo-title" className={cx(panelClass, "space-y-4")}>
+      <section aria-labelledby="todo-title" className={cx(panelClass, "min-w-0 space-y-4")}>
         <h2 id="todo-title" className="flex items-center gap-2 text-lg font-bold text-ink">
           <AlertTriangle aria-hidden="true" className="size-5 text-amber" />
           สิ่งที่ต้องดูแล

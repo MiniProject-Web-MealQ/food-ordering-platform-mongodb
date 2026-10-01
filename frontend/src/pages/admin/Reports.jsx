@@ -8,7 +8,7 @@ import { BarChart } from "@/features/admin/components/bar-chart";
 import { DataList } from "@/features/admin/components/data-list";
 import { FilterRow, SelectField } from "@/features/admin/components/fields";
 import { downloadCsv } from "@/features/admin/csv";
-import { formatBaht, formatDay, formatMonth, formatPercent, toDateInput } from "@/features/admin/format";
+import { formatBaht, formatMonth, formatWeekday, formatPercent, toDateInput } from "@/features/admin/format";
 import { dailySeries, hourlyCounts, menuRanking, monthlySeries, startOfDay, startOfMonth, storeRanking } from "@/features/admin/stats";
 import { useAdmin } from "@/features/admin/store";
 import { pageClass, panelClass } from "@/features/merchant/styles";
@@ -37,7 +37,7 @@ function CsvButton({ onClick, label }) {
 
 function Section({ id, title, action, children }) {
   return (
-    <section aria-labelledby={id} className={cx(panelClass, "space-y-4")}>
+    <section aria-labelledby={id} className={cx(panelClass, "min-w-0 space-y-4")}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id={id} className="text-lg font-bold text-ink">
           {title}
@@ -99,7 +99,8 @@ function Reports() {
           // ช่วงยาวมีแท่งเยอะ: ป้ายแกนใช้แค่วันที่ ส่วนชื่อวันเต็มอยู่ใน tooltip และตาราง
           data={daily.map((d) => ({
             key: d.date,
-            label: days > 10 ? String(new Date(d.date).getDate()) : formatDay(d.date),
+            label: days > 10 ? String(new Date(d.date).getDate()) : formatWeekday(d.date),
+            sublabel: days > 10 ? undefined : String(new Date(d.date).getDate()),
             longLabel: longDate.format(d.date),
             value: d.revenue,
           }))}
