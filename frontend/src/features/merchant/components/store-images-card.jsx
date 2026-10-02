@@ -25,7 +25,7 @@ function ImagePicker({ id, label, busy, hasImage, onPick, onRemove }) {
       <label
         className={cx(
           buttonClasses({ variant: "cocoa-outline", size: "sm" }),
-          "cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink",
+          "relative cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink",
           busy && "pointer-events-none opacity-60",
         )}
       >

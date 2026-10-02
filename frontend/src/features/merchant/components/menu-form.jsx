@@ -218,7 +218,7 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
             <label
               className={cx(
                 buttonClasses({ variant: "cocoa-outline", size: "sm" }),
-                "cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink",
+                "relative cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink",
               )}
             >
               <ImagePlus aria-hidden="true" className="size-4" />

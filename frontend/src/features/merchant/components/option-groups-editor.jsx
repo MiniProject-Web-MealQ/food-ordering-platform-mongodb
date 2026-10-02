@@ -186,9 +186,10 @@ function GroupCard({ g, group, count, errors, onChange, onMove, onRemove }) {
             { multiple: false, label: "เลือก 1 อย่าง" },
             { multiple: true, label: "เลือกได้หลายอย่าง" },
           ].map((t) => (
+            // relative: ให้ input sr-only อยู่ในปุ่มนี้ ไม่งั้นตอน focus เบราว์เซอร์จะเลื่อน <dialog> ทั้งกล่องจนหน้าว่าง
             <label
               key={String(t.multiple)}
-              className="flex cursor-pointer items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-ink ring-1 ring-haze has-checked:bg-forest has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-ink"
+              className="relative flex cursor-pointer items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-ink ring-1 ring-haze has-checked:bg-forest has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-ink"
             >
               <input
                 type="radio"
