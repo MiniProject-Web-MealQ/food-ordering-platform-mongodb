@@ -5,7 +5,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PasswordField } from "@/components/ui/password-field";
-import { buttonClasses, focusRing, textLinkClass } from "@/components/ui/styles";
+import { buttonClasses, textLinkClass } from "@/components/ui/styles";
 import { TextField } from "@/components/ui/text-field";
 import { googleSignInUrl, login } from "../api";
 import { ROLE_HOME } from "../types";
@@ -106,15 +106,6 @@ export function LoginForm() {
           {pending ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}
         </Button>
       </form>
-
-      <p className="text-center text-sm">
-        <Link
-          to={ROLE_HOME.CUSTOMER}
-          className={`rounded text-ink underline-offset-4 hover:underline ${focusRing}`}
-        >
-          ไปที่หน้า Customer Home <span aria-hidden="true">→</span>
-        </Link>
-      </p>
 
       <div className="flex items-center gap-4 text-sm text-ink-soft/80" role="separator">
         <span className="h-0.5 flex-1 rounded-full bg-mint" />
