@@ -1,3 +1,5 @@
+import { readImageFile } from "./image";
+
 /** ค่าในฟอร์มเป็นข้อความตามที่พิมพ์ toMenuFields() แปลงเป็น field ตาม Menu model */
 
 export const MENU_LIMITS = {
@@ -65,27 +67,10 @@ export function toMenuFields(values) {
   };
 }
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const MAX_IMAGE_SIDE = 480;
-
 /**
- * ย่อรูปที่เลือกเป็น JPEG data URL ขนาดเล็ก แล้วเก็บลง Menu.image ตรง ๆ
+ * ย่อรูปที่เลือกเป็น JPEG data URL ขนาดเล็ก (ด้านยาวสุด 480px) แล้วเก็บลง Menu.image ตรง ๆ
  * TODO(api): เปลี่ยนไปใช้ endpoint อัปโหลดรูปที่คืน URL เมื่อ backend มีให้
  */
-export async function readMenuImage(file) {
-  if (!file.type.startsWith("image/")) throw new Error("เลือกได้เฉพาะไฟล์รูปภาพ");
-  if (file.size > MAX_IMAGE_BYTES) throw new Error("รูปใหญ่เกิน 5 MB");
-  let bitmap;
-  try {
-    bitmap = await createImageBitmap(file);
-  } catch {
-    throw new Error("เปิดไฟล์รูปนี้ไม่ได้ ลองใช้ไฟล์ JPG หรือ PNG");
-  }
-  const scale = Math.min(1, MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  return canvas.toDataURL("image/jpeg", 0.8);
+export function readMenuImage(file) {
+  return readImageFile(file, { maxSide: 480 });
 }

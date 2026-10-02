@@ -54,7 +54,7 @@ npm run dev                   # http://localhost:5173
 | `/merchant/menu` | `Menu.jsx` | รายการเมนู ค้นหา กรองหมวด/สถานะ สลับ "มีขาย/หมด" + pop-up เพิ่ม/แก้ไข/ลบ (`?new=1`, `?edit=<id>`) |
 | `/merchant/menu/new` | `AddMenu.jsx` | ลิงก์เดิม: พาไป `/merchant/menu?new=1` |
 | `/merchant/menu/:id/edit` | `EditMenu.jsx` | ลิงก์เดิม: พาไป `/merchant/menu?edit=:id` |
-| `/merchant/settings` | `Settings.jsx` | ชื่อร้าน เบอร์โทร คำอธิบาย เวลาเปิด-ปิด สวิตช์เปิด/ปิดร้าน ออกจากระบบ |
+| `/merchant/settings` | `Settings.jsx` | **รูปร้าน (แบนเนอร์ + รูปโปรไฟล์)** ชื่อร้าน เบอร์โทร คำอธิบาย เวลาเปิด-ปิด สวิตช์เปิด/ปิดร้าน ออกจากระบบ |
 
 route ประกาศไว้ที่ [`src/routes/AppRoutes.jsx`](../../routes/AppRoutes.jsx) (งานนี้ไม่ได้แก้ไฟล์นั้น)
 ทุกหน้าใน `MerchantLayout` ต้องมี session ร้านค้า ถ้าไม่มีหรือหมดอายุจะถูกส่งไปหน้า login แล้วกลับมาหน้าเดิม
@@ -142,7 +142,37 @@ const result = await actions.advance(order); // { ok, data } หรือ { ok: 
 | เวลาเรียกคิว / เวลารับอาหาร | ✅ ใช้ค่าจาก backend | `orderView` ส่ง `queueCalledAt`, `queueCompletedAt`, `receiveTime` |
 | `sold_quantity` | ✅ แสดงจากฐานข้อมูล | backend นับเพิ่มเมื่อยืนยันรับอาหารสำเร็จ |
 | คืนเงินตอนยกเลิก | บอกร้านว่าต้องคืนเงินเอง | ยังไม่มีใน API |
+| **รูปร้าน (`logo`, `cover_image`)** | ย่อรูปเป็น JPEG data URL แล้วส่ง `logo` / `coverImage` ใน `PATCH /merchant/store` ถ้า backend ไม่บันทึก หน้าจอบอกว่า "ระบบหลังบ้านยังไม่รองรับ" | **ยังไม่รับ** — ให้ `updateStore` รับ 2 field นี้ (ดูหัวข้อ 4.1) |
 | สร้างเมนูที่ "ปิดขาย" | ✅ ส่ง `isAvailable` ตั้งแต่ `POST` | backend รองรับแล้ว |
+
+---
+
+### 4.1 รูปร้าน: สิ่งที่ backend ต้องเพิ่ม
+
+Store มี `logo` และ `cover_image` อยู่แล้ว และ `storeView` ส่ง `logo` / `coverImage` ให้ลูกค้าแล้ว
+หน้าลูกค้า (branch `feature/remaining-integration`) แสดงแบนเนอร์ในการ์ดร้าน/หน้าร้าน และโลโก้วงกลมใต้แบนเนอร์อยู่แล้ว
+ขาดแค่ให้ `PATCH /merchant/store` รับค่า ใส่ก่อน `await store.save()` ใน `merchantController.updateStore`:
+
+```js
+// รูปโปรไฟล์ร้าน (logo) และแบนเนอร์ (coverImage): data URL ของรูป หรือ URL https หรือ null เพื่อลบ
+for (const [input, field] of [["logo", "logo"], ["coverImage", "cover_image"]]) {
+  if (req.body?.[input] === undefined) continue;
+  const value = req.body[input];
+  if (value === null || value === "") {
+    store[field] = null;
+    continue;
+  }
+  const isImage = typeof value === "string" && (/^data:image\/(jpeg|png|webp);base64,/.test(value) || /^https:\/\//.test(value));
+  if (!isImage || value.length > 700_000) {
+    return sendError(res, 400, "VALIDATION_ERROR", "รูปร้านไม่ถูกต้องหรือใหญ่เกินไป");
+  }
+  store[field] = value;
+}
+```
+
+- หน้าร้านย่อรูปก่อนส่งแล้ว: แบนเนอร์ 1200×600 (2:1) โลโก้ 400×400 ปกติไม่เกิน 200 KB ต่อรูป (ไม่ชนลิมิต JSON 1 MB ใน `server.js`)
+- ทดสอบโค้ดนี้แล้วกับ backend ของ `remaining-integration` (แก้ชั่วคราว ไม่ได้ commit): ร้านบันทึกได้ reload แล้วยังอยู่ และหน้าร้านฝั่งลูกค้าแสดงทั้งสองรูป
+- วันหลังถ้ามี endpoint อัปโหลดรูป ให้คืน URL แล้วส่ง URL นั้นแทน data URL ได้เลย (โค้ดด้านบนรับ `https://` ไว้แล้ว)
 
 ---
 

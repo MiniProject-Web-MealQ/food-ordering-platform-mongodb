@@ -28,6 +28,9 @@ export function storeFromApi(store) {
     queue: {
       max_queue: Number(store.queue?.maxQueue) || 50,
     },
+    // รูปโปรไฟล์ร้าน (Store.logo) และแบนเนอร์ (Store.cover_image) ที่แสดงในหน้าร้านฝั่งลูกค้า
+    logo: store.logo || null,
+    cover_image: store.coverImage || null,
   };
 }
 
@@ -114,6 +117,9 @@ export function storeToApi(changes) {
   if (changes.description !== undefined) body.description = changes.description;
   if (changes.phone !== undefined) body.phone = changes.phone;
   if (changes.is_open !== undefined) body.isOpen = changes.is_open;
+  // TODO(api): PATCH /merchant/store ยังไม่รับ logo / coverImage (ดู README หัวข้อรูปร้าน)
+  if (changes.logo !== undefined) body.logo = changes.logo;
+  if (changes.cover_image !== undefined) body.coverImage = changes.cover_image;
   if (changes.opening_hours) {
     body.openingHours = { open: changes.opening_hours.open_time, close: changes.opening_hours.close_time };
   }
