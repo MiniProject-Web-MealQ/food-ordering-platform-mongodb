@@ -68,7 +68,7 @@ function Orders() {
         title="กระดานคิว"
         subtitle={`อยู่ในครัว ${inKitchenCount(state)} คิว · ออเดอร์ใหม่เข้ามาเองอัตโนมัติ`}
         action={
-          <div className="mt-1 flex shrink-0 gap-2">
+          <div className="mt-1 flex max-w-full flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setScanning(true)}

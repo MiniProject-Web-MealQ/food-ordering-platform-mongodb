@@ -25,6 +25,9 @@ export function storeFromApi(store) {
       open_time: store.openingHours?.open_time ?? "",
       close_time: store.openingHours?.close_time ?? "",
     },
+    queue: {
+      max_queue: Number(store.queue?.maxQueue) || 50,
+    },
   };
 }
 
@@ -51,7 +54,9 @@ export function menuFromApi(menu) {
  */
 export function orderFromApi(order) {
   const updatedAt = time(order.updatedAt);
-  const handedOver = order.status === "completed" ? updatedAt : null;
+  const handedOver = time(order.receiveTime) ?? (order.status === "completed" ? updatedAt : null);
+  const calledAt = time(order.queueCalledAt) ?? (order.status === "ready" ? updatedAt : null);
+  const completedAt = time(order.queueCompletedAt) ?? handedOver;
   return {
     order: {
       _id: order.id,
@@ -79,8 +84,8 @@ export function orderFromApi(order) {
       queue_number: order.queueNumber ?? 0,
       receive_code: order.pickupCode ?? "",
       status: QUEUE_STATUS_FOR_ORDER[order.status],
-      called_at: order.status === "ready" ? updatedAt : null,
-      completed_at: handedOver,
+      called_at: calledAt,
+      completed_at: completedAt,
     },
   };
 }
@@ -112,5 +117,14 @@ export function storeToApi(changes) {
   if (changes.opening_hours) {
     body.openingHours = { open: changes.opening_hours.open_time, close: changes.opening_hours.close_time };
   }
+  if (changes.address) {
+    body.address = {
+      detail: changes.address.detail,
+      province: changes.address.province,
+      district: changes.address.district,
+      postalCode: changes.address.postal_code,
+    };
+  }
+  if (changes.queue?.max_queue !== undefined) body.maxQueue = changes.queue.max_queue;
   return body;
 }

@@ -126,7 +126,7 @@ export function MerchantBottomNav() {
                 aria-current={active ? "page" : undefined}
                 aria-label={navLabel(item, pending)}
                 className={cx(
-                  "relative flex flex-col items-center gap-1 py-2.5 text-xs transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink",
+                  "relative flex min-w-0 flex-col items-center gap-1 px-1 py-2.5 text-center text-xs wrap-anywhere transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink",
                   active ? "font-semibold text-brand-ink" : "text-ink-soft hover:text-ink",
                 )}
               >

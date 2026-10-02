@@ -44,9 +44,9 @@ export function useMerchantActions() {
     cancel(order) {
       return saveOrder(api.setOrderStatus(order.order_number, "cancelled"));
     },
-    /** หน้าจอตรวจรหัสรับอาหารก่อนเรียกฟังก์ชันนี้ เพราะ API ยังไม่ตรวจให้ */
-    complete(order) {
-      return saveOrder(api.setOrderStatus(order.order_number, "completed"));
+    /** Backend เป็นคนตรวจรหัสรับอาหารและปิดออเดอร์ เพื่อไม่ให้ข้ามการยืนยันจากฝั่ง client */
+    complete(order, receiveCode) {
+      return saveOrder(api.receiveOrder(order.order_number, receiveCode));
     },
     setStoreOpen(isOpen) {
       return saveStore({ is_open: isOpen });
@@ -55,11 +55,8 @@ export function useMerchantActions() {
     setMenuAvailable(menu, isAvailable) {
       return saveMenu(api.updateMenu(menu._id, { isAvailable }));
     },
-    async addMenu(fields) {
-      // TODO(api): POST /merchant/menu สร้างเมนูเป็น "มีขาย" เสมอ ถ้าต้องการปิดขายต้องแก้ตามหลังอีกครั้ง
-      const created = await saveMenu(api.createMenu(menuToApi(fields)));
-      if (!created.ok || fields.is_available) return created;
-      return saveMenu(api.updateMenu(created.data.menu.id, { isAvailable: false }));
+    addMenu(fields) {
+      return saveMenu(api.createMenu(menuToApi(fields)));
     },
     updateMenu(menuId, fields) {
       return saveMenu(api.updateMenu(menuId, menuToApi(fields)));

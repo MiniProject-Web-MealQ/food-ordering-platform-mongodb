@@ -7,7 +7,7 @@ import { ScanPickupDialog } from "./scan-pickup-dialog";
 
 /**
  * ลูกค้าแสดงรหัสรับอาหาร 4 หลักที่เคาน์เตอร์ ร้านสแกน QR หรือพิมพ์รหัสเพื่อส่งอาหาร
- * ตรวจรหัสที่หน้าจอนี้ เพราะ backend ยังไม่ตรวจให้
+ * ส่งรหัสให้ backend ตรวจอีกชั้นก่อนปิดออเดอร์
  * `scannedCode` คือรหัสที่สแกนมาแล้วจากกระดานคิว ใส่ไว้ในช่องให้เลย
  */
 export function ReceiveCodeForm({ expectedCode, orderNumber, scannedCode = "", autoFocus = false, onConfirm }) {
@@ -22,22 +22,21 @@ export function ReceiveCodeForm({ expectedCode, orderNumber, scannedCode = "", a
       setError("กรอกรหัสให้ครบ 4 หลัก");
       return;
     }
-    // TODO(api): backend ควรเป็นคนตรวจรหัส (เช่น POST /merchant/orders/:id/receive { receiveCode })
-    if (value !== expectedCode) {
-      setError("รหัสไม่ตรงกับออเดอร์นี้ ให้ลูกค้าเปิดรหัสในแอปอีกครั้ง");
-      return;
-    }
     setSaving(true);
     setError("");
-    const result = await onConfirm();
+    const result = await onConfirm(value);
     // ถ้าสำเร็จ ออเดอร์จะเป็น "completed" และฟอร์มนี้จะหายไปเอง
     if (!result.ok) {
       setSaving(false);
-      setError(`บันทึกไม่สำเร็จ: ${result.error.message}`);
+      setError(
+        result.error.code === "RECEIVE_CODE_MISMATCH"
+          ? "รหัสไม่ตรงกับออเดอร์นี้ ให้ลูกค้าเปิดรหัสในแอปอีกครั้ง"
+          : `บันทึกไม่สำเร็จ: ${result.error.message}`,
+      );
     }
   }
 
-  /** สแกนแล้วตรงกับออเดอร์นี้ ให้ยืนยันรับอาหารทันที เหมือนพิมพ์รหัสเอง */
+  /** สแกนแล้วตรงกับข้อมูลที่โหลดมา ให้ส่งรหัสไปให้ backend ยืนยันอีกครั้ง */
   function handleScan(text) {
     const scan = parsePickupQr(text);
     if (!scan) return { message: "QR นี้ไม่ใช่รหัสรับอาหารของ MealQ" };

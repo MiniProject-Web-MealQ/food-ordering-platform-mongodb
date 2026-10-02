@@ -17,6 +17,8 @@ const FIELD_IDS = {
   name: "store-name",
   phone: "store-phone",
   description: "store-description",
+  pickup_point: "store-pickup-point",
+  max_queue: "store-max-queue",
   open_time: "store-open-time",
   close_time: "store-close-time",
 };
@@ -26,6 +28,8 @@ function storeToValues(store) {
     name: store.name,
     phone: store.phone ?? "",
     description: store.description ?? "",
+    pickup_point: store.address?.detail ?? "",
+    max_queue: String(store.queue?.max_queue ?? 50),
     open_time: store.opening_hours.open_time,
     close_time: store.opening_hours.close_time,
   };
@@ -37,6 +41,9 @@ function validate(values) {
   else if (values.name.trim().length > 60) errors.name = "ชื่อร้านยาวได้ไม่เกิน 60 ตัวอักษร";
   if (!/^0\d{8,9}$/.test(values.phone.replace(/[\s-]/g, ""))) errors.phone = "เบอร์โทรต้องขึ้นต้นด้วย 0 และมี 9–10 หลัก";
   if (values.description.trim().length > 200) errors.description = "คำอธิบายยาวได้ไม่เกิน 200 ตัวอักษร";
+  if (values.pickup_point.trim().length > 160) errors.pickup_point = "จุดรับอาหารยาวได้ไม่เกิน 160 ตัวอักษร";
+  const maxQueue = Number.parseInt(values.max_queue, 10);
+  if (!Number.isInteger(maxQueue) || maxQueue < 1 || maxQueue > 500) errors.max_queue = "จำนวนคิวสูงสุดต้องอยู่ระหว่าง 1–500";
   if (!values.open_time) errors.open_time = "เลือกเวลาเปิด";
   if (!values.close_time) errors.close_time = "เลือกเวลาปิด";
   else if (values.open_time && values.close_time <= values.open_time) errors.close_time = "เวลาปิดต้องหลังเวลาเปิด";
@@ -78,7 +85,6 @@ function StoreInfoForm() {
   const errors = validate(values);
   const shown = submitted ? errors : {};
   const errorCount = Object.keys(errors).length;
-  const pickupPoint = state.store.address?.detail;
 
   function set(field) {
     return (event) => {
@@ -101,6 +107,8 @@ function StoreInfoForm() {
       name: values.name.trim(),
       phone: values.phone.trim(),
       description: values.description.trim(),
+      address: { ...state.store.address, detail: values.pickup_point.trim() },
+      queue: { max_queue: Number.parseInt(values.max_queue, 10) },
       opening_hours: { open_time: values.open_time, close_time: values.close_time },
     });
     setSaving(false);
@@ -146,12 +154,26 @@ function StoreInfoForm() {
             </p>
           )}
         </div>
-        {/* TODO(api): PATCH /merchant/store ยังไม่รับ address จึงแสดงให้ดูอย่างเดียว */}
-        <div className="rounded-2xl bg-cream px-4 py-3 text-sm">
-          <p className="font-semibold text-ink">จุดรับอาหาร</p>
-          <p className="text-ink-soft">{pickupPoint || "ยังไม่ได้ตั้ง"}</p>
-          <p className="mt-1 text-xs text-ink-soft">ยังแก้จากหน้านี้ไม่ได้ ติดต่อผู้ดูแลระบบหากต้องการเปลี่ยน</p>
-        </div>
+        <TextField
+          id={FIELD_IDS.pickup_point}
+          label="จุดรับอาหาร"
+          value={values.pickup_point}
+          error={shown.pickup_point}
+          onChange={set("pickup_point")}
+          placeholder="เช่น เคาน์เตอร์หน้าร้าน ชั้น 1"
+        />
+        <TextField
+          id={FIELD_IDS.max_queue}
+          label="จำนวนคิวสูงสุด"
+          type="number"
+          inputMode="numeric"
+          min="1"
+          max="500"
+          value={values.max_queue}
+          error={shown.max_queue}
+          onChange={set("max_queue")}
+          required
+        />
       </section>
 
       <section aria-labelledby="store-hours-title" className={cx(panelClass, "space-y-5")}>

@@ -115,8 +115,8 @@ function ActionPanel({ order, queue, now, focusCode, scannedCode, handedOver, on
             orderNumber={order.order_number}
             scannedCode={scannedCode}
             autoFocus={focusCode}
-            onConfirm={async () => {
-              const result = await actions.complete(order);
+            onConfirm={async (receiveCode) => {
+              const result = await actions.complete(order, receiveCode);
               if (result.ok) onHandedOver();
               return result;
             }}

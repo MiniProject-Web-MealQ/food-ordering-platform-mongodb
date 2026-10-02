@@ -232,7 +232,7 @@ function Menu() {
       </p>
 
       {shown.length > 0 ? (
-        <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {shown.map((menu) => (
             <li key={menu._id}>
               <MenuRow menu={menu} busy={busyId === menu._id} onToggle={toggle} />

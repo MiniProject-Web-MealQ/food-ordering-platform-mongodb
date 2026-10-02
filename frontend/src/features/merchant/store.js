@@ -90,7 +90,7 @@ function failure(result) {
 export async function loadEverything() {
   const me = await getSession();
   if (!me.ok) return failure(me);
-  // session ของลูกค้าใช้เข้าหน้าร้านไม่ได้: ส่งไปหน้า login ร้านค้า
+  // session ของลูกค้าใช้เข้าหน้าร้านไม่ได้: ส่งไปหน้า login ร่วมพร้อมเลือก "ร้านค้า"
   if (me.data?.user?.role !== "MERCHANT") return sessionLost;
 
   const [store, menus, orders] = await Promise.all([getStore(), getMenus(), getOrders()]);

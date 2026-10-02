@@ -57,18 +57,20 @@ function RecentOrders({ state, now }) {
         <li key={order._id}>
           <Link
             to={`/merchant/orders/${order.order_number}`}
-            className={cx("-mx-2 flex items-center gap-3 rounded-2xl px-2 py-3 hover:bg-cream", focusRing)}
+            className={cx("-mx-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-2xl px-2 py-3 hover:bg-cream sm:flex sm:gap-3", focusRing)}
           >
             <span className="w-12 shrink-0 font-display text-xl font-black text-ink">
               {formatQueue(queueFor(state, order._id)?.queue_number ?? 0)}
             </span>
-            <span className="min-w-0 flex-1">
+            <span className="col-span-2 row-start-2 min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold text-ink">{order.customer.name}</span>
               <span className="block text-xs text-ink-soft">
                 {formatClock(order.order_date)} · {itemCount(order)} ที่ · {formatBaht(order.total_price)}
               </span>
             </span>
-            <OrderStatusBadge status={order.status} />
+            <span className="col-start-2 row-start-1 justify-self-end sm:shrink-0">
+              <OrderStatusBadge status={order.status} />
+            </span>
           </Link>
         </li>
       ))}
@@ -102,13 +104,13 @@ function Dashboard() {
         </Link>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-6">
         <StoreOpenCard />
-        <section aria-labelledby="today-title">
+        <section aria-labelledby="today-title" className="min-w-0">
           <h2 id="today-title" className="sr-only">
             สรุปวันนี้
           </h2>
-          <div className="grid grid-cols-2 gap-3 lg:gap-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-3 sm:grid-cols-2 lg:gap-4">
             <StatCard
               label="ออเดอร์วันนี้"
               value={summary.orderCount}
@@ -122,7 +124,7 @@ function Dashboard() {
         </section>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
         <section aria-labelledby="top-menus-title" className={panelClass}>
           <h2 id="top-menus-title" className="mb-4 text-lg font-bold text-ink">
             เมนูขายดีวันนี้
@@ -131,7 +133,7 @@ function Dashboard() {
         </section>
 
         <section aria-labelledby="recent-title" className={panelClass}>
-          <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
             <h2 id="recent-title" className="text-lg font-bold text-ink">
               ออเดอร์ล่าสุด
             </h2>

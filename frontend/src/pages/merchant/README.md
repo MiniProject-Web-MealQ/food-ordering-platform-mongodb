@@ -29,13 +29,15 @@ npm run dev                   # http://localhost:5173
 
 | บทบาท | อีเมล / รหัสผ่าน | เข้าที่ |
 |---|---|---|
-| ร้านค้า (ร้านป้าแดง) | `merchant@mealq.local` / `Merchant123!` | http://localhost:5173/merchant/login (ตอน `npm run dev` มีลิงก์ "ใช้บัญชีทดสอบ" ด้านล่างฟอร์ม ไม่มีในเว็บที่ build จริง) |
+| ร้านค้า (ร้านป้าแดง) | `merchant@mealq.local` / `Merchant123!` | http://localhost:5173/login แล้วเลือก "ร้านค้า" หรือ http://localhost:5173/login?role=merchant |
 | ลูกค้า | `customer@mealq.local` / `Customer123!` | http://localhost:5173/login |
 
 **ลองทั้ง flow:** เปิดลูกค้ากับร้านค้าคนละเบราว์เซอร์ (หรือหน้าต่าง Incognito) เพราะ session เป็น cookie ตัวเดียวกัน
 ลูกค้าสั่งร้านป้าแดง → ออเดอร์เด้งที่ "รอรับ" → ร้านกด รับออเดอร์ / เริ่มทำ / อาหารพร้อม → กรอกรหัส 4 หลักของลูกค้า → เสร็จ
 
-> backend อนุญาต CORS เฉพาะ `FRONTEND_URL` (ค่าเริ่มต้น `http://localhost:5173`) ถ้ารัน frontend port อื่นต้องแก้ใน `backend/.env`
+> ตอนพัฒนา backend รองรับ frontend บน `localhost`, `127.0.0.1` และ `[::1]` แม้ Vite จะเปลี่ยนพอร์ต เช่น `5174` ทั้ง API และ Socket.IO; เมื่อ `NODE_ENV=production` จะรับเฉพาะ URL ที่ระบุใน `FRONTEND_URL` (คั่นหลาย URL ด้วยจุลภาค)
+
+> ถ้ามี `frontend/.env.local` ค่า `VITE_API_URL` ในไฟล์นี้จะทับ `.env` สำหรับรันในเครื่องให้ใช้ `http://localhost:5000/api/v1` และรีสตาร์ต Vite หลังแก้ค่า
 
 ---
 
@@ -43,7 +45,8 @@ npm run dev                   # http://localhost:5173
 
 | URL | ไฟล์ | หน้าที่ |
 |---|---|---|
-| `/merchant/login` | `MerchantLogin.jsx` | login ร้านค้า (อยู่นอก `MerchantLayout`) ถ้ามี session ร้านอยู่แล้วจะข้ามไปเลย |
+| `/login` | `pages/auth/login.jsx` | หน้า login ร่วมของลูกค้าและร้านค้า เลือก "ร้านค้า" เพื่อเข้า Merchant |
+| `/merchant/login` | `MerchantLogin.jsx` | ส่งต่อไป `/login?role=merchant` โดยเก็บหน้าที่ต้องกลับไปหลัง login |
 | `/merchant` | – | redirect ไป `/merchant/dashboard` |
 | `/merchant/dashboard` | `Dashboard.jsx` | สรุปวันนี้: ออเดอร์, ยอดขาย, คิวที่กำลังทำ, รอรับ, เมนูขายดี, ออเดอร์ล่าสุด, สวิตช์เปิด/ปิดร้าน |
 | `/merchant/orders` | `Orders.jsx` | กระดานคิว 4 คอลัมน์ (รอรับ / กำลังทำ / พร้อมรับ / เสร็จแล้ว) กดเลื่อนสถานะ ค้นหา ปุ่มโหลดล่าสุด + **สแกนรับอาหาร** |
@@ -70,7 +73,7 @@ src/features/merchant/
 ├── use-merchant-actions.js  ทุกการแก้ไข (สถานะออเดอร์, ร้าน, เมนู, logout) → API → อัปเดต state
 ├── orders.js              ฟังก์ชันอ่านข้อมูล: หาออเดอร์/คิว, สรุปวันนี้, ค้นหา
 ├── status.js              ชื่อสถานะภาษาไทย, ลำดับสถานะ, คอลัมน์กระดานคิว
-├── constants.js           หมวดเมนู, ชื่อวิธีจ่ายเงิน, บัญชี seed
+├── constants.js           หมวดเมนู, ชื่อวิธีจ่ายเงิน
 ├── menu-form.js           validation ของฟอร์มเมนู + ย่อรูป
 ├── format.js / styles.js / nav-items.js / use-now.js
 └── components/            กระดานคิว, การ์ดออเดอร์, ฟอร์มเมนู, pop-up, sidebar ฯลฯ
@@ -118,8 +121,7 @@ const result = await actions.advance(order); // { ok, data } หรือ { ok: 
 - สแกนจากกระดานคิว → เปิดออเดอร์ที่พร้อมรับและตรงกับ QR โดยใส่รหัสให้แล้ว กดยืนยันอีกครั้ง
 - สแกนในหน้ารายละเอียด → ถ้าตรงกับออเดอร์นี้ ยืนยันรับอาหารทันที ถ้าเป็นของออเดอร์อื่น/ยังไม่พร้อม/ไม่ใช่ QR ของ MealQ จะบอกเหตุผลและสแกนต่อได้
 - อ่านได้ 3 แบบ: `MEALQ:<order_number>:<receive_code>` (แนะนำ), รหัส 4 หลักล้วน, หรือ JSON ที่มี `orderNumber` + `pickupCode`
-- ⚠️ QR ในแอปลูกค้าตอนนี้ (`features/customer/components/pickup-code.jsx`) เป็นลายตกแต่ง **สแกนไม่ได้** จนกว่าฝั่ง customer จะเปลี่ยนเป็น QR จริง
-  ระหว่างนี้ใช้ช่องกรอกรหัส 4 หลักได้เหมือนเดิม
+- QR ในแอปลูกค้า (`features/customer/components/pickup-code.jsx`) สร้างด้วย `qrcode` และเข้ารหัสรับอาหาร 4 หลักจริง ใช้ได้กับตัวสแกนร้านค้า หรือกรอกรหัสด้วยมือ
 
 **หมวดเมนู** เป็นรหัสตายตัว `single / noodle / drink / dessert` (แสดงเป็นภาษาไทย)
 ต้องตรงกับ `MENU_CATEGORIES` ฝั่ง customer เพราะแอปลูกค้ากรองเมนูด้วยรหัสนี้
@@ -132,15 +134,15 @@ const result = await actions.advance(order); // { ok, data } หรือ { ok: 
 
 | เรื่อง | ตอนนี้หน้าจอทำอะไร | ต้องการจาก backend |
 |---|---|---|
-| ตรวจรหัสรับอาหาร | เทียบ `pickupCode` ในเบราว์เซอร์ แล้วส่ง `completed` | ตรวจฝั่ง server เช่น `POST /merchant/orders/:id/receive { receiveCode }` |
-| ลำดับสถานะ | หน้าจอบังคับลำดับเอง (`status.js`) | `PATCH .../status` ตอนนี้รับทุกสถานะ ควรเช็คลำดับ |
+| ตรวจรหัสรับอาหาร | ส่งรหัสจากฟอร์ม/QR ไปตรวจที่ backend | ✅ `POST /merchant/orders/:id/receive { receiveCode }` ตรวจรหัสและปิดออเดอร์บน server |
+| ลำดับสถานะ | หน้าจอพาไปตามลำดับ (`status.js`) | ✅ backend ตรวจ `pending → confirmed → preparing → ready`; `completed` ต้องผ่าน receive endpoint |
 | รูปเมนู | ย่อเป็น JPEG data URL แล้วเก็บลง `Menu.image` ตรง ๆ | endpoint อัปโหลดรูปที่คืน URL |
-| จุดรับอาหาร (`address`) | แสดงอย่างเดียว | ให้ `PATCH /merchant/store` รับ `address` |
-| จำนวนคิวสูงสุด (`queue.max_queue`) | ไม่แสดง | ส่งใน `storeView` + ให้แก้ได้ + ใช้ตอนรับออเดอร์ |
-| เวลาเรียกคิว / เวลารับอาหาร | ใช้ `updatedAt` ของออเดอร์ (ถูกต้องเฉพาะขั้นล่าสุด) | ส่ง `called_at`, `completed_at`, `receive_time` มาใน `orderView` |
-| `sold_quantity` | แสดงค่าที่ seed ไว้ | backend ยังไม่นับเพิ่มตอนขาย |
+| จุดรับอาหาร (`address`) | ✅ แก้ได้จาก Settings | backend รับ `address.detail` แล้ว |
+| จำนวนคิวสูงสุด (`queue.max_queue`) | ✅ แก้ได้จาก Settings | backend ส่ง/บันทึก `maxQueue` และกันสร้างออเดอร์เมื่อคิวเต็ม |
+| เวลาเรียกคิว / เวลารับอาหาร | ✅ ใช้ค่าจาก backend | `orderView` ส่ง `queueCalledAt`, `queueCompletedAt`, `receiveTime` |
+| `sold_quantity` | ✅ แสดงจากฐานข้อมูล | backend นับเพิ่มเมื่อยืนยันรับอาหารสำเร็จ |
 | คืนเงินตอนยกเลิก | บอกร้านว่าต้องคืนเงินเอง | ยังไม่มีใน API |
-| สร้างเมนูที่ "ปิดขาย" | `POST` แล้ว `PATCH isAvailable:false` ต่อ | ให้ `POST /merchant/menu` รับ `isAvailable` |
+| สร้างเมนูที่ "ปิดขาย" | ✅ ส่ง `isAvailable` ตั้งแต่ `POST` | backend รองรับแล้ว |
 
 ---
 
@@ -153,9 +155,9 @@ const result = await actions.advance(order); // { ok, data } หรือ { ok: 
 | `preparing` | `PREPARING` |
 | `ready` | `READY` |
 | `completed` | `PICKED_UP` |
-| `cancelled` | ไม่มี — `order/syncStatus` ฝั่งลูกค้ายังไม่รองรับ ลูกค้าจะไม่เห็นว่าถูกยกเลิก |
+| `cancelled` | `CANCELLED` — แสดงการยกเลิกจาก API และ Socket.IO พร้อมสถานะคืนเงิน Wallet |
 
-**ไม่ได้แก้ไฟล์ฝั่ง customer** ต้องตกลงกันว่าจะใช้ชุดเดียว
+ตัวแปลงสถานะฝั่ง Customer อยู่ใน `features/customer/store.js` และโหลดประวัติออเดอร์จาก API ใหม่หลังเปลี่ยนสถานะ
 
 ---
 
@@ -192,10 +194,11 @@ login ผิด / บัญชีลูกค้าถูกปฏิเสธ /
 
 ## 8. ที่ยังไม่ได้ทำ
 
-- ข้อจำกัดในข้อ 4 (รอ backend)
+- รูปเมนูยังเก็บเป็น data URL; ถ้าจะใช้งาน production ควรมี object storage / upload endpoint
+- ระบบคืนเงินเมื่อยกเลิกออเดอร์ยังไม่มี
 - เสียงแจ้งเตือนเมื่อมีออเดอร์ใหม่
 - หน้าประวัติออเดอร์ย้อนหลัง/รายงานยอดขายรายวัน (กระดานแสดงของวันนี้ + ที่ยังค้าง)
 - ตัวเลือกเสริมของเมนู (`option_groups` เช่น ระดับความเผ็ด)
-- QR จริงฝั่งลูกค้า (ของฝั่ง customer) — ตัวสแกนฝั่งร้านพร้อมแล้ว
+- การชำระเงินจริงผ่านผู้ให้บริการภายนอก — การชำระเงินภายนอกในโหมดพัฒนาเป็น sandbox
 - ส่วน Admin — รอทีมสรุปขอบเขต
 - unit test
