@@ -9,6 +9,7 @@ router.get("/dashboard", asyncHandler(controller.dashboard));
 router.get("/orders", asyncHandler(controller.listOrders));
 router.get("/orders/:id", asyncHandler(controller.getOrder));
 router.patch("/orders/:id/status", asyncHandler(controller.updateOrderStatus));
+router.post("/orders/:id/receive", asyncHandler(controller.receiveOrder));
 router.get("/menu", asyncHandler(controller.listMenu));
 router.post("/menu", asyncHandler(controller.createMenu));
 router.get("/menu/:id", asyncHandler(controller.getMenu));

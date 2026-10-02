@@ -1,99 +1,87 @@
-// นำเข้า Link และ Outlet จาก react-router
-// Link ใช้เปลี่ยนหน้าภายในระบบ Merchant
-// Outlet ใช้แสดงหน้าต่าง ๆ เช่น Dashboard, Orders, Menu
-import { Link, Outlet } from "react-router";
+/*
+  MerchantLayout.jsx
+  --------------------------------------------------
+  Layout หลักของฝั่งร้านค้า (/merchant/*) ยกเว้นหน้า login
 
-function MerchantLayout() {
+  - ครอบทุกหน้าด้วย MerchantProvider (โหลดร้าน เมนู ออเดอร์ จาก API + รับออเดอร์ใหม่ผ่าน socket)
+  - ยังไม่ได้ login (หรือ session หมดอายุ) → ส่งไป /merchant/login แล้วค่อยกลับมาหน้าเดิม
+  - Desktop (lg ขึ้นไป): sidebar ด้านซ้าย (lg = แถบไอคอน, xl = sidebar เต็ม)
+  - มือถือ/แท็บเล็ต: แถบบนบอกชื่อร้าน + แถบเมนูด้านล่าง
+*/
+import { Navigate, Outlet, useLocation } from "react-router";
+import { LogoMark } from "@/components/brand/logo";
+import { Button } from "@/components/ui/button";
+import { MerchantBottomNav, MerchantSidebar, MerchantTopBar } from "@/features/merchant/components/merchant-nav";
+import { MerchantProvider } from "@/features/merchant/merchant-provider";
+import { useMerchant } from "@/features/merchant/store";
+
+function FullPageMessage({ children }) {
   return (
-    <div
-      style={{
-        // จัด Sidebar และเนื้อหาหลักให้อยู่ข้างกัน
-        display: "flex",
+    <main className="flex min-h-dvh w-full flex-1 flex-col items-center justify-center gap-4 bg-page px-4 text-center">
+      <LogoMark className="size-14 text-2xl" />
+      {children}
+    </main>
+  );
+}
 
-        // ให้ Layout สูงเต็มหน้าจอ
-        minHeight: "100vh",
-      }}
-    >
-      {/* Sidebar ทางด้านซ้ายของ Merchant Dashboard */}
-      <aside
-        style={{
-          // กำหนดความกว้างของ Sidebar
-          width: "220px",
+function MerchantShell() {
+  const { state, reload } = useMerchant();
+  const location = useLocation();
 
-          // ระยะห่างด้านใน Sidebar
-          padding: "20px",
+  if (state.status === "loading") {
+    return (
+      <FullPageMessage>
+        <p role="status" className="text-ink-soft">
+          กำลังโหลดข้อมูลร้าน…
+        </p>
+      </FullPageMessage>
+    );
+  }
 
-          // เส้นแบ่งระหว่าง Sidebar กับเนื้อหาหลัก
-          borderRight: "1px solid #ccc",
-        }}
-      >
-        {/* ชื่อระบบฝั่งร้านค้า */}
-        <h2>MealQ Merchant</h2>
+  if (state.status === "signed-out") {
+    return (
+      <Navigate
+        to="/merchant/login"
+        replace
+        state={{ from: location.pathname + location.search, reason: state.reason }}
+      />
+    );
+  }
 
-        {/* เมนูนำทางของฝั่ง Merchant */}
-        <nav
-          style={{
-            // จัดเมนูเป็นแนวตั้ง
-            display: "flex",
-            flexDirection: "column",
+  if (state.status === "error") {
+    return (
+      <FullPageMessage>
+        <div role="alert" className="space-y-1">
+          <p className="text-lg font-bold text-ink">โหลดข้อมูลร้านไม่สำเร็จ</p>
+          <p className="text-sm text-ink-soft">{state.error?.message}</p>
+        </div>
+        <Button variant="cocoa" size="md" onClick={reload}>
+          ลองใหม่
+        </Button>
+      </FullPageMessage>
+    );
+  }
 
-            // ระยะห่างระหว่างเมนู
-            gap: "12px",
-          }}
-        >
-          {/* ไปหน้า Dashboard */}
-          <Link to="/merchant/dashboard">
-            Dashboard
-          </Link>
-
-          {/* ไปหน้าจัดการ Order */}
-          <Link to="/merchant/orders">
-            Orders
-          </Link>
-
-          {/* ไปหน้าจัดการเมนูอาหาร */}
-          <Link to="/merchant/menu">
-            Menu
-          </Link>
-
-          {/* ไปหน้าตั้งค่าร้าน */}
-          <Link to="/merchant/settings">
-            Settings
-          </Link>
-        </nav>
-      </aside>
-
-      {/* พื้นที่หลักทางด้านขวา */}
-      <main
-        style={{
-          // ให้พื้นที่หลักกินพื้นที่ที่เหลือทั้งหมด
-          flex: 1,
-
-          // ระยะห่างภายในพื้นที่เนื้อหา
-          padding: "24px",
-        }}
-      >
-        {/*
-          Outlet จะแสดงหน้าตาม URL
-
-          ตัวอย่าง:
-          /merchant/dashboard
-          -> Dashboard.jsx
-
-          /merchant/orders
-          -> Orders.jsx
-
-          /merchant/menu
-          -> Menu.jsx
-
-          /merchant/settings
-          -> Settings.jsx
-        */}
-        <Outlet />
-      </main>
+  return (
+    <div className="flex min-h-dvh w-full flex-1 bg-page">
+      <MerchantSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <MerchantTopBar />
+        <main className="flex-1 pb-24 lg:pb-12">
+          <Outlet />
+        </main>
+        <MerchantBottomNav />
+      </div>
     </div>
   );
 }
 
-// ส่ง Component นี้ออกไปให้ Router เรียกใช้งาน
+function MerchantLayout() {
+  return (
+    <MerchantProvider>
+      <MerchantShell />
+    </MerchantProvider>
+  );
+}
+
 export default MerchantLayout;

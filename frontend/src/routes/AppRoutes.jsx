@@ -97,6 +97,27 @@ import EditMenu from "../pages/merchant/EditMenu";
 import Settings from "../pages/merchant/Settings";
 
 
+// ==================================================
+// Admin Pages (ผู้ดูแลระบบ · ตอนนี้ใช้ข้อมูลจำลอง)
+// ==================================================
+
+import AdminLayout from "../layouts/AdminLayout";
+import AdminLogin from "../pages/admin/AdminLogin";
+import AdminDashboard from "../pages/admin/Dashboard";
+import AdminStores from "../pages/admin/Stores";
+import AdminStoreDetail from "../pages/admin/StoreDetail";
+import AdminUsers from "../pages/admin/Users";
+import AdminUserDetail from "../pages/admin/UserDetail";
+import AdminOrders from "../pages/admin/Orders";
+import AdminOrderDetail from "../pages/admin/OrderDetail";
+import AdminPromotions from "../pages/admin/Promotions";
+import AdminWallets from "../pages/admin/Wallets";
+import AdminReports from "../pages/admin/Reports";
+import AdminSettings from "../pages/admin/Settings";
+import AdminActivity from "../pages/admin/Activity";
+import AdminAccount from "../pages/admin/Account";
+
+
 function AppRoutes() {
   return (
     <Routes>
@@ -288,6 +309,33 @@ function AppRoutes() {
           element={<Settings />}
         />
 
+      </Route>
+
+
+      {/* ==================================================
+          ADMIN ROUTES
+          ==================================================
+
+          ผู้ดูแลระบบอยู่ใต้ /admin
+          หน้า login แยกจาก AdminLayout (ไม่มี sidebar)
+      */}
+
+      <Route path="/admin/login" element={<AdminLogin />} />
+
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="stores" element={<AdminStores />} />
+        <Route path="stores/:id" element={<AdminStoreDetail />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="users/:id" element={<AdminUserDetail />} />
+        <Route path="orders" element={<AdminOrders />} />
+        <Route path="orders/:id" element={<AdminOrderDetail />} />
+        <Route path="promotions" element={<AdminPromotions />} />
+        <Route path="wallets" element={<AdminWallets />} />
+        <Route path="reports" element={<AdminReports />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="activity" element={<AdminActivity />} />
+        <Route path="account" element={<AdminAccount />} />
       </Route>
 
 
