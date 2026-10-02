@@ -330,7 +330,7 @@ export function OptionGroupsEditor({ groups, onChange, errors, showErrors, menus
             <label htmlFor="menu-options-copy" className="block text-xs font-semibold text-ink-soft">
               คัดลอกตัวเลือกจากเมนูอื่น
             </label>
-            <select id="menu-options-copy" value={copyFrom} onChange={(e) => setCopyFrom(e.target.value)} className={smallField}>
+            <select id="menu-options-copy" value={copyFrom} onChange={(e) => setCopyFrom(e.target.value)} className={fieldClass}>
               <option value="">เลือกเมนู</option>
               {copySources.map((m) => (
                 <option key={m._id} value={m._id}>
