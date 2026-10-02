@@ -1,61 +1,45 @@
 import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PasswordField } from "@/components/ui/password-field";
 import { focusRing } from "@/components/ui/styles";
 import { TextField } from "@/components/ui/text-field";
-import { MockBadge } from "@/features/admin/components/badges";
-import { DEMO_ADMIN_PASSWORD } from "@/features/admin/mock-data";
-import { loadState, readSession, signIn } from "@/features/admin/store";
+import { postJson } from "@/lib/api-client";
 import { usePageTitle } from "@/lib/use-page-title";
 
 /** แสดงเฉพาะตอน dev (npm run dev): ลิงก์กรอกบัญชีทดสอบ ตอน build จริงเป็น null และถูกตัดออก */
-const DEV_ACCOUNT = import.meta.env.DEV ? { email: "admin@mealq.local", password: DEMO_ADMIN_PASSWORD } : null;
+const DEV_ACCOUNT = import.meta.env.DEV ? { email: "admin@mealq.local", password: "Admin123!" } : null;
 
 function AdminLogin() {
   usePageTitle("เข้าสู่ระบบผู้ดูแล");
   const navigate = useNavigate();
   const location = useLocation();
-  const [alreadySignedIn] = useState(() => Boolean(readSession()));
+  const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const destination = location.state?.from ?? "/admin";
-  if (alreadySignedIn) return <Navigate to={destination} replace />;
+  const from = location.state?.from;
+  const destination = typeof from === "string" && (from === "/admin" || from.startsWith("/admin/")) && !from.startsWith("/admin/login") ? from : "/admin";
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (busy) return;
     if (!email.trim() || !password) {
       setError({ title: "กรอกอีเมลและรหัสผ่านให้ครบ" });
       return;
     }
-    // MOCK: เทียบกับรายชื่อผู้ใช้ในข้อมูลจำลอง รอ POST /auth/login { portal: "ADMIN" }
-    // บัญชีที่เก็บไว้จากเวอร์ชันก่อนยังไม่มี password จึงใช้รหัสเริ่มต้นแทน
-    const user = loadState().users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (!user || (user.role === "admin" && password !== (user.password ?? DEMO_ADMIN_PASSWORD))) {
-      setError({ title: "อีเมลหรือรหัสผ่านไม่ถูกต้อง", invalid: true });
+    setBusy(true);
+    setError(null);
+    const result = await postJson("/auth/login", { email: email.trim(), password, portal: "ADMIN", rememberMe: true });
+    setBusy(false);
+    if (!result.ok) {
+      setError({ title: result.error?.message || "เข้าสู่ระบบไม่สำเร็จ", invalid: result.status === 401 });
       return;
     }
-    if (user.role !== "admin") {
-      setError({ title: "บัญชีนี้ไม่ใช่ผู้ดูแลระบบ", detail: "บัญชีร้านค้าและลูกค้าใช้หน้านี้ไม่ได้", invalid: true });
-      return;
-    }
-    if (user.status !== "active") {
-      setError({ title: "บัญชีนี้ถูกระงับ", detail: "ติดต่อผู้ดูแลระบบคนอื่นเพื่อเปิดใช้งาน" });
-      return;
-    }
-    signIn({
-      user_id: user._id,
-      name: user.name,
-      email: user.email,
-      signed_in_at: Date.now(),
-      must_change_password: Boolean(user.must_change_password),
-    });
-    // บัญชีที่เพิ่งถูกสร้างต้องตั้งรหัสผ่านของตัวเองก่อนใช้งานหน้าอื่น
-    navigate(user.must_change_password ? "/admin/account" : destination, { replace: true });
+    navigate(result.data.user.must_change_password ? "/admin/account" : destination, { replace: true });
   }
 
   function fillDevAccount() {
@@ -74,7 +58,6 @@ function AdminLogin() {
           </span>
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-semibold text-brand-ink">MealQ · ผู้ดูแลระบบ</p>
-            <MockBadge />
           </div>
           <h1 className="text-3xl leading-tight font-bold text-ink">เข้าสู่ระบบผู้ดูแล</h1>
           <p className="text-ink-soft">สำหรับทีมดูแลเว็บไซต์เท่านั้น บัญชีผู้ดูแลเพิ่มได้โดยผู้ดูแลคนอื่น</p>
@@ -108,8 +91,8 @@ function AdminLogin() {
             invalid={error?.invalid}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Button type="submit" variant="cocoa" fullWidth>
-            เข้าสู่ระบบ
+          <Button type="submit" variant="cocoa" fullWidth disabled={busy}>
+            {busy ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}
           </Button>
         </form>
 

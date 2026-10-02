@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { CheckIcon, HeartIcon } from "@/components/icons";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { CatalogImage } from "@/features/customer/components/catalog-image";
 import { buttonClasses, focusRing, textLinkClass } from "@/components/ui/styles";
 import {
   defaultSelections,
@@ -121,7 +121,8 @@ function FoodDetail() {
       <div className={cx(containerClass, "lg:grid lg:grid-cols-2 lg:items-start lg:gap-12 lg:pt-10")}>
         {/* Phones: full-bleed photo. Desktop: rounded photo that stays in view beside the options. */}
         <div className={cx("relative -mx-4 sm:-mx-6 lg:mx-0", stickySidebarClass)}>
-          <ImagePlaceholder
+          <CatalogImage
+            src={menuItem.image}
             label={menuItem.name}
             className="aspect-square max-h-96 w-full border-x-0 border-t-0 lg:max-h-none lg:rounded-4xl lg:border-2"
           />

@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ChevronRightIcon } from "@/components/icons";
 import { buttonClasses, focusRing } from "@/components/ui/styles";
-import { isActiveOrder } from "@/features/customer/catalog";
+import { currentStatus } from "@/features/customer/catalog";
+import { saveProfile } from "@/features/customer/api";
 import { ToggleSwitch } from "@/features/customer/components/toggle-switch";
-import { CUSTOMER_PROFILE, PAYMENT_METHODS } from "@/features/customer/mock-data";
+import { PAYMENT_METHODS } from "@/features/customer/mock-data";
 import { useCustomer } from "@/features/customer/store";
 import { containerClass } from "@/features/customer/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
+import { postJson } from "@/lib/api-client";
 
 // Roughly how long a walk-in wait would have been per order; drives the "เวลาที่ประหยัด" stat.
 const MINUTES_SAVED_PER_ORDER = 10;
@@ -28,14 +30,35 @@ function Profile() {
   usePageTitle("โปรไฟล์");
   const navigate = useNavigate();
   const { state, dispatch } = useCustomer();
-  const [devices, setDevices] = useState(CUSTOMER_PROFILE.devices);
+  const [name, setName] = useState(state.user?.name || "");
+  const [phone, setPhone] = useState(state.user?.phone || "");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [choosingPayment, setChoosingPayment] = useState(false);
 
-  const completed = state.orders.filter((o) => !isActiveOrder(o)).length;
+  const completed = state.orders.filter((o) => currentStatus(o) === "PICKED_UP").length;
   const hoursSaved = ((completed * MINUTES_SAVED_PER_ORDER) / 60).toFixed(1);
   const unread = state.notifications.filter((n) => !n.read).length;
-  const payment = PAYMENT_METHODS.find((m) => m.id === state.settings.paymentMethod);
+  const payment = PAYMENT_METHODS.find((m) => m.id === state.settings.paymentMethod) || PAYMENT_METHODS[0];
   const setSetting = (key, value) => dispatch({ type: "settings/set", key, value });
+
+  async function handleSave(event) {
+    event.preventDefault();
+    if (saving) return;
+    setSaving(true);
+    const result = await saveProfile({ name: name.trim(), phone: phone.trim() || null });
+    if (result.ok) { dispatch({ type: "profile/set", user: result.data.user }); setMessage("บันทึกข้อมูลแล้ว"); }
+    else setMessage(result.error?.message || "บันทึกข้อมูลไม่สำเร็จ");
+    setSaving(false);
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    const result = await postJson("/auth/logout", {});
+    if (result.ok) navigate("/login", { replace: true });
+    else { setMessage(result.error?.message || "ออกจากระบบไม่สำเร็จ"); setLoggingOut(false); }
+  }
 
   return (
     // Desktop: identity, stats, devices and sign-out on the left; account links and settings on the right.
@@ -55,9 +78,9 @@ function Profile() {
           โปรไฟล์
         </span>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-ink lg:text-3xl">{CUSTOMER_PROFILE.name}</h1>
-          <p className="truncate text-ink-soft">{CUSTOMER_PROFILE.email}</p>
-          <p className="text-ink-soft">{CUSTOMER_PROFILE.phone}</p>
+          <h1 className="text-2xl font-bold text-ink lg:text-3xl">{state.user?.name}</h1>
+          <p className="truncate text-ink-soft">{state.user?.email}</p>
+          <p className="text-ink-soft">{state.user?.phone || "ยังไม่มีเบอร์โทร"}</p>
         </div>
       </header>
 
@@ -68,6 +91,17 @@ function Profile() {
       </dl>
 
       <div className="space-y-4 lg:col-start-2 lg:row-span-4 lg:row-start-1">
+        <form onSubmit={handleSave} className="space-y-3 rounded-3xl bg-cream p-5">
+          <h2 className="font-bold text-ink">แก้ไขข้อมูลส่วนตัว</h2>
+          <label className="block text-sm text-ink">ชื่อ
+            <input required minLength={2} maxLength={100} value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded-2xl border border-haze bg-white px-4 py-3" />
+          </label>
+          <label className="block text-sm text-ink">เบอร์โทร
+            <input type="tel" pattern="[0-9+() -]{8,20}" value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1 w-full rounded-2xl border border-haze bg-white px-4 py-3" />
+          </label>
+          <button type="submit" disabled={saving} className={buttonClasses({ variant: "cocoa", size: "md" })}>{saving ? "กำลังบันทึก…" : "บันทึกข้อมูล"}</button>
+          {message && <p role="status" className="text-sm text-ink">{message}</p>}
+        </form>
         <nav aria-label="บัญชี" className="overflow-hidden rounded-3xl bg-cream">
           <ul className="divide-y divide-haze">
             <li>
@@ -160,38 +194,17 @@ function Profile() {
       </div>
 
       <section aria-labelledby="devices-title" className="space-y-2 rounded-3xl bg-cream px-5 py-4 lg:col-start-1">
-        <h2 id="devices-title" className="font-bold text-ink">
-          อุปกรณ์ที่เข้าสู่ระบบ
-        </h2>
-        <ul className="space-y-1 text-sm text-ink-soft">
-          {devices.map((device) => (
-            <li key={device.id}>
-              {device.label} · {device.lastSeen}
-              {!device.current && (
-                <>
-                  {" — "}
-                  {/* MOCK: remote sign-out needs the sessions API. */}
-                  <button
-                    type="button"
-                    onClick={() => setDevices((prev) => prev.filter((d) => d.id !== device.id))}
-                    className={`rounded font-semibold text-danger underline-offset-4 hover:underline ${focusRing}`}
-                  >
-                    ออกจากระบบ
-                  </button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+        <h2 id="devices-title" className="font-bold text-ink">การเข้าสู่ระบบ</h2>
+        <p className="text-sm text-ink-soft">บัญชีนี้กำลังเข้าสู่ระบบบนเบราว์เซอร์ปัจจุบัน</p>
       </section>
 
       <button
         type="button"
-        // MOCK: until POST /auth/logout exists, signing out just returns to the login screen.
-        onClick={() => navigate("/login")}
+        disabled={loggingOut}
+        onClick={handleLogout}
         className={cx(buttonClasses({ fullWidth: true, variant: "danger-outline" }), "lg:col-start-1")}
       >
-        ออกจากระบบ
+        {loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
@@ -11,6 +12,7 @@ export function ForgotPasswordForm() {
   const [error, setError] = useState(null);
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
+  const [devToken, setDevToken] = useState(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -30,15 +32,19 @@ export function ForgotPasswordForm() {
       setError(result.error);
       return;
     }
+    setDevToken(import.meta.env.DEV ? result.data.devResetToken : null);
     setSent(true);
   }
 
   if (sent) {
     // Deliberately identical whether or not the account exists, to avoid leaking registered emails.
     return (
-      <Alert tone="success" title="ตรวจสอบกล่องอีเมลของคุณ">
-        ถ้ามีบัญชีที่ใช้ {email.trim()} เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปแล้ว
-      </Alert>
+      <div className="space-y-4">
+        <Alert tone="success" title={devToken ? "สร้างลิงก์ตั้งรหัสผ่านใหม่แล้ว" : "ส่งคำขอตั้งรหัสผ่านใหม่แล้ว"}>
+          {devToken ? "โหมดพัฒนา: ใช้ลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่ ลิงก์หมดอายุใน 15 นาที" : "หากมีบัญชีนี้และระบบส่งอีเมลพร้อมใช้งาน ลิงก์จะถูกส่งไปยังอีเมลของคุณ"}
+        </Alert>
+        {devToken && <Link className="block text-center font-semibold text-brand-ink underline" to={`/reset-password?token=${devToken}`}>ตั้งรหัสผ่านใหม่</Link>}
+      </div>
     );
   }
 

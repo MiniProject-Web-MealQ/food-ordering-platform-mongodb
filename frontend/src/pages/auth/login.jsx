@@ -12,7 +12,7 @@ export default function LoginPage() {
     <div className="space-y-6">
       <AuthHeader
         title="ยินดีต้อนรับกลับ"
-        description="เข้าสู่ระบบเพื่อสั่งอาหารและดูคิวของคุณ"
+        description="เลือกประเภทบัญชีเพื่อสั่งอาหารหรือจัดการร้านค้าของคุณ"
         leading={
           <Link
             to="/"

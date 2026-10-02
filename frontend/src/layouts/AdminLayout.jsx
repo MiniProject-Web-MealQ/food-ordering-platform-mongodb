@@ -1,51 +1,30 @@
-/*
-  AdminLayout.jsx
-  --------------------------------------------------
-  Layout หลักของฝั่งผู้ดูแลระบบ (/admin/*) ยกเว้นหน้า login
-
-  - ครอบทุกหน้าด้วย AdminProvider (MOCK: ข้อมูลจำลองใน localStorage รอ API /api/v1/admin/*)
-  - ยังไม่ได้ login → ส่งไป /admin/login แล้วค่อยกลับมาหน้าเดิม
-  - บัญชีใหม่ที่ยังไม่ได้เปลี่ยนรหัสผ่านครั้งแรก → บังคับไปหน้า /admin/account
-  - Desktop (lg ขึ้นไป): sidebar สีเข้มด้านซ้าย ให้ต่างจากหน้าร้านค้า
-  - มือถือ/แท็บเล็ต: แถบบน + ปุ่มเปิดเมนู
-*/
 import { Navigate, Outlet, useLocation } from "react-router";
 import { AdminProvider } from "@/features/admin/admin-provider";
 import { AdminSidebar, AdminTopBar } from "@/features/admin/components/admin-nav";
 import { useAdmin } from "@/features/admin/store";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 function AdminShell() {
-  const { state } = useAdmin();
+  const { state, loading, busy, error, refresh } = useAdmin();
   const location = useLocation();
-
-  if (!state.session) {
-    return <Navigate to="/admin/login" replace state={{ from: location.pathname + location.search }} />;
-  }
-
-  // บัญชีที่ผู้ดูแลคนอื่นสร้างให้ ต้องเปลี่ยนรหัสผ่านก่อนใช้หน้าอื่น
-  if (state.session.must_change_password && location.pathname !== "/admin/account") {
-    return <Navigate to="/admin/account" replace />;
-  }
-
+  if (loading) return <main role="status" className="grid min-h-dvh place-items-center">กำลังโหลดข้อมูลผู้ดูแล…</main>;
+  if (!state.session && error) return <main className="mx-auto max-w-lg space-y-4 px-4 py-20"><Alert tone="error" title={error} /><Button onClick={refresh}>ลองใหม่</Button></main>;
+  if (!state.session) return <Navigate to="/admin/login" replace state={{ from: location.pathname + location.search }} />;
+  if (state.session.must_change_password && location.pathname !== "/admin/account") return <Navigate to="/admin/account" replace />;
   return (
     <div className="flex min-h-dvh w-full flex-1 bg-page">
       <AdminSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <AdminTopBar />
-        <main className="flex-1 pb-16">
-          <Outlet />
-        </main>
+        {error && <div className="px-4 pt-4"><Alert tone="error" title={error} /></div>}
+        {busy && <p role="status" className="px-4 pt-2 text-sm text-ink-soft">กำลังบันทึก…</p>}
+        <main className="flex-1 pb-16" aria-busy={busy}><Outlet /></main>
       </div>
     </div>
   );
 }
 
-function AdminLayout() {
-  return (
-    <AdminProvider>
-      <AdminShell />
-    </AdminProvider>
-  );
+export default function AdminLayout() {
+  return <AdminProvider><AdminShell /></AdminProvider>;
 }
-
-export default AdminLayout;

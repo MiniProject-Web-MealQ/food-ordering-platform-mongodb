@@ -3,7 +3,7 @@ import { SearchIcon } from "@/components/icons";
 import { focusRing } from "@/components/ui/styles";
 import { MenuItemRow } from "@/features/customer/components/menu-item-row";
 import { getRestaurant, isOrderable } from "@/features/customer/catalog";
-import { MENU_ITEMS, RESTAURANTS } from "@/features/customer/mock-data";
+import { MENU_ITEMS, RESTAURANTS } from "@/features/customer/catalog";
 import { chipClasses } from "@/features/customer/styles";
 import { usePageTitle } from "@/lib/use-page-title";
 

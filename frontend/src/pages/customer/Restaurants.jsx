@@ -4,7 +4,7 @@ import { SearchIcon, SlidersIcon, XIcon } from "@/components/icons";
 import { focusRing } from "@/components/ui/styles";
 import { getRestaurantCategories } from "@/features/customer/catalog";
 import { RestaurantCard } from "@/features/customer/components/restaurant-card";
-import { MENU_CATEGORIES, RESTAURANTS } from "@/features/customer/mock-data";
+import { MENU_CATEGORIES, RESTAURANTS } from "@/features/customer/catalog";
 import { chipClasses, containerClass, scrollStripClass, stickySidebarClass } from "@/features/customer/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -177,7 +177,7 @@ function Restaurants() {
             {results.length} ร้าน · เรียงตาม{sort.label}
           </h2>
           {results.length > 0 ? (
-            <ul className="grid gap-4 md:grid-cols-2 lg:gap-5">
+            <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-5">
               {results.map((restaurant) => (
                 <li key={restaurant.id}>
                   <RestaurantCard restaurant={restaurant} />

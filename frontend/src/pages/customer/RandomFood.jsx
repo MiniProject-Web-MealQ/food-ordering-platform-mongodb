@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { CatalogImage } from "@/features/customer/components/catalog-image";
 import { buttonClasses, textLinkClass } from "@/components/ui/styles";
 import { getRestaurant, isOrderable } from "@/features/customer/catalog";
 import { ToggleSwitch } from "@/features/customer/components/toggle-switch";
 import { Rating } from "@/features/customer/components/rating";
 import { formatBaht, formatRange } from "@/features/customer/format";
-import { CUISINES, MENU_ITEMS } from "@/features/customer/mock-data";
+import { CUISINES } from "@/features/customer/mock-data";
+import { MENU_ITEMS } from "@/features/customer/catalog";
 import { useCustomer } from "@/features/customer/store";
 import { chipClasses, containerClass, stickySidebarClass } from "@/features/customer/styles";
 import { cx } from "@/lib/cx";
@@ -37,7 +38,7 @@ function pickRandom(list, avoidId) {
 
 function SetupView({ filters, setFilter, spinning, reelItem, onSpin }) {
   return (
-    <div className="flex-1 bg-forest text-white">
+    <div className="min-w-0 w-full flex-1 bg-forest text-white">
       <div
         className={cx(
           containerClass,
@@ -80,7 +81,7 @@ function SetupView({ filters, setFilter, spinning, reelItem, onSpin }) {
           </div>
         </div>
 
-        <fieldset disabled={spinning} className="space-y-6 lg:rounded-4xl lg:bg-white/5 lg:p-8">
+        <fieldset disabled={spinning} className="min-w-0 w-full space-y-6 lg:rounded-4xl lg:bg-white/5 lg:p-8">
           <legend className="sr-only">เงื่อนไขการสุ่ม</legend>
           <div>
             <p id="random-cuisine" className="mb-3 font-bold">
@@ -152,7 +153,8 @@ function ResultView({ item, onRespin }) {
         <span aria-hidden="true">🎉</span> วันนี้คุณได้…
       </h1>
       <article className="overflow-hidden rounded-4xl bg-cream shadow-card md:grid md:grid-cols-2">
-        <ImagePlaceholder
+        <CatalogImage
+          src={item.image}
           label={item.name}
           className="aspect-4/3 border-x-0 border-t-0 md:aspect-auto md:h-full md:min-h-72 md:border-b-0"
         />

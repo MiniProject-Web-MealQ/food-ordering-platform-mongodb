@@ -21,7 +21,7 @@ export function startOfMonth(ts) {
 
 /** ยอดขาย = ทุกออเดอร์ที่จ่ายแล้วและไม่ถูกยกเลิก */
 export function isSale(order) {
-  return order.status !== "cancelled";
+  return order.status !== "cancelled" && ["paid", "simulated"].includes(order.payment_status);
 }
 
 function revenueOf(orders) {
@@ -88,7 +88,7 @@ export function storeRanking(state, from, to = Infinity) {
     const row = rows.get(o.store_id) ?? { storeId: o.store_id, orders: 0, cancelled: 0, revenue: 0 };
     row.orders += 1;
     if (o.status === "cancelled") row.cancelled += 1;
-    else row.revenue += o.total_price;
+    else if (isSale(o)) row.revenue += o.total_price;
     rows.set(o.store_id, row);
   }
   return [...rows.values()]

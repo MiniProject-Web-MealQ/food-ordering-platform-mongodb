@@ -1,10 +1,9 @@
-import { Ban, Undo2 } from "lucide-react";
+import { Ban } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { buttonClasses, textLinkClass } from "@/components/ui/styles";
-import { TextField } from "@/components/ui/text-field";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { ReasonDialog } from "@/features/admin/components/reason-dialog";
 import { formatBaht, formatDateTime } from "@/features/admin/format";
@@ -27,51 +26,11 @@ function Row({ label, value, strong = false }) {
   );
 }
 
-function RefundFields({ order, amount, setAmount, method, setMethod }) {
-  return (
-    <>
-      <TextField
-        id="refund-amount"
-        label="จำนวนเงินที่คืน"
-        inputMode="numeric"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-        hint={`ยอดออเดอร์ ${formatBaht(order.total_price)}`}
-        trailing={<span className="pr-4 text-sm font-medium text-ink-soft">บาท</span>}
-      />
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-semibold text-ink">คืนผ่าน</legend>
-        {[
-          { value: "wallet", label: "เข้า MealQ Wallet ของลูกค้า", hint: "ยอดเข้า Wallet ทันที" },
-          { value: "original", label: `ช่องทางเดิม (${paymentLabel(order.payment_method)})`, hint: "ทำผ่านผู้ให้บริการชำระเงินแล้วบันทึกไว้" },
-        ].map((option) => (
-          <label key={option.value} className="flex cursor-pointer items-start gap-3 rounded-2xl bg-cream px-3 py-2.5 has-checked:ring-2 has-checked:ring-brand">
-            <input
-              type="radio"
-              name="refund-method"
-              value={option.value}
-              checked={method === option.value}
-              onChange={() => setMethod(option.value)}
-              className="mt-1 size-4 accent-cocoa"
-            />
-            <span>
-              <span className="block text-sm font-semibold text-ink">{option.label}</span>
-              <span className="block text-xs text-ink-soft">{option.hint}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-    </>
-  );
-}
-
 function OrderDetail() {
   const { id } = useParams();
   const { state, dispatch } = useAdmin();
   const [dialog, setDialog] = useState(null);
   const [notice, setNotice] = useState("");
-  const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState("wallet");
   const order = state.orders.find((o) => o.order_number === id || o._id === id);
   usePageTitle(order ? order.order_number : "ไม่พบออเดอร์");
 
@@ -92,16 +51,10 @@ function OrderDetail() {
   const store = byId(state.stores, order.store_id);
   const customer = byId(state.users, order.customer_id);
   const active = ACTIVE_ORDER_STATUSES.includes(order.status);
-  const refundable = order.status === "cancelled" && !order.refund;
   // แปลงเป็นรูปแบบที่ timeline ของหน้าร้านใช้
   const timelineOrder = { status: order.status, order_date: order.order_date, receive_time: order.status === "completed" ? order.updated_at : null };
   const timelineQueue = { called_at: order.status === "ready" ? order.updated_at : null };
 
-  function openRefund() {
-    setAmount(String(order.total_price));
-    setMethod(order.payment_method === "wallet" ? "wallet" : "original");
-    setDialog("refund");
-  }
 
   return (
     <div className={cx(pageClass, "space-y-4 lg:space-y-5")}>
@@ -149,7 +102,7 @@ function OrderDetail() {
             <OrderTimeline order={timelineOrder} queue={timelineQueue} />
             {order.cancel && (
               <p className="mt-3 rounded-2xl bg-haze px-4 py-3 text-sm text-ink">
-                ยกเลิกโดย{CANCEL_BY_LABEL[order.cancel.by]} · {formatDateTime(order.cancel.at)}
+                ยกเลิกโดย{CANCEL_BY_LABEL[order.cancel.by] || "?????????"} · {formatDateTime(order.cancel.at)}
                 <span className="block text-ink-soft">เหตุผล: {order.cancel.reason}</span>
               </p>
             )}
@@ -189,7 +142,7 @@ function OrderDetail() {
               <div className="flex gap-6">
                 <div>
                   <dt className="text-xs text-ink-soft">เลขคิว</dt>
-                  <dd className="font-display text-2xl font-black text-ink">{formatQueue(order.queue.queue_number)}</dd>
+                  <dd className="font-display text-2xl font-black text-ink">{order.queue.queue_number == null ? "–" : formatQueue(order.queue.queue_number)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-ink-soft">รหัสรับอาหาร</dt>
@@ -215,13 +168,8 @@ function OrderDetail() {
                 ยกเลิกออเดอร์แทนร้าน
               </Button>
             )}
-            {refundable && (
-              <Button variant="cocoa" size="md" fullWidth onClick={openRefund}>
-                <Undo2 aria-hidden="true" className="size-4" />
-                บันทึกการคืนเงิน
-              </Button>
-            )}
-            {!active && !refundable && !order.refund && <p className="text-sm text-ink-soft">ออเดอร์นี้จบแล้ว ไม่มีอะไรต้องจัดการ</p>}
+
+            {!active && !order.refund && <p className="text-sm text-ink-soft">ออเดอร์นี้จบแล้ว ไม่มีอะไรต้องจัดการ</p>}
             <p className="text-xs text-ink-soft">ผู้ดูแลเลื่อนสถานะการทำอาหารแทนร้านไม่ได้ ให้ร้านเป็นคนกดในหน้าร้านค้า</p>
           </section>
         </div>
@@ -234,34 +182,15 @@ function OrderDetail() {
           description="ใช้เมื่อร้านติดต่อไม่ได้หรือออเดอร์มีปัญหา หลังยกเลิกให้บันทึกการคืนเงินต่อ"
           confirmLabel="ยกเลิกออเดอร์"
           onClose={() => setDialog(null)}
-          onConfirm={(reason) => {
-            dispatch(actions.cancelOrder(order._id, reason));
+          onConfirm={async (reason) => {
+            const result = await dispatch(actions.cancelOrder(order._id, reason));
+            if (!result.ok) return result.error?.message || "???????????????";
             setNotice(`ยกเลิกออเดอร์ ${order.order_number} แล้ว อย่าลืมบันทึกการคืนเงิน`);
             setDialog(null);
           }}
         />
       )}
-      {dialog === "refund" && (
-        <ReasonDialog
-          title="บันทึกการคืนเงิน"
-          subtitle={order.order_number}
-          confirmLabel="บันทึกการคืนเงิน"
-          danger={false}
-          requireReason={false}
-          reasonLabel="หมายเหตุ"
-          onClose={() => setDialog(null)}
-          onConfirm={(note) => {
-            const value = Number(amount);
-            if (!value || value < 1 || value > order.total_price) return `จำนวนเงินต้องอยู่ระหว่าง 1–${order.total_price} บาท`;
-            dispatch(actions.refundOrder(order._id, { amount: value, method, note }));
-            setNotice(`บันทึกการคืนเงิน ${formatBaht(value)} แล้ว`);
-            setDialog(null);
-            return null;
-          }}
-        >
-          <RefundFields order={order} amount={amount} setAmount={setAmount} method={method} setMethod={setMethod} />
-        </ReasonDialog>
-      )}
+
     </div>
   );
 }

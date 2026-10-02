@@ -27,6 +27,11 @@ const storeSchema = new mongoose.Schema(
     cover_image: String,
     logo: String,
     is_open: { type: Boolean, default: true },
+    status: { type: String, enum: ["pending", "active", "suspended", "rejected"], default: "active" },
+    status_note: { type: String, default: null },
+    queue_sequence: { type: Number, default: 0, min: 0 },
+    checkout_lock: { type: String, default: null, select: false },
+    checkout_lock_until: { type: Date, default: null, select: false },
   },
   { timestamps: true },
 );

@@ -7,7 +7,6 @@ import { PageHeader } from "@/features/customer/components/page-header";
 import { RoleBadge } from "@/features/admin/components/badges";
 import { PasswordChecklist } from "@/features/admin/components/password-checklist";
 import { formatDate } from "@/features/admin/format";
-import { DEMO_ADMIN_PASSWORD } from "@/features/admin/mock-data";
 import { validateNewPassword } from "@/features/admin/password";
 import { byId } from "@/features/admin/stats";
 import { actions, useAdmin } from "@/features/admin/store";
@@ -17,30 +16,34 @@ import { usePageTitle } from "@/lib/use-page-title";
 
 const FIELD_IDS = { current: "account-current-password", password: "account-new-password", confirm: "account-confirm-password" };
 
-function ChangePasswordForm({ user, firstTime, onChanged }) {
+function ChangePasswordForm({ firstTime, onChanged }) {
   const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState("");
 
-  // MOCK: ตรวจรหัสเดิมกับข้อมูลจำลอง ระบบจริงให้ backend ตรวจ
-  const savedPassword = user.password ?? DEMO_ADMIN_PASSWORD;
   const errors = validateNewPassword(password, confirm);
   if (!current) errors.current = "กรอกรหัสผ่านปัจจุบัน";
-  else if (current !== savedPassword) errors.current = "รหัสผ่านปัจจุบันไม่ถูกต้อง";
   if (!errors.password && password === current) errors.password = "รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสเดิม";
   const shown = submitted ? errors : {};
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     setSubmitted(true);
     const first = Object.keys(FIELD_IDS).find((field) => errors[field]);
     if (first) {
       document.getElementById(FIELD_IDS[first])?.focus();
       return;
     }
-    onChanged(password);
+    setBusy(true);
+    setProblem("");
+    const result = await onChanged(password, current);
+    setBusy(false);
+    if (!result?.ok) { setProblem(result?.error?.message || "เปลี่ยนรหัสผ่านไม่สำเร็จ"); return; }
     setCurrent("");
     setPassword("");
     setConfirm("");
@@ -51,6 +54,7 @@ function ChangePasswordForm({ user, firstTime, onChanged }) {
   return (
     <form onSubmit={submit} noValidate className="space-y-5">
       {done && <Alert tone="success" title="เปลี่ยนรหัสผ่านแล้ว" />}
+      {problem && <Alert tone="error" title={problem} />}
       <PasswordField
         id={FIELD_IDS.current}
         label={firstTime ? "รหัสผ่านที่ได้รับ" : "รหัสผ่านปัจจุบัน"}
@@ -88,7 +92,7 @@ function ChangePasswordForm({ user, firstTime, onChanged }) {
           setDone(false);
         }}
       />
-      <Button type="submit" variant="cocoa" className="w-full sm:w-auto">
+      <Button type="submit" variant="cocoa" className="w-full sm:w-auto" disabled={busy}>
         {firstTime ? "ตั้งรหัสผ่านและเริ่มใช้งาน" : "เปลี่ยนรหัสผ่าน"}
       </Button>
     </form>
@@ -154,11 +158,11 @@ function Account() {
             {firstTime ? "ตั้งรหัสผ่านใหม่" : "เปลี่ยนรหัสผ่าน"}
           </h2>
           <ChangePasswordForm
-            user={user}
             firstTime={firstTime}
-            onChanged={(password) => {
-              dispatch(actions.changePassword(user._id, password));
-              if (firstTime) navigate("/admin", { replace: true });
+            onChanged={async (password, currentPassword) => {
+              const result = await dispatch(actions.changePassword(user._id, password, currentPassword));
+              if (result.ok && firstTime) navigate("/admin", { replace: true });
+              return result;
             }}
           />
         </section>

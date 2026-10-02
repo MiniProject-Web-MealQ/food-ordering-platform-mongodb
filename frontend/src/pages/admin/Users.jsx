@@ -23,6 +23,8 @@ import { usePageTitle } from "@/lib/use-page-title";
 function AddAdminDialog({ users, onAdd, onClose }) {
   const [values, setValues] = useState({ name: "", email: "", phone: "", password: "", confirm: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState("");
 
   const errors = {};
   if (!values.name.trim()) errors.name = "กรอกชื่อ";
@@ -36,17 +38,23 @@ function AddAdminDialog({ users, onAdd, onClose }) {
     return (e) => setValues((v) => ({ ...v, [field]: e.target.value }));
   }
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     setSubmitted(true);
     if (Object.keys(errors).length) return;
-    onAdd({ name: values.name.trim(), email: values.email.trim().toLowerCase(), phone: values.phone.trim(), password: values.password });
+    setBusy(true);
+    setProblem("");
+    const result = await onAdd({ name: values.name.trim(), email: values.email.trim().toLowerCase(), phone: values.phone.trim(), password: values.password });
+    setBusy(false);
+    if (!result.ok) setProblem(result.error?.message || "เพิ่มผู้ดูแลไม่สำเร็จ");
   }
 
   return (
     <MerchantDialog eyebrow="ผู้ใช้" title="เพิ่มผู้ดูแลระบบ" subtitle="บัญชีผู้ดูแลสร้างได้จากหน้านี้เท่านั้น ไม่มีปุ่มสมัครเอง" onClose={onClose}>
       <form onSubmit={submit} noValidate className="mx-auto max-w-lg space-y-4 rounded-3xl bg-white p-5 ring-1 ring-haze">
         {submitted && Object.keys(errors).length > 0 && <Alert tone="error" title="ยังเพิ่มไม่ได้ ตรวจช่องที่ผิด" />}
+        {problem && <Alert tone="error" title={problem} />}
         <TextField id="new-admin-name" label="ชื่อ" value={values.name} error={shown.name} onChange={set("name")} required />
         <TextField id="new-admin-email" label="อีเมล" type="email" value={values.email} error={shown.email} onChange={set("email")} required />
         <TextField id="new-admin-phone" label="เบอร์โทร (ไม่บังคับ)" type="tel" value={values.phone} error={shown.phone} onChange={set("phone")} />
@@ -76,7 +84,7 @@ function AddAdminDialog({ users, onAdd, onClose }) {
           ส่งรหัสนี้ให้ผู้ดูแลคนใหม่ทางช่องทางที่ปลอดภัย เมื่อเขา login ครั้งแรก ระบบจะบังคับให้เปลี่ยนเป็นรหัสของตัวเอง
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" variant="cocoa" size="md">
+          <Button type="submit" variant="cocoa" size="md" disabled={busy}>
             เพิ่มผู้ดูแล
           </Button>
           <Button variant="cocoa-outline" size="md" onClick={onClose}>
@@ -162,10 +170,12 @@ function Users() {
         <AddAdminDialog
           users={state.users}
           onClose={() => setAdding(false)}
-          onAdd={(fields) => {
-            dispatch(actions.addAdmin(fields));
+          onAdd={async (fields) => {
+            const result = await dispatch(actions.addAdmin(fields));
+            if (!result.ok) return result;
             setAdding(false);
             setNotice(`เพิ่มผู้ดูแลระบบ “${fields.name}” แล้ว`);
+            return result;
           }}
         />
       )}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { AlertTriangleIcon, TicketIcon, XIcon } from "@/components/icons";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { CatalogImage } from "@/features/customer/components/catalog-image";
 import { buttonClasses, focusRing } from "@/components/ui/styles";
 import { getRestaurant, priceCart } from "@/features/customer/catalog";
 import { PageHeader } from "@/features/customer/components/page-header";
@@ -180,7 +180,7 @@ function Cart() {
               <ul className="divide-y divide-haze lg:rounded-4xl lg:px-6 lg:ring-1 lg:ring-haze">
                 {priced.lines.map((line) => (
                   <li key={line.key} className="flex gap-3 py-4 lg:gap-5 lg:py-5">
-                    <ImagePlaceholder
+                    <CatalogImage
                       compact
                       label={line.menuItem.shortLabel}
                       className="size-16 shrink-0 rounded-2xl lg:size-20"

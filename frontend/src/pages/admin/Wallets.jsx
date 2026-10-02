@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -29,14 +29,23 @@ function AdjustForm({ balance, onAdjust }) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const request = useRef(null);
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     const value = Number(amount);
     if (!value || value < 1) return setError("กรอกจำนวนเงินตั้งแต่ 1 บาท");
     if (direction === "remove" && value > balance) return setError(`หักได้ไม่เกินยอดคงเหลือ ${formatBaht(balance)}`);
     if (reason.trim().length < 5) return setError("ใส่เหตุผลอย่างน้อย 5 ตัวอักษร");
-    onAdjust(direction === "add" ? value : -value, reason.trim());
+    const signature = `${direction}:${value}:${reason.trim()}`;
+    if (request.current?.signature !== signature) request.current = { signature, key: crypto.randomUUID() };
+    setBusy(true);
+    const result = await onAdjust(direction === "add" ? value : -value, reason.trim(), request.current.key);
+    setBusy(false);
+    if (!result.ok) { setError(result.error?.message || "ปรับยอดไม่สำเร็จ"); return; }
+    request.current = null;
     setAmount("");
     setReason("");
     setError("");
@@ -76,7 +85,7 @@ function AdjustForm({ balance, onAdjust }) {
           {error}
         </p>
       )}
-      <Button type="submit" variant="cocoa" size="md" fullWidth>
+      <Button type="submit" variant="cocoa" size="md" fullWidth disabled={busy}>
         บันทึกการปรับยอด
       </Button>
     </form>
@@ -213,9 +222,11 @@ function Wallets() {
           user={openUser}
           state={state}
           onClose={close}
-          onAdjust={(amount, reason) => {
-            dispatch(actions.adjustWallet(openUser._id, amount, reason));
+          onAdjust={async (amount, reason, key) => {
+            const result = await dispatch(actions.adjustWallet(openUser._id, amount, reason, key));
+            if (!result.ok) return result;
             setNotice(`ปรับยอด Wallet ของ ${openUser.name} ${signed(amount)} แล้ว`);
+            return result;
           }}
         />
       )}

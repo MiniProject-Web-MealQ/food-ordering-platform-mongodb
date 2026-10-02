@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { PlusIcon, StarIcon, XIcon } from "@/components/icons";
-import { buttonClasses, focusRing } from "@/components/ui/styles";
-import { getRestaurant } from "@/features/customer/catalog";
+import { StarIcon } from "@/components/icons";
+import { buttonClasses } from "@/components/ui/styles";
+import { currentStatus, getOrderRestaurant } from "@/features/customer/catalog";
+import { submitReview } from "@/features/customer/api";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { useCustomer } from "@/features/customer/store";
 import { chipClasses } from "@/features/customer/styles";
@@ -12,7 +13,6 @@ import NotFoundPage from "@/pages/not-found";
 
 const RATING_LABELS = ["", "แย่มาก", "ไม่ค่อยดี", "พอใช้", "ดี", "ยอดเยี่ยม — ขอบคุณ!"];
 const TAGS = ["อร่อย", "รอไม่นาน", "คุ้มราคา", "ปริมาณเยอะ", "แพ็กมาดี"];
-const MAX_PHOTOS = 3;
 
 function StarInput({ value, onChange }) {
   return (
@@ -51,23 +51,27 @@ function Review() {
   const [rating, setRating] = useState(order?.review?.rating ?? 0);
   const [tags, setTags] = useState(order?.review?.tags ?? []);
   const [text, setText] = useState(order?.review?.text ?? "");
-  // { url } previews. URLs are revoked on removal; the few left at unmount are freed with the page.
-  const [photos, setPhotos] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   if (!order) return <NotFoundPage />;
 
-  const restaurant = getRestaurant(order.restaurantId);
+  const restaurant = getOrderRestaurant(order);
+  const canReview = currentStatus(order) === "PICKED_UP";
 
   function toggleTag(tag) {
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    if (rating === 0) return;
-    // MOCK: photos stay on this device until the review API accepts uploads.
-    dispatch({ type: "order/review", orderId: order.id, review: { rating, tags, text: text.trim() } });
-    navigate("/customer/orders", { replace: true });
+    if (rating === 0 || saving || !canReview) return;
+    setSaving(true);
+    const result = await submitReview(order.id, { rating, tags, text: text.trim() });
+    if (result.ok) {
+      dispatch({ type: "order/upsert", order: result.data.order });
+      navigate("/customer/orders", { replace: true });
+    } else { setError(result.error?.message || "บันทึกรีวิวไม่สำเร็จ"); setSaving(false); }
   }
 
   return (
@@ -106,52 +110,6 @@ function Review() {
           </div>
         </fieldset>
 
-        <div className="space-y-3">
-          <p id="review-photos" className="font-bold text-ink">
-            รูปอาหาร <span className="font-normal text-ink-soft">(ไม่บังคับ · สูงสุด {MAX_PHOTOS} รูป)</span>
-          </p>
-          <ul aria-labelledby="review-photos" className="flex flex-wrap gap-3">
-            {photos.map((photo, index) => (
-              <li key={photo.url} className="relative">
-                <img src={photo.url} alt={`รูปที่ ${index + 1}`} className="size-20 rounded-2xl object-cover" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    URL.revokeObjectURL(photo.url);
-                    setPhotos((prev) => prev.filter((p) => p !== photo));
-                  }}
-                  aria-label={`ลบรูปที่ ${index + 1}`}
-                  className={`absolute -top-2 -right-2 grid size-7 place-items-center rounded-full bg-forest text-white ${focusRing}`}
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              </li>
-            ))}
-            {photos.length < MAX_PHOTOS && (
-              <li>
-                <label className="grid size-20 cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-leaf bg-cream text-ink-soft hover:bg-haze has-focus-visible:outline-2 has-focus-visible:outline-ink">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="sr-only"
-                    onChange={(e) => {
-                      const room = MAX_PHOTOS - photos.length;
-                      const picked = [...e.target.files].slice(0, room).map((file) => ({
-                        url: URL.createObjectURL(file),
-                      }));
-                      setPhotos((prev) => [...prev, ...picked]);
-                      e.target.value = "";
-                    }}
-                  />
-                  <PlusIcon className="size-6" />
-                  <span className="sr-only">เพิ่มรูป</span>
-                </label>
-              </li>
-            )}
-          </ul>
-        </div>
-
         <div>
           <label htmlFor="review-text" className="sr-only">
             เขียนรีวิว
@@ -167,8 +125,10 @@ function Review() {
           />
         </div>
 
-        <button type="submit" disabled={rating === 0} className={buttonClasses({ variant: "cocoa", fullWidth: true })}>
-          {rating === 0 ? "เลือกจำนวนดาวก่อนส่ง" : "ส่งรีวิว"}
+        {error && <p role="alert" className="text-danger">{error}</p>}
+        {!canReview && <p role="status" className="text-ink-soft">รีวิวได้หลังจากรับอาหารแล้ว</p>}
+        <button type="submit" disabled={rating === 0 || saving || !canReview} className={buttonClasses({ variant: "cocoa", fullWidth: true })}>
+          {saving ? "กำลังบันทึก…" : rating === 0 ? "เลือกจำนวนดาวก่อนส่ง" : "ส่งรีวิว"}
         </button>
       </main>
     </form>

@@ -9,7 +9,6 @@ import { cx } from "@/lib/cx";
 import { ADMIN_NAV_ITEMS, isAdminNavActive } from "../nav-items";
 import { attention } from "../stats";
 import { useAdmin } from "../store";
-import { MockBadge } from "./badges";
 
 function useBadgeCounts() {
   const { state } = useAdmin();
@@ -76,7 +75,6 @@ export function AdminSidebar() {
         <Brand />
       </Link>
       <div className="mx-5 mt-4">
-        <MockBadge />
       </div>
       <nav aria-label="เมนูผู้ดูแลระบบ" className="mt-5 flex-1 overflow-y-auto px-3">
         <NavList />
@@ -117,7 +115,6 @@ export function AdminTopBar() {
         <Link to="/admin" className={cx("min-w-0 flex-1 rounded-full", focusRing)}>
           <Brand />
         </Link>
-        <MockBadge className="max-sm:hidden" />
         <button
           type="button"
           onClick={() => setOpen(true)}

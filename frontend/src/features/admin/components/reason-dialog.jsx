@@ -23,15 +23,25 @@ export function ReasonDialog({
 }) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     if (requireReason && reason.trim().length < 5) {
       setError("ใส่เหตุผลอย่างน้อย 5 ตัวอักษร");
       return;
     }
-    const problem = onConfirm(reason.trim());
-    if (problem) setError(problem);
+    setBusy(true);
+    setError("");
+    try {
+      const problem = await onConfirm(reason.trim());
+      if (problem) setError(problem);
+    } catch {
+      setError("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -62,8 +72,8 @@ export function ReasonDialog({
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" variant={danger ? "danger-outline" : "cocoa"} size="md">
-            {confirmLabel}
+          <Button type="submit" variant={danger ? "danger-outline" : "cocoa"} size="md" disabled={busy}>
+            {busy ? "กำลังบันทึก…" : confirmLabel}
           </Button>
           <Button variant="cocoa-outline" size="md" onClick={onClose}>
             ยกเลิก

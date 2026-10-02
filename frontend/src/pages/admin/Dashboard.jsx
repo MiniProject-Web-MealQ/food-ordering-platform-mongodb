@@ -73,7 +73,7 @@ function Dashboard() {
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
           <StatCard label="ออเดอร์ทั้งหมด" value={today.orderCount.toLocaleString("th-TH")} hint="ทุกร้าน" Icon={ReceiptText} />
-          <StatCard label="ยอดขายรวมทุกร้าน" value={formatBaht(today.revenue)} hint="ไม่รวมที่ยกเลิก" Icon={Wallet} highlight />
+          <StatCard label="ยอดขายรวมทุกร้าน" value={formatBaht(today.revenue)} hint="รวมการชำระแบบทดสอบ · ไม่รวมยกเลิก" Icon={Wallet} highlight />
           <StatCard label="ออเดอร์ที่ยกเลิก" value={today.cancelled} hint={today.orderCount ? `${formatPercent(today.cancelled / today.orderCount)} ของวันนี้` : "–"} Icon={Ban} />
           <StatCard label="คิวที่ค้างอยู่ทั้งระบบ" value={today.backlog} hint="รอรับ + กำลังทำ + รอลูกค้ามารับ" Icon={Clock} />
         </div>

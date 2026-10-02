@@ -60,7 +60,7 @@ function Activity() {
 
   return (
     <div className={cx(pageClass, "space-y-4 lg:space-y-5")}>
-      <PageHeader title="บันทึกการทำงาน" subtitle="ทุกการแก้ไขของผู้ดูแลระบบ ใช้ตรวจย้อนหลังว่าใครทำอะไร เมื่อไหร่" />
+      <PageHeader title="บันทึกการทำงาน" subtitle="บันทึกจากฐานข้อมูลสูงสุด 500 รายการล่าสุด ใช้ตรวจย้อนหลังว่าใครทำอะไร เมื่อไหร่" />
       <FilterRow>
         <SearchField id="activity-search" label="ค้นหาในบันทึก" value={query} onChange={setQuery} placeholder="ค้นหาชื่อร้าน ผู้ใช้ เลขออเดอร์ หรือเหตุผล" />
         <SelectField

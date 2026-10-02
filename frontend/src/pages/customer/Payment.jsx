@@ -51,14 +51,9 @@ function Payment() {
       const at = Date.now();
       dispatch({
         type: "order/place",
-        orderId: order.orderNumber,
-        backendOrderId: order.id,
-        paymentMethod: method.id,
-        pickupCode: order.pickupCode,
-        queueNumber: order.queueNumber,
-        at,
+        order,
       });
-      setResult({ ok: true, orderId: order.orderNumber, at });
+      setResult({ ok: true, orderId: order.orderNumber, total: order.totalPrice, paymentMode: order.paymentMode, at });
     }, PROCESSING_MS);
 
     return () => {
@@ -88,7 +83,7 @@ function Payment() {
               className="mx-auto block size-16 animate-spin rounded-full border-4 border-white/15 border-t-brand motion-reduce:animate-none"
             />
             <p className="mt-6 text-xl font-bold">กำลังส่งออเดอร์ไปที่ร้าน…</p>
-            <p className="mt-2 text-sm text-white/75">MealQ กำลังบันทึกออเดอร์ลง MongoDB</p>
+            <p className="mt-2 text-sm text-white/75">กำลังยืนยันรายการอาหารและคิวของคุณ</p>
           </div>
         )}
 
@@ -97,9 +92,10 @@ function Payment() {
             <span className="mx-auto grid size-16 place-items-center rounded-full bg-mint text-brand-ink">
               <CheckIcon className="size-8" strokeWidth={3} />
             </span>
-            <p className="mt-6 text-2xl font-bold text-ink">ชำระเงินและส่งออเดอร์สำเร็จ</p>
+            <p className="mt-6 text-2xl font-bold text-ink">ส่งออเดอร์สำเร็จ</p>
+            {result.paymentMode === "sandbox" && <p className="mt-2 text-sm text-ink-soft">โหมดทดสอบ: ไม่มีการตัดเงินจริง</p>}
             <p className="mt-2 text-sm text-ink-soft">
-              {formatBaht(summary.total)} · {method.label} · {formatClock(result.at)}
+              {formatBaht(result.total)} · {method.label} · {formatClock(result.at)}
             </p>
           </div>
         )}

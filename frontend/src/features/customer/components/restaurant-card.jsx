@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { CatalogImage } from "./catalog-image";
 import { cx } from "@/lib/cx";
 import { getRestaurantMenu } from "../catalog";
 import { formatDistance, formatRange } from "../format";
@@ -33,7 +33,7 @@ export function RestaurantCard({ restaurant }) {
         !restaurant.isOpen && "opacity-70",
       )}
     >
-      <ImagePlaceholder label={`${restaurant.name} cover`} className="aspect-16/7 border-x-0 border-t-0" />
+      <CatalogImage src={restaurant.coverImage} label={`${restaurant.name} cover`} className="aspect-16/7 border-x-0 border-t-0" />
       <div className="space-y-2 p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="truncate text-lg font-bold text-ink">
@@ -68,7 +68,8 @@ export function RestaurantCard({ restaurant }) {
 export function RestaurantRow({ restaurant, meta, trailing }) {
   return (
     <article className="relative flex items-center gap-3 rounded-3xl bg-cream p-3 ring-1 ring-haze">
-      <ImagePlaceholder
+      <CatalogImage
+        src={restaurant.logo || restaurant.coverImage}
         compact
         label={restaurant.name}
         className={cx("size-18 shrink-0 rounded-2xl", !restaurant.isOpen && "opacity-50")}

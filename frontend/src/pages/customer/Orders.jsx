@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { FilterBar } from "@/components/ui/filter-token-bar";
 import { buttonClasses } from "@/components/ui/styles";
-import { getRestaurant, isActiveOrder } from "@/features/customer/catalog";
+import { currentStatus, getOrderRestaurant, isActiveOrder } from "@/features/customer/catalog";
 import { ActiveOrderCard } from "@/features/customer/components/active-order-card";
 import { SegmentedTabs } from "@/features/customer/components/segmented-tabs";
 import { formatBaht, formatWhen } from "@/features/customer/format";
@@ -13,7 +13,8 @@ import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
 
 function HistoryCard({ order, onReorder }) {
-  const restaurant = getRestaurant(order.restaurantId);
+  const restaurant = getOrderRestaurant(order);
+  const cancelled = currentStatus(order) === "CANCELLED";
 
   return (
     <article className="relative rounded-3xl bg-cream p-4 ring-1 ring-haze">
@@ -31,18 +32,18 @@ function HistoryCard({ order, onReorder }) {
             {order.items.map((item) => `${item.qty}× ${item.name}`).join(" · ")}
           </p>
           <p className="text-xs text-ink-soft">
-            #{order.id} · {formatWhen(order.statusTimes.PICKED_UP)}
+            #{order.id} · {cancelled ? "ยกเลิกแล้ว · " : ""}{formatWhen(order.statusTimes.CANCELLED || order.statusTimes.PICKED_UP || order.statusTimes.PLACED)}
           </p>
         </div>
         <p className="shrink-0 font-bold text-ink">{formatBaht(order.total)}</p>
       </div>
       <div className="relative mt-3 flex gap-2">
-        <Link
+        {!cancelled && <Link
           to={`/customer/orders/${order.id}/review`}
           className={buttonClasses({ variant: order.review ? "secondary" : "soft", size: "sm" })}
         >
           {order.review ? `รีวิวแล้ว ★ ${order.review.rating}` : "ให้คะแนน"}
-        </Link>
+        </Link>}
         <button type="button" onClick={onReorder} className={buttonClasses({ variant: "cocoa-outline", size: "sm" })}>
           สั่งอีกครั้ง
         </button>
@@ -109,7 +110,7 @@ function Orders() {
             ))}
             <p className="rounded-3xl bg-cream px-5 py-4 text-sm text-ink-soft md:col-span-2">
               {active.length > 0
-                ? "ออเดอร์ที่กำลังดำเนินการจะแสดงที่นี่จนกดรับอาหารเสร็จ"
+                ? "สถานะอัปเดตอัตโนมัติเมื่อร้านรับออเดอร์ ทำอาหาร และยืนยันการรับอาหาร"
                 : "ยังไม่มีออเดอร์ที่กำลังดำเนินการ"}
             </p>
           </>

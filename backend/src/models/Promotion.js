@@ -5,7 +5,7 @@ const promotionSchema = new mongoose.Schema(
     store_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
-      required: true
+      default: null
     },
 
     title: {
@@ -41,6 +41,9 @@ const promotionSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    max_discount: { type: Number, default: null, min: 0 },
+    per_user_limit: { type: Number, default: null, min: 1 },
+    usage_by_customer: { type: Map, of: Number, default: {} },
 
     start_date: {
       type: Date,

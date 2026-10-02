@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { BagIcon, BellIcon, SearchIcon } from "@/components/icons";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { CatalogImage } from "@/features/customer/components/catalog-image";
 import { buttonClasses, focusRing, textLinkClass } from "@/components/ui/styles";
 import { getRestaurant, getWeeklyBestsellers, isActiveOrder, priceCart } from "@/features/customer/catalog";
 import { ActiveOrderCard } from "@/features/customer/components/active-order-card";
@@ -9,7 +9,7 @@ import { Rating } from "@/features/customer/components/rating";
 import { RestaurantRow } from "@/features/customer/components/restaurant-card";
 import { chipClasses, containerClass, scrollStripClass } from "@/features/customer/styles";
 import { formatBaht, greeting } from "@/features/customer/format";
-import { MENU_CATEGORIES, RESTAURANTS } from "@/features/customer/mock-data";
+import { MENU_CATEGORIES, RESTAURANTS } from "@/features/customer/catalog";
 import { useCustomer } from "@/features/customer/store";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -104,7 +104,7 @@ function Home() {
 
       <section aria-labelledby="bestsellers-title" className="space-y-3 lg:space-y-5">
         <h2 id="bestsellers-title" className="text-xl font-bold text-ink lg:text-3xl">
-          <span aria-hidden="true">🔥</span> เมนูขายดีประจำสัปดาห์
+          <span aria-hidden="true">🔥</span> เมนูขายดี
         </h2>
         <ul
           // Scrolling strip on phones; a plain grid from sm up (not built on scrollStripClass, whose sm bleed would conflict).
@@ -115,7 +115,7 @@ function Home() {
               key={item.id}
               className="relative flex w-44 shrink-0 snap-start flex-col overflow-hidden rounded-3xl bg-cream ring-1 ring-haze transition-shadow hover:shadow-card sm:w-auto"
             >
-              <ImagePlaceholder label={item.name} className="aspect-4/3 border-x-0 border-t-0" />
+              <CatalogImage src={item.image} label={item.name} className="aspect-4/3 border-x-0 border-t-0" />
               <div className="flex flex-1 flex-col gap-1 p-3">
                 <h3 className="truncate font-semibold text-ink">
                   <Link
@@ -142,13 +142,13 @@ function Home() {
       <section aria-labelledby="nearby-title" className="space-y-3 lg:space-y-5">
         <div className="flex items-baseline justify-between">
           <h2 id="nearby-title" className="text-xl font-bold text-ink lg:text-3xl">
-            ร้านใกล้คุณ
+            ร้านอาหาร
           </h2>
           <Link to="/customer/explore?sort=distance" className={`${textLinkClass} text-sm lg:text-base`}>
             ดูทั้งหมด
           </Link>
         </div>
-        <ul className="grid gap-3 md:grid-cols-2 lg:gap-4">
+        <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:gap-4">
           {nearby.map((restaurant, index) => (
             // Phones show the four closest; wider screens fill a 2-column grid of six.
             <li key={restaurant.id} className={index >= 4 ? "max-md:hidden" : undefined}>

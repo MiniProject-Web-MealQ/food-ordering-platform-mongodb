@@ -61,6 +61,7 @@ import RegisterPage from "../pages/auth/register";
 import ForgotPasswordPage from "../pages/auth/forgot-password";
 import ResetPasswordPage from "../pages/auth/reset-password";
 import NotFoundPage from "../pages/not-found";
+import InformationPage from "../pages/information";
 
 // Layout ย่อยของลูกค้าที่มีแถบเมนูด้านล่าง
 import CustomerTabLayout from "../layouts/CustomerTabLayout";
@@ -98,7 +99,7 @@ import Settings from "../pages/merchant/Settings";
 
 
 // ==================================================
-// Admin Pages (ผู้ดูแลระบบ · ตอนนี้ใช้ข้อมูลจำลอง)
+// Admin Pages (ผู้ดูแลระบบ)
 // ==================================================
 
 import AdminLayout from "../layouts/AdminLayout";
@@ -127,6 +128,10 @@ function AppRoutes() {
         path="/"
         element={<HomePage />}
       />
+
+      <Route path="/help" element={<InformationPage kind="help" />} />
+      <Route path="/terms" element={<InformationPage kind="terms" />} />
+      <Route path="/privacy" element={<InformationPage kind="privacy" />} />
 
 
       {/* ==================================================
@@ -199,9 +204,7 @@ function AppRoutes() {
           MERCHANT LOGIN
           ==================================================
 
-          หน้า Login ของร้านค้าจะแยกจาก MerchantLayout
-
-          เพราะหน้า Login ยังไม่ต้องแสดง Sidebar
+          URL เดิมของร้านค้าส่งต่อไปหน้า Login ร่วม พร้อมเลือกบทบาทร้านค้า
       */}
 
       <Route

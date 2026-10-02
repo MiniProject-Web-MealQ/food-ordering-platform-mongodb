@@ -1,7 +1,89 @@
-import { COUPONS, MENU_CATEGORIES, MENU_ITEMS, RESTAURANTS, SERVICE_FEE } from "./mock-data";
+import { MENU_CATEGORIES as KNOWN_CATEGORIES, SERVICE_FEE } from "./mock-data";
 
-const restaurantsById = new Map(RESTAURANTS.map((r) => [r.id, r]));
-const menuById = new Map(MENU_ITEMS.map((m) => [m.id, m]));
+export const RESTAURANTS = [];
+export const MENU_ITEMS = [];
+export const MENU_CATEGORIES = [];
+export const COUPONS = {};
+const restaurantsById = new Map();
+const menuById = new Map();
+
+/** Keeps existing page lookups synchronous while the provider loads the current server catalogue. */
+export function setCatalogue({ restaurants, menus, promotions = [] }) {
+  restaurantsById.clear();
+  menuById.clear();
+  const mappedRestaurants = restaurants.map((store) => ({
+    id: store.clientId || store.id,
+    backendId: store.id,
+    name: store.name,
+    category: store.category || "อาหารและเครื่องดื่ม",
+    rating: Number(store.rating?.average || 0),
+    reviewCount: Number(store.rating?.count || 0),
+    location: store.address?.detail || "รับอาหารที่หน้าร้าน",
+    pickupPoint: store.pickupPoint || "หน้าร้าน",
+    distance: null,
+    hours: { open: store.openingHours?.open_time || "—", close: store.openingHours?.close_time || "—" },
+    isOpen: store.isOpen,
+    queueLength: Number(store.queue?.activeCount || 0),
+    nowServing: Number(store.queue?.nowServing || 0),
+    waitMinutes: store.queue?.waitMinutes || [5, 10],
+    phone: store.phone || "—",
+    about: store.description || "",
+    coverImage: store.coverImage,
+    logo: store.logo,
+    reviews: [],
+  }));
+  for (const store of mappedRestaurants) {
+    restaurantsById.set(store.id, store);
+    restaurantsById.set(store.backendId, store);
+  }
+  RESTAURANTS.splice(0, RESTAURANTS.length, ...mappedRestaurants);
+  const mappedMenus = menus.flatMap((menu) => {
+    const store = restaurantsById.get(menu.storeId);
+    if (!store) return [];
+    return [{
+      id: menu.clientId || menu.id,
+      backendId: menu.id,
+      restaurantId: store.id,
+      name: menu.name,
+      shortLabel: menu.name,
+      description: menu.description || "",
+      category: menu.category,
+      cuisine: menu.cuisine || ({ single: "thai", noodle: "thai", drink: "drink", dessert: "dessert" }[menu.category] || "thai"),
+      price: Number(menu.price || 0),
+      image: menu.image,
+      rating: store.rating,
+      reviewCount: store.reviewCount,
+      weeklyOrders: Number(menu.soldQuantity || 0),
+      prepMinutes: Number(menu.cookTime || 5),
+      allergens: menu.allergens || [],
+      optionGroups: menu.optionGroups || [],
+      soldOut: !menu.isAvailable,
+    }];
+  });
+  for (const menu of mappedMenus) {
+    menuById.set(menu.id, menu);
+    menuById.set(menu.backendId, menu);
+  }
+  MENU_ITEMS.splice(0, MENU_ITEMS.length, ...mappedMenus);
+  const categories = [...new Set(mappedMenus.map((menu) => menu.category))].map((id) =>
+    KNOWN_CATEGORIES.find((category) => category.id === id) || { id, label: id, emoji: "🍽️" },
+  );
+  MENU_CATEGORIES.splice(0, MENU_CATEGORIES.length, ...categories);
+  for (const code of Object.keys(COUPONS)) delete COUPONS[code];
+  for (const promotion of promotions) COUPONS[promotion.code.toUpperCase()] = {
+    ...promotion,
+    restaurantId: promotion.storeId ? restaurantsById.get(promotion.storeId)?.id : null,
+    label: promotion.discountType === "percentage" ? "ลด " + promotion.discountValue + "%" : "ลด ฿" + promotion.discountValue,
+  };
+}
+
+/** An order retains its store identity even when a store is no longer in the public catalogue. */
+export function getOrderRestaurant(order) {
+  return getRestaurant(order.restaurantId) || {
+    id: order.restaurantId, name: order.restaurantName || "ร้านอาหาร", pickupPoint: "หน้าร้าน",
+    waitMinutes: order.etaMinutes || [5, 10], nowServing: order.nowServing || 0,
+  };
+}
 
 export function getRestaurant(id) {
   return restaurantsById.get(id) ?? null;
@@ -28,7 +110,7 @@ export function getWeeklyBestsellers(limit = 6) {
 }
 
 export function isOrderable(menuItem) {
-  return !menuItem.soldOut && Boolean(getRestaurant(menuItem.restaurantId)?.isOpen);
+  return Boolean(menuItem) && !menuItem.soldOut && Boolean(getRestaurant(menuItem.restaurantId)?.isOpen);
 }
 
 // ---------- Options & cart lines ----------
@@ -90,8 +172,12 @@ export function resolveCartLines(cart) {
 export function priceCart(cart) {
   const lines = resolveCartLines(cart);
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
-  const coupon = cart.couponCode ? COUPONS[cart.couponCode] : null;
-  const discount = coupon ? Math.round((subtotal * coupon.percent) / 100) : 0;
+  const candidate = cart.couponCode ? COUPONS[cart.couponCode] : null;
+  const coupon = candidate && (!candidate.restaurantId || candidate.restaurantId === cart.restaurantId)
+    && subtotal >= Number(candidate.minimumOrder || 0) ? candidate : null;
+  let discount = coupon ? coupon.discountType === "percentage" ? Math.round(subtotal * Number(coupon.discountValue) / 100) : Number(coupon.discountValue) : 0;
+  if (coupon?.maxDiscount != null) discount = Math.min(discount, Number(coupon.maxDiscount));
+  discount = Math.min(subtotal, discount);
   const serviceFee = lines.length > 0 ? SERVICE_FEE : 0;
   return {
     lines,
@@ -116,16 +202,18 @@ export const ORDER_STEPS = [
 ];
 
 export function currentStatus(order) {
+  if (order.status) return order.status;
   const reached = ORDER_STEPS.filter((s) => order.statusTimes[s.status]);
-  return reached.at(-1).status;
+  return reached.at(-1)?.status || "PLACED";
 }
 
 export function isActiveOrder(order) {
-  return currentStatus(order) !== "PICKED_UP";
+  return !["PICKED_UP", "CANCELLED"].includes(currentStatus(order));
 }
 
 export function statusLabel(status) {
-  return ORDER_STEPS.find((s) => s.status === status).label;
+  if (status === "CANCELLED") return "ยกเลิกออเดอร์แล้ว";
+  return ORDER_STEPS.find((s) => s.status === status)?.label || "รอร้านรับออเดอร์";
 }
 
 /** 0–1 progress for the thin bar on active-order cards. */
