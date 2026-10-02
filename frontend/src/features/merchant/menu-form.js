@@ -1,4 +1,5 @@
 import { readImageFile } from "./image";
+import { groupToValue, toOptionGroupFields, validateOptionGroups } from "./option-groups";
 
 /** ค่าในฟอร์มเป็นข้อความตามที่พิมพ์ toMenuFields() แปลงเป็น field ตาม Menu model */
 
@@ -10,7 +11,7 @@ export const MENU_LIMITS = {
 };
 
 export function emptyMenuValues() {
-  return { name: "", category: "", price: "", cook_time: "", description: "", image: null, is_available: true };
+  return { name: "", category: "", price: "", cook_time: "", description: "", image: null, is_available: true, option_groups: [] };
 }
 
 export function menuToValues(menu) {
@@ -22,6 +23,7 @@ export function menuToValues(menu) {
     description: menu.description ?? "",
     image: menu.image ?? null,
     is_available: menu.is_available,
+    option_groups: (menu.option_groups ?? []).map(groupToValue),
   };
 }
 
@@ -52,6 +54,8 @@ export function validateMenu(values, menus, editingId = null) {
   if (values.description.trim().length > MENU_LIMITS.descriptionMax)
     errors.description = `คำอธิบายยาวได้ไม่เกิน ${MENU_LIMITS.descriptionMax} ตัวอักษร`;
 
+  // ตัวเลือกเสริม: key เป็น id ของช่องในฟอร์ม (og-…) ต่อท้าย field หลัก
+  Object.assign(errors, validateOptionGroups(values.option_groups ?? []));
   return errors;
 }
 
@@ -64,6 +68,7 @@ export function toMenuFields(values) {
     description: values.description.trim(),
     image: values.image,
     is_available: values.is_available,
+    option_groups: toOptionGroupFields(values.option_groups ?? []),
   };
 }
 

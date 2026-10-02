@@ -75,6 +75,7 @@ src/features/merchant/
 ├── status.js              ชื่อสถานะภาษาไทย, ลำดับสถานะ, คอลัมน์กระดานคิว
 ├── constants.js           หมวดเมนู, ชื่อวิธีจ่ายเงิน
 ├── menu-form.js           validation ของฟอร์มเมนู + ย่อรูป
+├── option-groups.js       ตัวเลือกเสริม: ชุดสำเร็จรูป (เผ็ด/หวาน/เส้น/เพิ่มพิเศษ), validation, แปลงชื่อตัวเลือกในออเดอร์
 ├── format.js / styles.js / nav-items.js / use-now.js
 └── components/            กระดานคิว, การ์ดออเดอร์, ฟอร์มเมนู, pop-up, sidebar ฯลฯ
 src/layouts/MerchantLayout.jsx  ครอบ provider + หน้ากำลังโหลด / โหลดไม่สำเร็จ / ไม่ได้ login
@@ -144,6 +145,8 @@ const result = await actions.advance(order); // { ok, data } หรือ { ok: 
 | คืนเงินตอนยกเลิก | บอกร้านว่าต้องคืนเงินเอง | ยังไม่มีใน API |
 | **รูปร้าน (`logo`, `cover_image`)** | ย่อรูปเป็น JPEG data URL แล้วส่ง `logo` / `coverImage` ใน `PATCH /merchant/store` ถ้า backend ไม่บันทึก หน้าจอบอกว่า "ระบบหลังบ้านยังไม่รองรับ" | **ยังไม่รับ** — ให้ `updateStore` รับ 2 field นี้ (ดูหัวข้อ 4.1) |
 | สร้างเมนูที่ "ปิดขาย" | ✅ ส่ง `isAvailable` ตั้งแต่ `POST` | backend รองรับแล้ว |
+| **ตัวเลือกเสริมของเมนู (`option_groups`)** | ตั้งค่าใน pop-up เพิ่ม/แก้ไขเมนู แล้วส่ง `optionGroups` ใน `POST`/`PATCH /merchant/menu` ถ้า backend ไม่บันทึก หน้าจอบอกว่า "ตัวเลือกเสริมยังไม่ถูกเก็บ" | **ยังไม่รับ** — ให้ `createMenu`/`updateMenu` เรียก `validateOptionGroups` ที่มีอยู่แล้ว (ดูหัวข้อ 4.2) |
+| ชื่อตัวเลือกในออเดอร์ | กระดานคิวแปลง `selections` (id) เป็นชื่อจากเมนูปัจจุบัน | ถ้าร้านลบตัวเลือกไปแล้วจะเหลือแค่ id — ขอเก็บชื่อตัวเลือกไว้ใน order item ด้วย |
 
 ---
 
@@ -173,6 +176,35 @@ for (const [input, field] of [["logo", "logo"], ["coverImage", "cover_image"]]) 
 - หน้าร้านย่อรูปก่อนส่งแล้ว: แบนเนอร์ 1200×600 (2:1) โลโก้ 400×400 ปกติไม่เกิน 200 KB ต่อรูป (ไม่ชนลิมิต JSON 1 MB ใน `server.js`)
 - ทดสอบโค้ดนี้แล้วกับ backend ของ `remaining-integration` (แก้ชั่วคราว ไม่ได้ commit): ร้านบันทึกได้ reload แล้วยังอยู่ และหน้าร้านฝั่งลูกค้าแสดงทั้งสองรูป
 - วันหลังถ้ามี endpoint อัปโหลดรูป ให้คืน URL แล้วส่ง URL นั้นแทน data URL ได้เลย (โค้ดด้านบนรับ `https://` ไว้แล้ว)
+
+### 4.2 ตัวเลือกเสริมของเมนู: สิ่งที่ backend ต้องเพิ่ม
+
+Menu มี `option_groups` อยู่แล้ว, `services/menu-validation.js` มี `validateOptionGroups` แล้ว,
+`order-pricing` ตรวจ `selections` และบวกราคาตัวเลือกแล้ว, หน้าลูกค้าแสดงตัวเลือกแล้ว
+ขาดแค่ `merchantController` ไม่ได้ส่ง `optionGroups` ต่อไปบันทึก:
+
+```js
+const { validateOptionGroups } = require("../services/menu-validation");
+
+// createMenu: ก่อน Menu.create(...)
+let optionGroups = [];
+try {
+  if (req.body?.optionGroups !== undefined) optionGroups = validateOptionGroups(req.body.optionGroups);
+} catch (error) {
+  return sendError(res, error.status || 400, error.code || "VALIDATION_ERROR", error.message);
+}
+// แล้วเพิ่มใน Menu.create({ ..., option_groups: optionGroups })
+
+// updateMenu: หลังลูป map ของ field อื่น
+try {
+  if (req.body?.optionGroups !== undefined) allowed.option_groups = validateOptionGroups(req.body.optionGroups);
+} catch (error) {
+  return sendError(res, error.status || 400, error.code || "VALIDATION_ERROR", error.message);
+}
+```
+
+- หน้าร้านส่งรูปแบบที่ `validateOptionGroups` ต้องการแล้ว: id เป็น a-z 0-9 `-` (สร้างให้เอง), `min`/`max` เป็นตัวเลข, ตัวเลือกมี `label`, `price`, `default`, `isAvailable`
+- ทดสอบโค้ดนี้แล้วกับ backend ของ `remaining-integration` (แก้ชั่วคราว ไม่ได้ commit): บันทึก/แก้ไขได้, ลูกค้าสั่ง "เส้นใหญ่ · เผ็ดน้อย · +เพิ่มหมู · +เพิ่มเนื้อ" ได้ราคา 50+20+20 = 90, ตัวเลือกที่ปิดขายถูกปฏิเสธ (400), กระดานคิวแสดงตัวเลือกที่ลูกค้าเลือก
 
 ---
 

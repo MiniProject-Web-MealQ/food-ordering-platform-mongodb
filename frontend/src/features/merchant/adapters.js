@@ -47,6 +47,26 @@ export function menuFromApi(menu) {
     cook_time: Number(menu.cookTime) || 0,
     is_available: menu.isAvailable !== false,
     sold_quantity: Number(menu.soldQuantity) || 0,
+    option_groups: (menu.optionGroups ?? []).map(optionGroupFromApi),
+  };
+}
+
+/** กลุ่มตัวเลือกเสริมของเมนู (ดู option-groups.js) */
+function optionGroupFromApi(group) {
+  return {
+    id: group.id,
+    label: group.label ?? "",
+    required: Boolean(group.required),
+    multiple: Boolean(group.multiple),
+    min: Number(group.min) || 0,
+    max: Number(group.max) || 1,
+    options: (group.options ?? []).map((option) => ({
+      id: option.id,
+      label: option.label ?? "",
+      price: Number(option.price) || 0,
+      default: Boolean(option.default),
+      is_available: option.isAvailable !== false && option.is_available !== false,
+    })),
   };
 }
 
@@ -72,6 +92,8 @@ export function orderFromApi(order) {
         quantity: Number(item.quantity) || 0,
         total_price: Number(item.totalPrice) || 0,
         note: item.note ?? "",
+        // ตัวเลือกเสริมที่ลูกค้าเลือก { groupId: [optionId] } แปลงเป็นชื่อด้วย selectionLabels()
+        selections: item.selections ?? {},
       })),
       subtotal: Number(order.subtotal) || 0,
       service_fee: Number(order.serviceFee) || 0,
@@ -107,6 +129,23 @@ export function menuToApi(fields) {
   if (fields.image !== undefined) body.image = fields.image;
   if (fields.cook_time !== undefined) body.cookTime = fields.cook_time;
   if (fields.is_available !== undefined) body.isAvailable = fields.is_available;
+  if (fields.option_groups !== undefined) {
+    body.optionGroups = fields.option_groups.map((group) => ({
+      id: group.id,
+      label: group.label,
+      required: group.required,
+      multiple: group.multiple,
+      min: group.min,
+      max: group.max,
+      options: group.options.map((option) => ({
+        id: option.id,
+        label: option.label,
+        price: option.price,
+        default: option.default,
+        isAvailable: option.is_available,
+      })),
+    }));
+  }
   return body;
 }
 

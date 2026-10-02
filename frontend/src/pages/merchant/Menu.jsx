@@ -11,6 +11,7 @@ import { MerchantDialog } from "@/features/merchant/components/merchant-dialog";
 import { emptyMenuValues, menuToValues } from "@/features/merchant/menu-form";
 import { categoryLabel } from "@/features/merchant/constants";
 import { useMerchant } from "@/features/merchant/store";
+import { optionGroupsStored } from "@/features/merchant/option-groups";
 import { useMerchantActions } from "@/features/merchant/use-merchant-actions";
 import { fieldClass, pageClass, panelClass } from "@/features/merchant/styles";
 import { cx } from "@/lib/cx";
@@ -41,6 +42,13 @@ function ChipGroup({ label, options, value, onChange }) {
       ))}
     </div>
   );
+}
+
+/** บันทึกเมนูสำเร็จแต่ backend ไม่เก็บตัวเลือกเสริม: บอกร้านตรง ๆ แทนการทำเหมือนสำเร็จทั้งหมด */
+function optionsWarning(fields, result) {
+  return optionGroupsStored(fields.option_groups, result.data?.menu)
+    ? null
+    : "แต่ตัวเลือกเสริมยังไม่ถูกเก็บ เพราะระบบหลังบ้านยังไม่รองรับ (รอทีมหลังบ้าน)";
 }
 
 /**
@@ -80,7 +88,7 @@ function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
           onCancel={onClose}
           onSubmit={async (fields) => {
             const result = await actions.addMenu(fields);
-            if (result.ok) onDone(`เพิ่มเมนู “${fields.name}” แล้ว`);
+            if (result.ok) onDone(`เพิ่มเมนู “${fields.name}” แล้ว`, optionsWarning(fields, result));
             return result;
           }}
         />
@@ -99,7 +107,7 @@ function MenuEditorDialog({ mode, menuId, onClose, onDone }) {
         onCancel={onClose}
         onSubmit={async (fields) => {
           const result = await actions.updateMenu(menu._id, fields);
-          if (result.ok) onDone(`บันทึก “${fields.name}” แล้ว`);
+          if (result.ok) onDone(`บันทึก “${fields.name}” แล้ว`, optionsWarning(fields, result));
           return result;
         }}
       />
@@ -137,8 +145,8 @@ function Menu() {
     else setSearchParams({}, { replace: true, preventScrollReset: true });
   }
 
-  function finishDialog(message) {
-    setNotice({ text: message });
+  function finishDialog(message, warning) {
+    setNotice(warning ? { text: `${message} ${warning}`, error: true } : { text: message });
     closeDialog();
   }
 
