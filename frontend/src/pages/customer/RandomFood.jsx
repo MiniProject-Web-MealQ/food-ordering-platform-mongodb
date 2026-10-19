@@ -1,314 +1,238 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import { ArrowRight, ArrowUpRight, Check, ChevronDown, Dice5, History, Pause, Play, RotateCcw, SlidersHorizontal, Sparkles, Store, Volume2, VolumeX } from "lucide-react";
 import { CatalogImage } from "@/features/customer/components/catalog-image";
-import { buttonClasses, textLinkClass } from "@/components/ui/styles";
-import { getRestaurant, isOrderable } from "@/features/customer/catalog";
+import { RandomStage } from "@/features/customer/components/random-stage";
+import { RandomAtmosphere } from "@/features/customer/components/random-atmosphere";
 import { ToggleSwitch } from "@/features/customer/components/toggle-switch";
-import { Rating } from "@/features/customer/components/rating";
-import { formatBaht, formatRange } from "@/features/customer/format";
+import { MENU_ITEMS, getMenuItem, getRestaurant, isOrderable } from "@/features/customer/catalog";
+import { formatBaht } from "@/features/customer/format";
 import { CUISINES } from "@/features/customer/mock-data";
-import { MENU_ITEMS } from "@/features/customer/catalog";
 import { useCustomer } from "@/features/customer/store";
-import { chipClasses, containerClass, stickySidebarClass } from "@/features/customer/styles";
-import { cx } from "@/lib/cx";
+import { chooseRandomCandidate, filterRandomCandidates, getRandomBudgetMax, getRecentMenuIds } from "@/features/customer/random-food";
+import { useRandomAudio } from "@/features/customer/use-random-audio";
 import { usePageTitle } from "@/lib/use-page-title";
+import "@/features/customer/random-experience.css";
 
-const BUDGET_MIN = 20;
-const BUDGET_MAX = 150;
-const BUDGET_STEP = 5;
-const SPIN_TICKS = 18;
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_FILTERS = { cuisine: "all", budget: 80, openOnly: true, hideSoldOut: true, noRepeat: false };
+const CUISINE_SYMBOLS = { all: "✦", thai: "🍜", japanese: "🍣", korean: "🍲", fastfood: "🍔", drink: "🥤", dessert: "🍰" };
+const menuId = (item) => item?.id || item?.backendId;
+const menuPath = (item) => `/customer/restaurants/${item.restaurantId}/menu/${menuId(item)}`;
 
-function candidatesFor(filters, recentMenuIds) {
-  return MENU_ITEMS.filter((item) => {
-    const restaurant = getRestaurant(item.restaurantId);
-    if (filters.cuisine !== "all" && item.cuisine !== filters.cuisine) return false;
-    if (item.price > filters.budget) return false;
-    if (filters.openOnly && !restaurant.isOpen) return false;
-    if (filters.hideSoldOut && item.soldOut) return false;
-    if (filters.noRepeat && recentMenuIds.has(item.id)) return false;
-    return true;
-  });
-}
-
-function pickRandom(list, avoidId) {
-  const pool = list.length > 1 ? list.filter((item) => item.id !== avoidId) : list;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function SetupView({ filters, setFilter, spinning, reelItem, onSpin }) {
-  return (
-    <div className="min-w-0 w-full flex-1 bg-forest text-white">
-      <div
-        className={cx(
-          containerClass,
-          "space-y-6 pt-6 pb-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-12 lg:space-y-0 lg:pt-12 lg:pb-16",
-        )}
-      >
-        <div className={cx("space-y-6", stickySidebarClass)}>
-          <header>
-            <p className="text-xs font-semibold tracking-[0.3em] text-brand">RANDOM FOOD</p>
-            <h1 className="mt-1 text-3xl font-bold lg:mt-3 lg:text-5xl lg:leading-tight">วันนี้กินอะไรดี?</h1>
-            <p className="mt-1 text-sm text-white/75">ตั้งเงื่อนไขคร่าว ๆ แล้วให้เราเลือกให้</p>
-          </header>
-
-          <div className="space-y-4 rounded-4xl bg-white/5 p-4">
-            <div
-              aria-live="polite"
-              aria-busy={spinning}
-              className="overflow-hidden rounded-3xl border-t-4 border-brand bg-cream px-4 py-7 text-center text-ink lg:py-14"
-            >
-              <p className="text-xs font-semibold tracking-[0.3em] text-brand-ink">ผลลัพธ์</p>
-              {reelItem ? (
-                <div key={reelItem.id} className={cx(spinning && "motion-safe:animate-[reel_90ms_ease-out]")}>
-                  <p className="mt-1 truncate text-2xl font-bold lg:text-4xl">{reelItem.name}</p>
-                  <p className="text-sm text-ink-soft">
-                    {getRestaurant(reelItem.restaurantId).name} · {formatBaht(reelItem.price)}
-                  </p>
-                </div>
-              ) : (
-                <p className="mt-1 text-2xl font-bold text-ink-soft">? ? ?</p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={onSpin}
-              aria-disabled={spinning}
-              className={buttonClasses({ variant: "cocoa", fullWidth: true })}
-            >
-              <span aria-hidden="true">🎲</span> {spinning ? "กำลังสุ่ม…" : "สุ่มอาหาร"}
-            </button>
-          </div>
-        </div>
-
-        <fieldset disabled={spinning} className="min-w-0 w-full space-y-6 lg:rounded-4xl lg:bg-white/5 lg:p-8">
-          <legend className="sr-only">เงื่อนไขการสุ่ม</legend>
-          <div>
-            <p id="random-cuisine" className="mb-3 font-bold">
-              ประเภทอาหาร
-            </p>
-            <div role="group" aria-labelledby="random-cuisine" className="flex flex-wrap gap-2">
-              {[{ id: "all", label: "ทุกประเภท" }, ...CUISINES].map((cuisine) => (
-                <button
-                  key={cuisine.id}
-                  type="button"
-                  aria-pressed={filters.cuisine === cuisine.id}
-                  onClick={() => setFilter("cuisine", cuisine.id)}
-                  className={chipClasses({ selected: filters.cuisine === cuisine.id, tone: "dark" })}
-                >
-                  {cuisine.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="random-budget" className="font-bold">
-              งบต่อจาน · ไม่เกิน {formatBaht(filters.budget)}
-            </label>
-            <input
-              id="random-budget"
-              type="range"
-              min={BUDGET_MIN}
-              max={BUDGET_MAX}
-              step={BUDGET_STEP}
-              value={filters.budget}
-              onChange={(e) => setFilter("budget", Number(e.target.value))}
-              className="mt-3 w-full accent-brand"
-            />
-            <div aria-hidden="true" className="flex justify-between text-xs text-white/60">
-              <span>{formatBaht(BUDGET_MIN)}</span>
-              <span>{formatBaht(BUDGET_MAX)}</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              ["openOnly", "เฉพาะร้านที่เปิดอยู่"],
-              ["hideSoldOut", "ซ่อนเมนูที่ของหมด"],
-              ["noRepeat", "ไม่ซ้ำเมนูที่สั่งใน 7 วัน"],
-            ].map(([key, label]) => (
-              <div key={key} className="rounded-3xl bg-white/5 px-5 py-4">
-                <ToggleSwitch
-                  id={`random-${key}`}
-                  tone="dark"
-                  label={label}
-                  checked={filters[key]}
-                  onChange={(value) => setFilter(key, value)}
-                />
-              </div>
-            ))}
-          </div>
-        </fieldset>
-      </div>
-    </div>
-  );
-}
-
-function ResultView({ item, onRespin }) {
-  const restaurant = getRestaurant(item.restaurantId);
-  return (
-    <div className="mx-auto w-full max-w-4xl space-y-5 px-4 pt-6 pb-8 sm:px-6 lg:space-y-8 lg:px-8 lg:pt-12 lg:pb-16">
-      <h1 className="text-center font-bold text-ink lg:text-2xl">
-        <span aria-hidden="true">🎉</span> วันนี้คุณได้…
-      </h1>
-      <article className="overflow-hidden rounded-4xl bg-cream shadow-card md:grid md:grid-cols-2">
-        <CatalogImage
-          src={item.image}
-          label={item.name}
-          className="aspect-4/3 border-x-0 border-t-0 md:aspect-auto md:h-full md:min-h-72 md:border-b-0"
-        />
-        <div className="space-y-1 p-6 text-center md:flex md:flex-col md:justify-center md:p-10">
-          <h2 className="text-2xl font-bold text-ink lg:text-4xl">{item.name}</h2>
-          <p className="text-sm text-ink-soft">
-            {restaurant.name} · <Rating value={item.rating} /> · คิว {restaurant.queueLength} · ~
-            {formatRange(restaurant.waitMinutes)} นาที
-          </p>
-          <p className="pt-2 text-3xl font-bold text-ink lg:text-5xl">{formatBaht(item.price)}</p>
-        </div>
-      </article>
-      <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
-        <button type="button" onClick={onRespin} className={buttonClasses({ variant: "cocoa-outline" })}>
-          <span aria-hidden="true">🎲</span> สุ่มใหม่
-        </button>
-        {isOrderable(item) ? (
-          <Link
-            to={`/customer/restaurants/${item.restaurantId}/menu/${item.id}`}
-            className={buttonClasses({ variant: "cocoa" })}
-          >
-            สั่งเลย
-          </Link>
-        ) : (
-          <button type="button" disabled className={buttonClasses({ variant: "cocoa" })}>
-            {item.soldOut ? "เมนูหมด" : "ร้านปิดอยู่"}
-          </button>
-        )}
-      </div>
-      <p className="text-center">
-        <Link to={`/customer/restaurants/${item.restaurantId}`} className={`${textLinkClass} text-sm`}>
-          ดูเมนูอื่นของร้านนี้
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-function EmptyView({ filters, onWiden, onBack }) {
-  const widened = Math.min(BUDGET_MAX, Math.max(filters.budget + 30, 50));
-  const cuisine = CUISINES.find((c) => c.id === filters.cuisine);
-  const canWiden = filters.budget < BUDGET_MAX;
-
-  return (
-    <div className="mx-auto w-full max-w-lg px-4 pt-10 pb-8 sm:px-6 lg:pt-20">
-      <div role="alert" className="space-y-4 rounded-4xl bg-white px-6 py-10 text-center shadow-card">
-        <span aria-hidden="true" className="mx-auto grid size-16 place-items-center rounded-full bg-haze text-3xl">
-          🎲
-        </span>
-        <h1 className="text-2xl font-bold text-ink">ไม่มีเมนูที่ตรงเงื่อนไข</h1>
-        <p className="text-ink-soft">
-          งบ {formatBaht(filters.budget)}
-          {cuisine && ` · ${cuisine.label}`} ตอนนี้ยังไม่มีเมนูที่ตรง — ลองขยายงบหรือเปลี่ยนประเภท
-        </p>
-        <div className="flex flex-col items-center gap-2">
-          {canWiden && (
-            <button type="button" onClick={() => onWiden(widened)} className={buttonClasses({ variant: "cocoa", size: "md" })}>
-              ขยายงบเป็น {formatBaht(widened)}
-            </button>
-          )}
-          <button type="button" onClick={onBack} className={`${textLinkClass} text-sm`}>
-            กลับไปแก้เงื่อนไข
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
 }
 
 function RandomFood() {
-  usePageTitle("สุ่มอาหาร");
+  usePageTitle("สุ่มอาหาร · ค้นพบจานโปรด");
   const { state } = useCustomer();
-  const [filters, setFilters] = useState({
-    cuisine: "all",
-    budget: 80,
-    openOnly: true,
-    hideSoldOut: true,
-    noRepeat: false,
-  });
-  const [view, setView] = useState("setup"); // setup | spinning | result | empty
-  const [reelItem, setReelItem] = useState(null);
-  const [result, setResult] = useState(null);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [phase, setPhase] = useState("idle");
+  const [previewId, setPreviewId] = useState(null);
+  const [resultId, setResultId] = useState(null);
+  const [drawId, setDrawId] = useState(0);
+  const [burstKey, setBurstKey] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [reelIds, setReelIds] = useState([]);
+  const [announcement, setAnnouncement] = useState("");
+  const [notice, setNotice] = useState("");
+  const [motionEnabled, setMotionEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const allowMotion = motionEnabled && !reducedMotion;
+  const { start: startAudio, tick: tickAudio, finish: finishAudio, stop: stopAudio } = useRandomAudio(soundEnabled);
   const timers = useRef([]);
+  const busy = useRef(false);
+  const run = useRef(0);
+  const finishNow = useRef(null);
+  const orders = useRef(state.orders);
+  const motion = useRef(allowMotion);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => { orders.current = state.orders; }, [state.orders]);
+  useEffect(() => {
+    motion.current = allowMotion;
+    if (!allowMotion) finishNow.current?.();
+  }, [allowMotion]);
+  useEffect(() => () => {
+    run.current += 1;
+    timers.current.forEach(clearTimeout);
+    finishNow.current = null;
+    stopAudio();
+  }, [stopAudio]);
+
+  // The provider refreshes catalogue arrays in place. Recompute on each render.
+  const effectiveFilters = { ...filters, noRepeat: Boolean(state.user) && filters.noRepeat };
+  const recent = getRecentMenuIds(state.orders);
+  const candidates = filterRandomCandidates(MENU_ITEMS, getRestaurant, effectiveFilters, recent);
+  const budgetMax = getRandomBudgetMax(MENU_ITEMS);
+  const cuisinePool = filterRandomCandidates(MENU_ITEMS, getRestaurant, { ...effectiveFilters, cuisine: "all" }, recent);
+  const previousResult = resultId ? getMenuItem(resultId) : null;
+  const result = previousResult && getRestaurant(previousResult.restaurantId) ? previousResult : null;
+  const stagePhase = phase === "result" && !result ? "empty" : phase;
+  const stageItem = phase === "result" ? result : phase === "spinning" ? getMenuItem(previewId) : candidates[Math.floor(candidates.length / 3)] || null;
+  const spinning = phase === "spinning";
+  const orbitItems = candidates.filter((item) => menuId(item) !== menuId(stageItem)).slice(0, 5);
+  const historyItems = history.map(getMenuItem).filter((item) => item && getRestaurant(item.restaurantId));
+  const showEmpty = phase === "empty" || (phase === "result" && !result);
 
   function setFilter(key, value) {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    if (busy.current) return;
+    setFilters((current) => ({ ...current, [key]: value }));
+    setPhase("idle");
+    setNotice("");
+    setAnnouncement("");
   }
 
-  function spin(activeFilters = filters) {
-    if (view === "spinning") return;
-    const since = Date.now() - WEEK_MS;
-    const recent = new Set(
-      state.orders.filter((o) => o.statusTimes.PLACED >= since).flatMap((o) => o.items.map((i) => i.menuId)),
-    );
-    const candidates = candidatesFor(activeFilters, recent);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function resetFilters() {
+    if (busy.current) return;
+    setFilters(DEFAULT_FILTERS);
+    setPhase("idle");
+    setNotice("");
+  }
 
-    if (candidates.length === 0) {
-      setView("empty");
+  function spin() {
+    if (busy.current) return;
+    const activeFilters = { ...filters, noRepeat: Boolean(state.user) && filters.noRepeat };
+    const pool = filterRandomCandidates(MENU_ITEMS, getRestaurant, activeFilters, getRecentMenuIds(orders.current));
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setNotice("");
+    if (!pool.length) {
+      setPhase("empty");
+      setAnnouncement("ยังไม่มีเมนูที่ตรงเงื่อนไข ลองขยายงบหรือเลือกประเภทอาหารใหม่");
       return;
     }
-
-    const winner = pickRandom(candidates, result?.id);
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) {
-      setResult(winner);
-      setView("result");
+    busy.current = true;
+    const activeRun = ++run.current;
+    const winner = chooseRandomCandidate(pool, resultId);
+    // Bound image decoding without limiting the actual draw's eligible pool.
+    const reel = [winner, ...pool.filter((item) => menuId(item) !== menuId(winner)).sort(() => Math.random() - 0.5).slice(0, 6)];
+    setReelIds(reel.map(menuId));
+    startAudio();
+    const finish = () => {
+      if (!busy.current || run.current !== activeRun) return;
+      busy.current = false;
+      finishNow.current = null;
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      // Shops can close or update stock while the animation runs.
+      const freshPool = filterRandomCandidates(MENU_ITEMS, getRestaurant, activeFilters, getRecentMenuIds(orders.current));
+      const currentWinner = freshPool.find((item) => menuId(item) === menuId(winner)) || chooseRandomCandidate(freshPool, resultId);
+      if (!currentWinner) {
+        setPhase("empty");
+        setNotice("ข้อมูลร้านหรือเมนูเพิ่งเปลี่ยน ลองปรับตัวเลือกแล้วสุ่มอีกครั้ง");
+        setAnnouncement("ไม่มีเมนูที่ตรงเงื่อนไขแล้ว กรุณาลองใหม่");
+        stopAudio();
+        return;
+      }
+      const id = menuId(currentWinner);
+      setPreviewId(id);
+      setResultId(id);
+      setDrawId((value) => value + 1);
+      setHistory((items) => [id, ...items.filter((value) => value !== id)].slice(0, 5));
+      setPhase("result");
+      if (motion.current) setBurstKey((value) => value + 1);
+      setAnnouncement(`มื้อนี้ได้ ${currentWinner.name} จาก ${getRestaurant(currentWinner.restaurantId).name} ราคา ${formatBaht(currentWinner.price)}`);
+      finishAudio();
+    };
+    finishNow.current = finish;
+    if (!allowMotion) {
+      finish();
       return;
     }
-
-    // Reel slows down: each tick waits a little longer, and the last tick lands on the winner.
-    setView("spinning");
+    setPhase("spinning");
+    setPreviewId(menuId(reel[reel.length - 1]));
+    setAnnouncement("กำลังสุ่มเมนูอาหาร คุณสามารถข้ามเอฟเฟกต์เพื่อดูผลได้");
+    const delays = Array.from({ length: 20 }, (_, index) => 48 + index * index * 0.75);
+    const total = delays.reduce((sum, delay) => sum + delay, 0);
     let elapsed = 0;
-    timers.current = Array.from({ length: SPIN_TICKS }, (_, tick) => {
-      elapsed += 50 + tick * tick * 1.2;
-      const last = tick === SPIN_TICKS - 1;
-      return setTimeout(() => {
-        setReelItem(last ? winner : pickRandom(MENU_ITEMS));
-        if (last) {
-          timers.current.push(
-            setTimeout(() => {
-              setResult(winner);
-              setView("result");
-            }, 700),
-          );
-        }
-      }, elapsed);
+    delays.forEach((delay, index) => {
+      elapsed += delay / total * 2650;
+      timers.current.push(setTimeout(() => {
+        if (!busy.current || run.current !== activeRun) return;
+        setPreviewId(menuId(index === delays.length - 1 ? winner : reel[index % reel.length]));
+        tickAudio();
+      }, elapsed));
     });
+    timers.current.push(setTimeout(finish, 2950));
   }
 
-  if (view === "result") return <ResultView item={result} onRespin={() => spin()} />;
-  if (view === "empty") {
-    return (
-      <EmptyView
-        filters={filters}
-        onBack={() => setView("setup")}
-        onWiden={(budget) => {
-          const next = { ...filters, budget };
-          setFilters(next);
-          spin(next);
-        }}
-      />
-    );
+  function toggleMotion() {
+    setMotionEnabled((value) => !value);
+    if (allowMotion && busy.current) {
+      motion.current = false;
+      finishNow.current?.();
+    }
   }
+
   return (
-    <SetupView
-      filters={filters}
-      setFilter={setFilter}
-      spinning={view === "spinning"}
-      reelItem={reelItem}
-      onSpin={() => spin()}
-    />
+    <div className="random-experience" data-motion={allowMotion ? "on" : "off"}>
+      <div className="random-experience__aurora" aria-hidden="true" />
+      <div className="random-experience__shell">
+        <header className="random-experience__header">
+          <div>
+            <p className="random-experience__eyebrow"><span /> THE DELICIOUS UNKNOWN</p>
+            <h1>มื้อนี้… <span>สุ่มให้ว้าว.</span><Sparkles aria-hidden="true" /></h1>
+            <p className="random-experience__intro">พักคำถามว่า “กินอะไรดี” แล้วปล่อยให้จานอร่อยมาเซอร์ไพรส์คุณ</p>
+          </div>
+          <div className="random-experience__controls" aria-label="ตั้งค่าเอฟเฟกต์">
+            <button type="button" aria-pressed={soundEnabled} onClick={() => setSoundEnabled((value) => !value)} title={soundEnabled ? "ปิดเสียง" : "เปิดเสียงตอนสุ่ม"}>{soundEnabled ? <Volume2 /> : <VolumeX />}<span>เสียง{soundEnabled ? "เปิด" : "ปิด"}</span></button>
+            <button type="button" aria-pressed={motionEnabled && !reducedMotion} disabled={reducedMotion} onClick={toggleMotion} title={reducedMotion ? "กำลังใช้การลดการเคลื่อนไหวตามอุปกรณ์" : allowMotion ? "หยุดการเคลื่อนไหว" : "เปิดการเคลื่อนไหว"}>{allowMotion ? <Pause /> : <Play />}<span>{allowMotion ? "พักเอฟเฟกต์" : "ลดการเคลื่อนไหว"}</span></button>
+          </div>
+        </header>
+
+        <div className="random-experience__layout">
+          <div className="random-experience__main">
+            <div className="random-experience__stage-wrap">
+              <RandomStage item={stageItem} restaurant={getRestaurant(stageItem?.restaurantId)} orbitItems={orbitItems} phase={stagePhase} motionEnabled={allowMotion} drawId={drawId} candidateCount={candidates.length} />
+              <RandomAtmosphere motionEnabled={allowMotion} burstKey={burstKey} />
+            </div>
+            <div className="random-experience__action-panel">
+              <div className="random-experience__status"><span className={spinning ? "is-spinning" : ""} aria-hidden="true" /><span>{spinning ? "ความอร่อยกำลังเดินทางมาหาคุณ" : phase === "result" && result ? "ค้นพบแล้ว! จานนี้เป็นยังไงบ้าง?" : `${candidates.length} เมนูตรงใจ · สุ่มจากข้อมูลร้านจริง`}</span><span className="random-experience__step">{spinning ? "DRAWING" : phase === "result" && result ? "YOUR MATCH" : "READY TO DISCOVER"}</span></div>
+              {phase === "result" && result ? (
+                <div className="random-experience__result-actions">
+                  <Link to={menuPath(result)} className="random-experience__spin"><span className="random-experience__button-icon"><ArrowUpRight /></span><span>ดูเมนูนี้<small>{isOrderable(result) ? "เลือกตัวเลือกอาหาร แล้วค่อยสั่งได้เลย" : result.soldOut ? "ขณะนี้เมนูหมด · เปิดดูรายละเอียดได้" : "ขณะนี้ร้านปิด · เปิดดูรายละเอียดได้"}</small></span><ArrowRight className="random-experience__button-arrow" /></Link>
+                  <button type="button" onClick={spin} className="random-experience__respin"><RotateCcw />สุ่มอีกจาน</button>
+                </div>
+              ) : (
+                <button type="button" onClick={spin} disabled={spinning} aria-busy={spinning} className="random-experience__spin"><span className="random-experience__button-icon"><Dice5 /></span><span>{spinning ? "กำลังสุ่มความอร่อย…" : "สุ่มมื้อที่ใช่ให้ฉัน"}<small>{spinning ? "อีกนิดเดียว ก็ได้เจอจานโปรดใหม่" : "หนึ่งคลิก อาจเจอของอร่อยที่ไม่เคยลอง"}</small></span><ArrowRight className="random-experience__button-arrow" /></button>
+              )}
+              <div className="random-experience__action-foot">
+                {spinning ? <button type="button" onClick={() => finishNow.current?.()}>ข้ามเอฟเฟกต์ <ArrowRight /></button> : result && phase === "result" ? <Link to={`/customer/restaurants/${result.restaurantId}`}><Store />ดูร้าน {getRestaurant(result.restaurantId).name}<ArrowUpRight /></Link> : <span><Check />สุ่มอย่างเดียว ยังไม่มีการสั่งซื้อหรือหักเงิน</span>}
+                <span>ราคาเริ่มต้น · ไม่รวมตัวเลือกและค่าบริการ</span>
+              </div>
+            </div>
+
+            {showEmpty && <div className="random-experience__empty"><Sparkles /><div><h2>เพิ่มโอกาสเจอจานที่ใช่</h2><p>{notice || (phase === "result" ? "เมนูนี้ถูกนำออกจากร้านแล้ว ลองค้นหาจานใหม่ได้เลย" : "ตอนนี้ยังไม่มีเมนูตรงเงื่อนไข ลองเพิ่มงบ เปลี่ยนหมวด หรือพักตัวเลือกไม่ซ้ำ")}</p><button type="button" onClick={() => { setFilters({ ...DEFAULT_FILTERS, budget: budgetMax }); setPhase("idle"); setNotice(""); }}>ดูทุกหมวดในงบ {formatBaht(budgetMax)} <ArrowRight /></button><Link to="/customer/explore">เลือกดูร้านด้วยตัวเอง <ArrowUpRight /></Link></div></div>}
+
+            {historyItems.length > 0 && <section className="random-experience__history" aria-labelledby="random-history-title"><div className="random-experience__section-heading"><h2 id="random-history-title"><History />ผลสุ่มรอบนี้</h2><span>เผื่อจานก่อนยังอยู่ในใจ</span></div><div className="random-experience__history-list">{historyItems.map((item, index) => <Link key={menuId(item)} to={menuPath(item)} className="random-experience__history-item"><span className="random-experience__history-number">0{index + 1}</span><CatalogImage src={item.image} label={item.name} compact className="random-experience__history-image" /><span><strong>{item.name}</strong><small>{getRestaurant(item.restaurantId).name}</small></span><b>{formatBaht(item.price)}</b><ArrowUpRight /></Link>)}</div></section>}
+          </div>
+
+          <aside className="random-experience__filters">
+            <div className="random-experience__filter-heading"><span className="random-experience__filter-icon"><SlidersHorizontal /></span><div><p>MAKE IT YOURS</p><h2>ปรุงวงสุ่มให้ถูกใจ</h2></div><button type="button" disabled={spinning} onClick={resetFilters} aria-label="รีเซ็ตตัวกรอง" title="รีเซ็ตตัวกรอง"><RotateCcw /></button></div>
+            <fieldset disabled={spinning}>
+              <legend className="sr-only">เงื่อนไขการสุ่มอาหาร</legend>
+              <div className="random-experience__filter-section"><div className="random-experience__label"><h3 id="random-cuisine-label">อยากกินแนวไหน</h3><span>01 / FLAVOUR</span></div><div className="random-experience__cuisines" role="group" aria-labelledby="random-cuisine-label">{[{ id: "all", label: "เซอร์ไพรส์ฉัน" }, ...CUISINES].map((cuisine) => { const count = cuisine.id === "all" ? cuisinePool.length : cuisinePool.filter((item) => item.cuisine === cuisine.id).length; return <button type="button" key={cuisine.id} aria-pressed={filters.cuisine === cuisine.id} onClick={() => setFilter("cuisine", cuisine.id)}><span aria-hidden="true">{CUISINE_SYMBOLS[cuisine.id]}</span><strong>{cuisine.label}</strong><small>{count}</small>{filters.cuisine === cuisine.id && <Check aria-hidden="true" />}</button>; })}</div></div>
+              <div className="random-experience__filter-section"><div className="random-experience__label"><label htmlFor="random-budget">งบต่อจาน</label><span>02 / BUDGET</span></div><div className="random-experience__budget-value"><span>ไม่เกิน</span><strong>{formatBaht(filters.budget)}</strong><span>/ จาน</span></div><input id="random-budget" type="range" min="20" max={budgetMax} step="5" value={filters.budget} aria-valuetext={`ไม่เกิน ${filters.budget} บาทต่อจาน`} onChange={(event) => setFilter("budget", Number(event.target.value))} style={{ "--budget-progress": `${Math.max(0, Math.min(100, (filters.budget - 20) / (budgetMax - 20) * 100))}%` }} /><div className="random-experience__range-labels" aria-hidden="true"><span>฿20</span><span>{formatBaht(budgetMax)}</span></div><div className="random-experience__budget-presets">{[50, 80, 120, budgetMax].filter((value, index, values) => values.indexOf(value) === index).map((value) => <button type="button" key={value} aria-pressed={filters.budget === value} onClick={() => setFilter("budget", value)}>{value === budgetMax ? "ทุกช่วงราคา" : formatBaht(value)}</button>)}</div></div>
+              <div className="random-experience__filter-section"><div className="random-experience__label"><h3>ใส่ใจอีกนิด</h3><span>03 / YOUR RULES</span></div><div className="random-experience__switches">{[["openOnly", "เฉพาะร้านที่เปิดอยู่", "พร้อมให้คุณเลือกสั่งต่อ"], ["hideSoldOut", "ซ่อนเมนูที่หมด", "เลือกจากจานที่ยังมีอยู่"], ["noRepeat", "ไม่ซ้ำที่สั่งใน 7 วัน", state.user ? "เว้นเมนูเก่า ลองรสชาติใหม่" : "เข้าสู่ระบบเพื่อใช้ประวัติการสั่งซื้อ"]].map(([key, label, description]) => <div key={key}><ToggleSwitch id={`random-${key}`} tone="dark" label={label} checked={Boolean(effectiveFilters[key])} disabled={key === "noRepeat" && !state.user} onChange={(value) => setFilter(key, value)} /><p>{description}</p></div>)}</div></div>
+            </fieldset>
+            <div className="random-experience__pool"><div><Sparkles /><span>วงสุ่มของคุณ</span></div><strong>{candidates.length}<small>เมนู</small></strong><p>{candidates.length ? "ปรับตัวเลือกได้ตามใจ แล้วไปลุ้นจานต่อไปกัน" : "ลองขยายตัวเลือกอีกนิด เพื่อเจอเมนูเพิ่มเติม"}</p><a href="#random-how-it-works">สุ่มอย่างไร <ChevronDown /></a></div>
+          </aside>
+        </div>
+
+        <section id="random-how-it-works" className="random-experience__how" aria-label="วิธีใช้สุ่มอาหาร"><div><span>01</span><p><strong>เลือกอารมณ์มื้อนี้</strong>กำหนดประเภทอาหารและงบที่สบายใจ</p></div><div><span>02</span><p><strong>เปิดเซอร์ไพรส์จานโปรด</strong>สุ่มจากเมนูจริงที่ตรงเงื่อนไขของคุณ</p></div><div><span>03</span><p><strong>ถูกใจ แล้วค่อยสั่ง</strong>เปิดดูเมนู เลือกตัวเลือก แล้วชำระเงิน</p></div></section>
+        <footer className="random-experience__footer"><span>MEALQ / A GOOD MEAL IS A GOOD MOOD.</span><span>ปล่อยให้มื้อนี้มีเรื่องเซอร์ไพรส์ <Sparkles /></span></footer>
+      </div>
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
+      <div className="random-experience__preload" aria-hidden="true">{reelIds.map((id) => { const item = getMenuItem(id); return item?.image ? <img key={id} src={item.image} alt="" width="1" height="1" /> : null; })}</div>
+    </div>
   );
 }
 

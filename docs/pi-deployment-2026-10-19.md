@@ -4,7 +4,7 @@
 
 - SSH: linapspi4@100.112.221.80 (Tailscale)
 - LAN: 192.168.1.121
-- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-auth-motion
+- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-random-experience
 - Current symlink: /home/linapspi4/mealq-app/current
 - Compose project mealq: รุ่นคูปองอัปเดตเฉพาะ API และ web; MongoDB, Tunnel และ volume mealq_db_data ไม่ถูกเปลี่ยน
 - เว็บรับเฉพาะ loopback 127.0.0.1:8088 จาก Tunnel ไม่มีการเปิด API/MongoDB บน public port
@@ -22,7 +22,7 @@
 
 เก็บ images mealq-api:before-20261019 และ mealq-web:before-20261019 สำหรับ rollback โดยใช้ compose เดิมและ MEALQ_RELEASE=before-20261019 หลังคืน environment เดิม ไม่ต้องลบ volume หรือ restore DB เพื่อ rollback โค้ด เพราะ schema ที่เพิ่มรองรับข้อมูลเก่า ห้ามใช้ compose down -v
 
-รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-auth-motion` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
+รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-random-experience` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
 
 ```sh
 docker compose -p mealq --env-file /home/linapspi4/mealq-app/shared/compose.env -f /home/linapspi4/mealq-app/current/deploy/compose.yaml up -d --no-deps --no-build --wait api web
@@ -140,3 +140,15 @@ API/web health ผ่าน, SMTP authentication ผ่าน, capabilities แ�
 - API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนเปลี่ยน เว็บ muaysart 200 ไม่มีการเปลี่ยนข้อมูลบัญชีหรือส่งอีเมล/Push ทดสอบจริง
 - สำรอง source ก่อนแก้: `C:\Users\game_\MealQBackups\source-before-login-motion-20261019T225923`; rollback: `shared/backups/activation-20261019-auth-motion-20261019T160740Z-348616`
 - สำรองเต็มก่อนสลับ `20261019T230756+0700-349149` และหลังสลับ `20261019T230857+0700-349906`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว
+
+## รุ่น Random experience
+
+- ขึ้น web-only release `20261019-random-experience` สำเร็จเวลาประมาณ 23:29 น. ออกแบบ `/customer/random` ใหม่เป็นเวทีโทนดำ/ทองแดง ใช้ภาพอาหารจริงบนจานแบบ perspective, รูปเมนูลอย, parallax จำกัดระยะ, แสงประกอบ, Canvas ฝุ่นแสง/กระดาษโปรย และ reveal เมื่อสุ่มเสร็จ
+- มีเสียงสังเคราะห์ที่ปิดเป็นค่าเริ่มต้นและเริ่มได้หลังผู้ใช้เลือกเปิดแล้วกดสุ่ม, ปุ่มพักการเคลื่อนไหว, ข้ามเอฟเฟกต์, ประวัติผลสุ่มในหน้านี้ และลิงก์ดูเมนู/ร้านโดยไม่มีการสั่งซื้อหรือหักเงินอัตโนมัติ
+- แยกตัวกรองที่ตรวจ store/identity/price, งบตามราคาสูงสุดใน catalogue, หมวดพร้อมจำนวนเมนูจริง, เปิดร้าน/ของหมด และไม่ซ้ำประวัติ 7 วัน (ข้ามออเดอร์ยกเลิกและรองรับ ID ทั้งสองแบบ) สุ่มและแสดง reel เฉพาะเมนูที่ตรงเงื่อนไข พร้อมตรวจใหม่เมื่อร้าน/stock เปลี่ยนระหว่าง animation
+- เคารพ prefers-reduced-motion ทั้งก่อนและระหว่างสุ่ม, หยุด Canvas/parallax เมื่อซ่อนหรือพ้นจอ, จำกัดอนุภาค/DPR/ภาพ reel และยกเลิก timer/audio เมื่อออกจากหน้า แสดงผลสุดท้ายผ่าน live region โดยไม่อ่านชื่อทุก tick
+- Frontend **75 tests**, full ESLint และ production build ผ่าน; controller smoke แบบ mock hooks/timers **10 กรณี** ผ่าน ครอบคลุมกดซ้ำ, ตัวกรอง/reset, skip/cleanup, Reduce Motion ระหว่างสุ่ม, stock/เมนูเปลี่ยน และประวัติใหม่ ผลนี้ไม่ใช่ browser/DOM/ภาพ/เสียงจริง เนื่องจาก saved origin permission ยังปฏิเสธการควบคุม browser
+- ตรวจ HTTPS `/customer/random`, URL รุ่นใหม่, `/login`, `/admin/wallets` ได้ no-store HTML ตรง build (`index-CdNMjvgg.js`), Random JS/CSS (`RandomFood-Bu4VgWW4.js`, `RandomFood-BmgHg0ml.css`) พร้อม dependency รวม **22 assets** และตัวอย่างรูปจริง **8 ภาพ** ตรง SHA256; public catalogue ขณะตรวจ 7 ร้าน/49 เมนู, API/DB healthy, Google/email capabilities พร้อม, www 308 คง path/query และ muaysart ตอบ 200
+- API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนเปลี่ยน ไม่มีการแก้ฐานข้อมูล/บัญชี สร้างออเดอร์ หรือส่งข้อความจริง ใช้ release/image ใหม่แยกและเก็บรุ่นเก่าทั้งหมด
+- สำรอง source ก่อนแก้: `C:\Users\game_\MealQBackups\source-before-random-experience-20261019T231350`; rollback: `shared/backups/activation-20261019-random-experience-20261019T162913Z-359400`
+- สำรองเต็มก่อนสลับ `20261019T232931+0700-359958` และหลังสลับ `20261019T233008+0700-360582`; สำเนานอก Pi แบบเข้ารหัส 146,106 ไบต์ผ่าน decryption/SHA/HMAC แล้ว
