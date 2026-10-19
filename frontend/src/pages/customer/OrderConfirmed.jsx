@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router";
 import { CheckIcon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/styles";
-import { getRestaurant, queuesAhead } from "@/features/customer/catalog";
+import { getOrderRestaurant, queuesAhead } from "@/features/customer/catalog";
 import { PickupCode } from "@/features/customer/components/pickup-code";
 import { formatBaht, formatRange } from "@/features/customer/format";
 import { useCustomer } from "@/features/customer/store";
@@ -16,7 +16,7 @@ function OrderConfirmed() {
 
   if (!order) return <NotFoundPage />;
 
-  const restaurant = getRestaurant(order.restaurantId);
+  const restaurant = getOrderRestaurant(order);
   const ahead = queuesAhead(order);
 
   return (
@@ -53,7 +53,7 @@ function OrderConfirmed() {
               <div>
                 <dt className="sr-only">ยอดชำระ</dt>
                 <dd className="text-xl font-bold">{formatBaht(order.total)}</dd>
-                <dd className="text-xs text-ink-soft">จ่ายแล้ว</dd>
+                <dd className="text-xs text-ink-soft">{order.paymentMode === "sandbox" ? "ยอดทดสอบ · ไม่มีการตัดเงินจริง" : "ยอดชำระ"}</dd>
               </div>
             </dl>
           </section>

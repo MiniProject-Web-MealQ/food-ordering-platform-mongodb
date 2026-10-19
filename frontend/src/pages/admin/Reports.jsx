@@ -72,6 +72,7 @@ function Reports() {
   return (
     <div className={cx(pageClass, "space-y-4 lg:space-y-5")}>
       <PageHeader title="รายงาน" subtitle={`${periodLabel} · ยอดขาย ${formatBaht(totalRevenue)} จาก ${totalOrders.toLocaleString("th-TH")} ออเดอร์`} />
+      <p className="text-sm text-ink-soft">ยอดขายรวมออเดอร์ที่ชำระแบบทดสอบ ออเดอร์ที่ยังไม่ชำระหรือถูกยกเลิกไม่นับเป็นยอดขาย</p>
       <FilterRow>
         <SelectField id="report-period" label="ช่วงเวลา" value={period} onChange={setPeriod} options={PERIODS} />
       </FilterRow>

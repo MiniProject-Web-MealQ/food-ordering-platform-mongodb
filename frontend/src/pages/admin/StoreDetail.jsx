@@ -34,17 +34,24 @@ function StoreEditForm({ store, onSave }) {
   const [maxQueue, setMaxQueue] = useState(String(store.queue?.max_queue ?? ""));
   const [submitted, setSubmitted] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState("");
 
   const errors = {};
   if (!address.trim()) errors.address = "กรอกจุดรับอาหาร";
   if (!/^\d+$/.test(maxQueue) || Number(maxQueue) < 1 || Number(maxQueue) > 200) errors.maxQueue = "ต้องเป็นตัวเลข 1–200";
   const shown = submitted ? errors : {};
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     setSubmitted(true);
     if (Object.keys(errors).length) return;
-    onSave(address.trim(), Number(maxQueue));
+    setBusy(true);
+    setProblem("");
+    const result = await onSave(address.trim(), Number(maxQueue));
+    setBusy(false);
+    if (!result.ok) { setProblem(result.error?.message || "บันทึกไม่สำเร็จ"); return; }
     setSaved(true);
     setSubmitted(false);
   }
@@ -76,7 +83,8 @@ function StoreEditForm({ store, onSave }) {
         }}
       />
       {saved && <Alert tone="success" title="บันทึกข้อมูลร้านแล้ว" />}
-      <Button type="submit" variant="cocoa" size="md">
+      {problem && <Alert tone="error" title={problem} />}
+      <Button type="submit" variant="cocoa" size="md" disabled={busy}>
         บันทึก
       </Button>
     </form>
@@ -112,9 +120,9 @@ function StoreDetail() {
   const recent = state.orders.filter((o) => o.store_id === store._id).slice(0, 10);
   const config = dialog && DIALOGS[dialog];
 
-  function confirm(reason) {
-    if (dialog === "forceClose") dispatch(actions.forceCloseStore(store._id, reason));
-    else dispatch(actions.setStoreStatus(store._id, config.status, reason));
+  async function confirm(reason) {
+    const result = await dispatch(dialog === "forceClose" ? actions.forceCloseStore(store._id, reason) : actions.setStoreStatus(store._id, config.status, reason));
+    if (!result.ok) return result.error?.message || "บันทึกไม่สำเร็จ";
     setNotice(`${config.title} “${store.name}” แล้ว`);
     setDialog(null);
   }
@@ -136,7 +144,7 @@ function StoreDetail() {
     <div className={cx(pageClass, "space-y-4 lg:space-y-5")}>
       <PageHeader
         title={store.name}
-        subtitle={`${store.category} · สมัครเมื่อ ${formatDate(store.created_at)}`}
+        subtitle={`สมัครเมื่อ ${formatDate(store.created_at)}`}
         fallback="/admin/stores"
         action={<StoreStatusBadge store={store} />}
       />
@@ -192,12 +200,12 @@ function StoreDetail() {
             <div>
               <dt className="text-xs text-ink-soft">เวลาเปิด-ปิด</dt>
               <dd className="text-ink">
-                {store.opening_hours.open_time}–{store.opening_hours.close_time} น.
+                {store.opening_hours?.open_time && store.opening_hours?.close_time ? `${store.opening_hours.open_time}–${store.opening_hours.close_time} น.` : "ยังไม่ระบุเวลา"}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-ink-soft">คะแนน</dt>
-              <dd className="text-ink">{store.rating.count ? `★ ${store.rating.average.toFixed(1)} (${store.rating.count} รีวิว)` : "ยังไม่มีรีวิว"}</dd>
+              <dd className="text-ink">{store.rating?.count ? `★ ${store.rating.average.toFixed(1)} (${store.rating.count} รีวิว)` : "ยังไม่มีรีวิว"}</dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-xs text-ink-soft">จุดรับอาหาร</dt>

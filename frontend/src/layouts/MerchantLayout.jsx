@@ -4,7 +4,7 @@
   Layout หลักของฝั่งร้านค้า (/merchant/*) ยกเว้นหน้า login
 
   - ครอบทุกหน้าด้วย MerchantProvider (โหลดร้าน เมนู ออเดอร์ จาก API + รับออเดอร์ใหม่ผ่าน socket)
-  - ยังไม่ได้ login (หรือ session หมดอายุ) → ส่งไป /merchant/login แล้วค่อยกลับมาหน้าเดิม
+  - ยังไม่ได้ login (หรือ session หมดอายุ) → ส่งไป /login?role=merchant แล้วค่อยกลับมาหน้าเดิม
   - Desktop (lg ขึ้นไป): sidebar ด้านซ้าย (lg = แถบไอคอน, xl = sidebar เต็ม)
   - มือถือ/แท็บเล็ต: แถบบนบอกชื่อร้าน + แถบเมนูด้านล่าง
 */
@@ -41,7 +41,7 @@ function MerchantShell() {
   if (state.status === "signed-out") {
     return (
       <Navigate
-        to="/merchant/login"
+        to="/login?role=merchant"
         replace
         state={{ from: location.pathname + location.search, reason: state.reason }}
       />
@@ -63,11 +63,11 @@ function MerchantShell() {
   }
 
   return (
-    <div className="flex min-h-dvh w-full flex-1 bg-page">
+    <div className="flex min-h-dvh min-w-0 w-full flex-1 bg-page">
       <MerchantSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <MerchantTopBar />
-        <main className="flex-1 pb-24 lg:pb-12">
+        <main className="min-w-0 flex-1 pb-24 lg:pb-12">
           <Outlet />
         </main>
         <MerchantBottomNav />

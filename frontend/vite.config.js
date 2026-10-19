@@ -7,6 +7,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:5000', changeOrigin: true },
+      '/socket.io': { target: 'http://127.0.0.1:5000', changeOrigin: true, ws: true },
+    },
     allowedHosts: ['bid-depot-home-moore.trycloudflare.com', 'straight-percentage-polls-thriller.trycloudflare.com'],
   },
   resolve: {

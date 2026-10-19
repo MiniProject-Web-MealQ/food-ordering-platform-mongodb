@@ -57,8 +57,8 @@ Frontend: `http://localhost:5173`
 3. เข้า Customer และเลือกร้าน `ร้านป้าแดง`
 4. เพิ่มเมนูลง cart แล้ว checkout
 5. หน้าชำระเงินจะเรียก Backend และบันทึก Order ลง MongoDB
-6. เปิด Merchant อีก Browser/Profile ที่ `http://localhost:5173/merchant/login`
-7. Login Merchant ด้วย `merchant@mealq.local` / `Merchant123!`
+6. เปิด Merchant อีก Browser/Profile ที่ `http://localhost:5173/login`
+7. เลือก "ร้านค้า" แล้ว Login ด้วย `merchant@mealq.local` / `Merchant123!` ระบบจะพาไป `/merchant/dashboard`
 8. ไป Orders จะเห็น Order ของ Customer
 9. เปลี่ยน status เป็น `preparing` / `ready` / `completed`
 10. Customer ที่ยังเปิดเว็บอยู่จะรับ `order:status` ผ่าน Socket.IO
@@ -115,4 +115,4 @@ Smoke test route เดิมยังใช้ได้:
 
 ## หมายเหตุ
 
-Customer catalogue UI ยังอ่านข้อมูลร้าน/เมนูจาก mock-data เพื่อไม่ต้องรื้อ UI ที่คนที่ 1 ทำไว้ แต่ seed จะนำ mock-data ชุดเดียวกันลง MongoDB ทำให้ตอน Customer สั่งอาหาร Backend สามารถ resolve menu ID และสร้าง Order จริงได้ ส่วน Merchant ใช้ข้อมูล MongoDB จริงทั้งหมด
+Customer catalogue อ่านร้าน เมนู โปรโมชั่น และคิวจาก API จริงแล้ว ประวัติออเดอร์ รายการโปรด และโปรไฟล์โหลดจาก MongoDB โดยแยก state ตามบัญชี ร้านหรือเมนูที่ Merchant แก้ไขจะปรากฏฝั่ง Customer ส่วน mock-data ใช้เป็นต้นแบบสำหรับ seed และค่าคงที่ของ UI เท่านั้น ดูวิธีรัน บัญชี Admin และข้อจำกัดบริการภายนอกล่าสุดที่ [README.md](README.md)

@@ -8,7 +8,10 @@ const connectDB = require("../config/db");
 const User = require("../models/User");
 const Store = require("../models/Store");
 const Menu = require("../models/Menu");
+const Wallet = require("../models/Wallet");
+const Promotion = require("../models/Promotion");
 const { hashPassword } = require("../services/password");
+const resetDemo = process.argv.includes("--reset-demo");
 
 async function upsertDemoUser({ name, email, password, role }) {
   let user = await User.findOne({ email });
@@ -19,7 +22,7 @@ async function upsertDemoUser({ name, email, password, role }) {
       password_hash: await hashPassword(password),
       role,
     });
-  } else {
+  } else if (resetDemo) {
     user.name = name;
     user.role = role;
     user.password_hash = await hashPassword(password);
@@ -43,6 +46,11 @@ async function run() {
     password: "Merchant123!",
     role: "merchant",
   });
+  await upsertDemoUser({ name: "Demo Admin", email: "admin@mealq.local", password: "Admin123!", role: "admin" });
+  await Wallet.findOneAndUpdate({ user_id: customer._id }, { $setOnInsert: { balance: 1000 } }, { upsert: true, setDefaultsOnInsert: true });
+  await Promotion.findOneAndUpdate({ store_id: null, code: "LUNCH10" }, {
+    $setOnInsert: { title: "ลด 10%", discount_type: "percentage", discount_value: 10, minimum_order: 0, start_date: new Date("2020-01-01"), expire_date: new Date("2099-12-31"), is_active: true },
+  }, { upsert: true, setDefaultsOnInsert: true });
 
   const mockDataPath = path.resolve(__dirname, "../../../frontend/src/features/customer/mock-data.js");
   const { RESTAURANTS, MENU_ITEMS } = await import(pathToFileURL(mockDataPath).href);
@@ -66,8 +74,8 @@ async function run() {
 
     const store = await Store.findOneAndUpdate(
       { client_id: restaurant.id },
-      { $set: update },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { [resetDemo ? "$set" : "$setOnInsert"]: update },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
     storeByClientId.set(restaurant.id, store);
   }
@@ -78,7 +86,7 @@ async function run() {
     await Menu.findOneAndUpdate(
       { client_id: item.id },
       {
-        $set: {
+        [resetDemo ? "$set" : "$setOnInsert"]: {
           client_id: item.id,
           store_id: store._id,
           name: item.name,
@@ -91,12 +99,12 @@ async function run() {
           is_available: item.soldOut !== true,
         },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
   }
 
   const paDaeng = storeByClientId.get("pa-daeng");
-  if (paDaeng && String(paDaeng.owner_id || "") !== String(merchant._id)) {
+  if (paDaeng && !paDaeng.owner_id) {
     paDaeng.owner_id = merchant._id;
     await paDaeng.save();
   }
@@ -104,6 +112,8 @@ async function run() {
   console.log("Seed completed");
   console.log("Customer: customer@mealq.local / Customer123!");
   console.log("Merchant: merchant@mealq.local / Merchant123!");
+  console.log("Admin: admin@mealq.local / Admin123!");
+  console.log("Seed preserves existing users, menus and stores. Pass --reset-demo to restore demo fields/passwords.");
   console.log(`Seeded ${RESTAURANTS.length} restaurants and ${MENU_ITEMS.length} menu items`);
   console.log(`Demo customer id: ${customer._id}`);
   process.exit(0);

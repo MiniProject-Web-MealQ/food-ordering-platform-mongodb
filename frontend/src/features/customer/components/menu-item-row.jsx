@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { CatalogImage } from "./catalog-image";
 import { cx } from "@/lib/cx";
 import { getRestaurant, isOrderable } from "../catalog";
 import { formatBaht } from "../format";
@@ -17,7 +17,8 @@ export function MenuItemRow({ menuItem, variant = "restaurant" }) {
 
   return (
     <div className="relative flex items-center gap-3 rounded-3xl bg-cream p-3">
-      <ImagePlaceholder
+      <CatalogImage
+        src={menuItem.image}
         compact
         label={menuItem.shortLabel}
         className={cx("size-18 shrink-0 rounded-2xl", !orderable && "opacity-50")}

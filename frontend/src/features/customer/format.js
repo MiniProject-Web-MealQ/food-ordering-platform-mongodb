@@ -30,6 +30,7 @@ export function formatRange([min, max]) {
 }
 
 export function formatDistance(meters) {
+  if (meters === null || meters === undefined) return "รับอาหารที่ร้าน";
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${meters} ม.`;
 }
 

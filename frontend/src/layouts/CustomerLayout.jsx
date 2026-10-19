@@ -10,17 +10,28 @@
   หน้าที่มี Bottom Nav (เฉพาะมือถือ/แท็บเล็ต) จะอยู่ใน CustomerTabLayout อีกชั้น
   หน้าที่มีปุ่มด้านล่างของตัวเอง (ตะกร้า, ชำระเงิน, รายละเอียดเมนู) อยู่ใน Layout นี้โดยตรง
 */
-import { Outlet } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { CustomerHeader } from "@/features/customer/components/customer-header";
 import { CustomerProvider } from "@/features/customer/customer-provider";
+import { useCustomer } from "@/features/customer/store";
+
+function CustomerContent() {
+  const { state } = useCustomer();
+  const { pathname, search } = useLocation();
+  const needsAccount = /^\/customer\/(orders|profile|favorites|notifications|checkout)(\/|$)/.test(pathname);
+  if (needsAccount && !state.user) return <Navigate to="/login" state={{ from: pathname + search }} replace />;
+  return (
+    <div className="flex min-h-dvh min-w-0 w-full flex-1 flex-col bg-white">
+      <CustomerHeader />
+      <Outlet />
+    </div>
+  );
+}
 
 function CustomerLayout() {
   return (
     <CustomerProvider>
-      <div className="flex min-h-dvh w-full flex-1 flex-col bg-white">
-        <CustomerHeader />
-        <Outlet />
-      </div>
+      <CustomerContent />
     </CustomerProvider>
   );
 }

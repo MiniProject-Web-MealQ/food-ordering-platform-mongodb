@@ -110,8 +110,9 @@ function Promotions() {
           id={`promo-toggle-${p._id}`}
           label={<span className="sr-only">เปิดใช้คูปอง {p.code}</span>}
           checked={p.is_active}
-          onChange={(checked) => {
-            dispatch(actions.updatePromotion(p._id, { is_active: checked }));
+          onChange={async (checked) => {
+            const result = await dispatch(actions.updatePromotion(p._id, { is_active: checked }));
+            if (!result.ok) return;
             setNotice(checked ? `เปิดใช้คูปอง ${p.code} แล้ว` : `ปิดคูปอง ${p.code} แล้ว`);
           }}
         />
@@ -131,11 +132,6 @@ function Promotions() {
           </Button>
         }
       />
-      {/* MOCK: ระบบสั่งอาหารจริงยังรู้จักแค่ LUNCH10 (orderController.js) และแอปลูกค้าตรวจคูปองจาก mock-data */}
-      <div className="rounded-3xl border-2 border-amber/50 bg-amber/10 px-5 py-4 text-sm">
-        <p className="font-semibold text-ink">คูปองที่สร้างที่นี่ยังใช้กับลูกค้าจริงไม่ได้</p>
-        <p className="text-ink-soft">ต้องรอหลังบ้านเพิ่ม API คูปอง และให้ฝั่งลูกค้าตรวจคูปองผ่าน API ก่อน ตอนนี้เก็บไว้ในเบราว์เซอร์นี้เท่านั้น</p>
-      </div>
       <p role="status" className={notice ? "rounded-2xl bg-mint px-4 py-2 text-sm font-medium text-ink" : "sr-only"}>
         {notice}
       </p>
@@ -159,10 +155,12 @@ function Promotions() {
             stores={liveStores}
             submitLabel="สร้างคูปอง"
             onCancel={() => setDialog(null)}
-            onSubmit={(fields) => {
-              dispatch(actions.addPromotion(fields));
+            onSubmit={async (fields) => {
+              const result = await dispatch(actions.addPromotion(fields));
+              if (!result.ok) return result;
               setNotice(`สร้างคูปอง ${fields.code} แล้ว`);
               setDialog(null);
+              return result;
             }}
           />
         </MerchantDialog>
@@ -177,10 +175,12 @@ function Promotions() {
             editingId={editing._id}
             submitLabel="บันทึกการแก้ไข"
             onCancel={() => setDialog(null)}
-            onSubmit={(fields) => {
-              dispatch(actions.updatePromotion(editing._id, fields));
+            onSubmit={async (fields) => {
+              const result = await dispatch(actions.updatePromotion(editing._id, fields));
+              if (!result.ok) return result;
               setNotice(`บันทึกคูปอง ${fields.code} แล้ว`);
               setDialog(null);
+              return result;
             }}
           />
         </MerchantDialog>

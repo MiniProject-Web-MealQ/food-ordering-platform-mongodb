@@ -1,4 +1,4 @@
-import { apiUrl, postJson, UNEXPECTED_RESPONSE } from "@/lib/api-client";
+import { apiUrl, getJson, postJson, UNEXPECTED_RESPONSE } from "@/lib/api-client";
 import { isUserRole } from "./types";
 import { normalizePhone } from "./validation";
 
@@ -20,6 +20,9 @@ export async function login(input) {
     await postJson("/auth/login", { ...input, email: input.email.trim() }),
   );
 }
+
+export const getSession = () => getJson("/auth/me");
+export const getCapabilities = () => getJson("/auth/capabilities");
 
 export async function register(input) {
   const phone = normalizePhone(input.phone);
@@ -43,5 +46,6 @@ export async function resetPassword(token, password) {
 }
 
 export function googleSignInUrl(portal) {
-  return apiUrl(`/auth/google?portal=${portal.toLowerCase()}`);
+  const params = new URLSearchParams({ portal: portal.toLowerCase(), returnOrigin: window.location.origin });
+  return apiUrl(`/auth/google?${params}`);
 }

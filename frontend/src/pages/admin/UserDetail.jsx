@@ -219,13 +219,10 @@ function UserDetail() {
               variant="cocoa-outline"
               size="md"
               fullWidth
-              onClick={() => {
-                dispatch(actions.resetPassword(user._id));
-                setNotice(`ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่ ${user.email} แล้ว (ข้อมูลจำลอง: ยังไม่ได้ส่งอีเมลจริง)`);
-              }}
+              disabled
             >
               <KeyRound aria-hidden="true" className="size-4" />
-              ส่งลิงก์ตั้งรหัสผ่านใหม่
+              ส่งลิงก์ตั้งรหัสผ่านใหม่ (ยังไม่มีบริการอีเมล)
             </Button>
           </div>
         </section>
@@ -238,8 +235,9 @@ function UserDetail() {
           description="ผู้ใช้จะ login ไม่ได้จนกว่าจะยกเลิกระงับ"
           confirmLabel="ระงับบัญชี"
           onClose={() => setDialog(null)}
-          onConfirm={(reason) => {
-            dispatch(actions.setUserStatus(user._id, "suspended", reason));
+          onConfirm={async (reason) => {
+            const result = await dispatch(actions.setUserStatus(user._id, "suspended", reason));
+            if (!result.ok) return result.error?.message || "บันทึกไม่สำเร็จ";
             done(`ระงับบัญชี “${user.name}” แล้ว`);
           }}
         />
@@ -254,8 +252,9 @@ function UserDetail() {
           requireReason={false}
           reasonLabel="หมายเหตุ"
           onClose={() => setDialog(null)}
-          onConfirm={(reason) => {
-            dispatch(actions.setUserStatus(user._id, "active", reason));
+          onConfirm={async (reason) => {
+            const result = await dispatch(actions.setUserStatus(user._id, "active", reason));
+            if (!result.ok) return result.error?.message || "บันทึกไม่สำเร็จ";
             done(`ยกเลิกระงับ “${user.name}” แล้ว`);
           }}
         />
@@ -270,8 +269,9 @@ function UserDetail() {
           requireReason={false}
           reasonLabel="หมายเหตุ"
           onClose={() => setDialog(null)}
-          onConfirm={() => {
-            dispatch(actions.setUserRole(user._id, role));
+          onConfirm={async () => {
+            const result = await dispatch(actions.setUserRole(user._id, role));
+            if (!result.ok) return result.error?.message || "บันทึกไม่สำเร็จ";
             setNewRole("");
             done(`เปลี่ยน “${user.name}” เป็น${ROLE_LABEL[role]}แล้ว`);
           }}

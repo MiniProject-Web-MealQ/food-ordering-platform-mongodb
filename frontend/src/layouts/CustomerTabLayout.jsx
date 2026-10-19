@@ -11,7 +11,7 @@ import { BottomNav } from "@/features/customer/components/bottom-nav";
 function CustomerTabLayout() {
   return (
     <>
-      <main className="flex flex-1 flex-col">
+      <main className="flex min-w-0 w-full flex-1 flex-col">
         <Outlet />
       </main>
       <BottomNav />

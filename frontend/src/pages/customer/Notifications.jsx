@@ -10,6 +10,7 @@ const KIND_ICON = {
   preparing: { emoji: "👩‍🍳", className: "bg-haze" },
   paid: { emoji: "✓", className: "bg-mint text-ink" },
   promo: { emoji: "🎟️", className: "bg-mint" },
+  cancelled: { emoji: "✕", className: "bg-alert/15 text-danger" },
 };
 
 function destination(notification) {
@@ -51,7 +52,7 @@ function Notifications() {
       ) : (
         <ul className="space-y-3">
           {notifications.map((notification) => {
-            const icon = KIND_ICON[notification.kind];
+            const icon = KIND_ICON[notification.kind] || KIND_ICON.preparing;
             const highlight = notification.kind === "ready" && !notification.read;
             return (
               <li

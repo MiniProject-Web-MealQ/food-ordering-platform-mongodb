@@ -42,6 +42,8 @@ function DateInput({ field, label, values, error, onChange }) {
 export function PromotionForm({ initialValues, promotions, stores, editingId = null, submitLabel, onSubmit, onCancel }) {
   const [values, setValues] = useState(initialValues);
   const [submitted, setSubmitted] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState("");
   const errors = validatePromotion(values, promotions, editingId);
   const shown = submitted ? errors : {};
   const errorCount = Object.keys(errors).length;
@@ -62,21 +64,27 @@ export function PromotionForm({ initialValues, promotions, stores, editingId = n
 
   const digits = (v) => v.replace(/\D/g, "");
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     setSubmitted(true);
     if (errorCount) {
       const first = FIELD_ORDER.find((f) => errors[f]);
       document.getElementById(idOf(first))?.focus();
       return;
     }
-    onSubmit(toPromotionFields(values));
+    setBusy(true);
+    setProblem("");
+    const result = await onSubmit(toPromotionFields(values));
+    setBusy(false);
+    if (!result?.ok) setProblem(result?.error?.message || "บันทึกคูปองไม่สำเร็จ");
   }
 
   return (
     <form onSubmit={submit} noValidate className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-6">
       <div className={cx(panelClass, "space-y-5")}>
         {submitted && errorCount > 0 && <Alert tone="error" title={`ยังบันทึกไม่ได้ มี ${errorCount} ช่องที่ต้องแก้`} />}
+        {problem && <Alert tone="error" title={problem} />}
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField label="โค้ดคูปอง" placeholder="เช่น LUNCH10" autoComplete="off" {...text("code", (v) => v.toUpperCase().replace(/\s/g, ""))} />
           <TextField label="ชื่อคูปอง" placeholder="เช่น ลด 10% ช่วงกลางวัน" {...text("title")} />
@@ -146,8 +154,8 @@ export function PromotionForm({ initialValues, promotions, stores, editingId = n
           <p className="mt-1 text-xs text-ink-soft">ปิดไว้ก่อนได้ ลูกค้าจะใช้โค้ดนี้ไม่ได้จนกว่าจะเปิด</p>
         </div>
         <div className="flex flex-col gap-2">
-          <Button type="submit" variant="cocoa" fullWidth>
-            {submitLabel}
+          <Button type="submit" variant="cocoa" fullWidth disabled={busy}>
+            {busy ? "กำลังบันทึก…" : submitLabel}
           </Button>
           <Button variant="cocoa-outline" fullWidth onClick={onCancel}>
             ยกเลิก

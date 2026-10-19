@@ -1,5 +1,5 @@
 function frontendRole(role) {
-  return role === "customer" ? "CUSTOMER" : "MERCHANT";
+  return role === "admin" ? "ADMIN" : role === "customer" ? "CUSTOMER" : "MERCHANT";
 }
 
 function userView(user) {
@@ -9,6 +9,8 @@ function userView(user) {
     email: user.email,
     phone: user.phone ?? null,
     role: frontendRole(user.role),
+    status: user.status || "active",
+    mustChangePassword: Boolean(user.must_change_password),
   };
 }
 

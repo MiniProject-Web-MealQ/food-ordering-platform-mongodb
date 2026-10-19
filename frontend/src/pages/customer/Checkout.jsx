@@ -18,7 +18,7 @@ function Checkout() {
   usePageTitle("ชำระเงิน");
   const navigate = useNavigate();
   const { state } = useCustomer();
-  const [method, setMethod] = useState(state.settings.paymentMethod);
+  const [method, setMethod] = useState(PAYMENT_METHODS.some((option) => option.id === state.settings.paymentMethod) ? state.settings.paymentMethod : PAYMENT_METHODS[0].id);
   // Read once so the estimate doesn't shift while the customer is looking at it.
   const [now] = useState(() => Date.now());
   const priced = priceCart(state.cart);
@@ -28,12 +28,12 @@ function Checkout() {
   const restaurant = getRestaurant(state.cart.restaurantId);
   const queueNumber = nextQueueNumber(restaurant, state.orders);
   const readyAt = now + restaurant.waitMinutes[1] * 60_000;
-  const selected = PAYMENT_METHODS.find((m) => m.id === method);
-  const payLabel = `จ่าย ${formatBaht(priced.total)} ด้วย ${selected.cta}`;
+  const orderable = restaurant.isOpen && priced.lines.every((line) => !line.menuItem.soldOut);
+  const payLabel = `ยืนยันออเดอร์ทดสอบ ${formatBaht(priced.total)}`;
 
   function handleSubmit(event) {
     event.preventDefault();
-    navigate("/customer/checkout/payment", { state: { method } });
+    if (orderable) navigate("/customer/checkout/payment", { state: { method } });
   }
 
   return (
@@ -110,7 +110,7 @@ function Checkout() {
               <span className="font-bold text-ink">ยอดชำระ</span>
               <span className="text-2xl font-bold text-ink">{formatBaht(priced.total)}</span>
             </p>
-            <button type="submit" className={cx(buttonClasses({ variant: "cocoa", fullWidth: true }), "mt-5 max-lg:hidden")}>
+            <button type="submit" disabled={!orderable} className={cx(buttonClasses({ variant: "cocoa", fullWidth: true }), "mt-5 max-lg:hidden")}>
               {payLabel}
             </button>
           </section>
@@ -140,13 +140,14 @@ function Checkout() {
 
           <p className="flex gap-3 rounded-3xl bg-mint/60 px-5 py-4 text-xs text-ink lg:col-start-1">
             <LockIcon className="size-4 shrink-0" />
-            ชำระผ่านผู้ให้บริการที่ผ่านมาตรฐาน PCI-DSS · MealQ ไม่เก็บเลขบัตรของคุณ
+            โหมดทดสอบ: จำลองการชำระเงินเพื่อทดลองสั่งอาหาร ไม่มีการตัดเงินจริง
           </p>
+          {!orderable && <p role="alert" className="text-danger">ร้านปิดหรือมีเมนูที่ไม่เปิดขาย กรุณากลับไปแก้ไขตะกร้า</p>}
         </div>
       </main>
 
       <div className="sticky bottom-0 z-10 border-t border-haze bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 lg:hidden">
-        <button type="submit" className={buttonClasses({ variant: "cocoa", fullWidth: true })}>
+        <button type="submit" disabled={!orderable} className={buttonClasses({ variant: "cocoa", fullWidth: true })}>
           {payLabel}
         </button>
       </div>

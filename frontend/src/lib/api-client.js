@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "";
+const API_URL = (import.meta.env.VITE_API_URL || "/api/v1").replace(/\/$/, "");
 
 export const NETWORK_ERROR = {
   code: "NETWORK_ERROR",
@@ -70,6 +70,10 @@ export function postJson(path, body) {
 
 export function patchJson(path, body) {
   return requestJson(path, { method: "PATCH", body });
+}
+
+export function putJson(path, body) {
+  return requestJson(path, { method: "PUT", body });
 }
 
 export function deleteJson(path) {

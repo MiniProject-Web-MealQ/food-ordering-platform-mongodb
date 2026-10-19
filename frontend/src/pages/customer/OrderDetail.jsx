@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { CheckIcon, PlayIcon } from "@/components/icons";
+import { CheckIcon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/styles";
-import { currentStatus, getRestaurant, ORDER_STEPS, statusLabel } from "@/features/customer/catalog";
+import { currentStatus, getOrderRestaurant, ORDER_STEPS, statusLabel } from "@/features/customer/catalog";
+import { cancelOrder } from "@/features/customer/api";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { PickupCode } from "@/features/customer/components/pickup-code";
 import { formatBaht, formatClock, formatRange } from "@/features/customer/format";
 import { PAYMENT_METHODS } from "@/features/customer/mock-data";
-import { actions, useCustomer } from "@/features/customer/store";
+import { useCustomer } from "@/features/customer/store";
 import { containerClass } from "@/features/customer/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -19,7 +21,7 @@ function stepDetail(status, order, restaurant) {
   const method = PAYMENT_METHODS.find((m) => m.id === order.paymentMethod);
   return {
     PLACED: time,
-    PAID: `${time} · ${method.label.replace(" QR", "")}`,
+    PAID: `${time} · ${method?.label.replace(" QR", "") || order.paymentMethod}${order.paymentMode === "sandbox" ? " (ทดสอบ)" : ""}`,
     QUEUED: `${time} · คิว #${order.queueNumber}`,
     PREPARING: `${time} · ร้านเริ่มทำแล้ว`,
     READY: `${time} · รับที่${restaurant.pickupPoint}`,
@@ -31,16 +33,28 @@ function OrderDetail() {
   const { id } = useParams();
   usePageTitle(`ออเดอร์ #${id}`);
   const { state, dispatch } = useCustomer();
+  const [cancelling, setCancelling] = useState(false);
+  const [error, setError] = useState(null);
   const order = state.orders.find((o) => o.id === id);
 
   if (!order) return <NotFoundPage />;
 
-  const restaurant = getRestaurant(order.restaurantId);
+  const restaurant = getOrderRestaurant(order);
   const status = currentStatus(order);
   const statusIndex = ORDER_STEPS.findIndex((s) => s.status === status);
   const done = status === "PICKED_UP";
+  const cancelled = status === "CANCELLED";
   const ready = status === "READY";
   const notes = order.items.filter((item) => item.note);
+
+  async function handleCancel() {
+    if (cancelling || !window.confirm("ยืนยันยกเลิกออเดอร์นี้?")) return;
+    setCancelling(true);
+    const result = await cancelOrder(order.id);
+    if (result.ok) { dispatch({ type: "order/upsert", order: result.data.order }); setError(null); }
+    else setError(result.error?.message || "ยกเลิกออเดอร์ไม่สำเร็จ");
+    setCancelling(false);
+  }
 
   return (
     <div className={cx(containerClass, "pb-8 lg:pb-16")}>
@@ -49,18 +63,20 @@ function OrderDetail() {
         subtitle={`${restaurant.name} · ${formatClock(order.statusTimes.PLACED)}`}
         fallback="/customer/orders"
         action={
-          !done && (
-            // MOCK: stands in for merchant-side status updates until realtime events exist.
+          ["PLACED", "QUEUED"].includes(status) && (
             <button
               type="button"
-              onClick={() => dispatch(actions.advanceOrder(order.id))}
+              disabled={cancelling}
+              onClick={handleCancel}
               className={cx(buttonClasses({ variant: "soft", size: "sm" }), "mt-1")}
             >
-              เดินสถานะ <PlayIcon className="size-3" />
+              {cancelling ? "กำลังยกเลิก…" : "ยกเลิกออเดอร์"}
             </button>
           )
         }
       />
+      {error && <p role="alert" className="mb-4 text-danger">{error}</p>}
+      {cancelled && <p className="mb-4 rounded-3xl bg-alert/10 p-4 text-danger">ออเดอร์นี้ถูกยกเลิกแล้ว · {formatClock(order.statusTimes.CANCELLED)}</p>}
 
       {/* Desktop: status, pickup code and items on the left; the timeline stays in view on the right. */}
       <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:grid-rows-[auto_auto_auto_1fr] lg:items-start lg:gap-x-8 lg:gap-y-5 lg:space-y-0">
@@ -73,10 +89,10 @@ function OrderDetail() {
             <div>
               <p className="font-display text-6xl leading-none font-black lg:text-8xl">#{order.queueNumber}</p>
               <p className="mt-2 text-sm text-white/75">
-                {done ? "รับอาหารเรียบร้อย" : `กำลังทำคิว #${order.nowServing}`}
+                {cancelled ? "ยกเลิกออเดอร์แล้ว" : done ? "รับอาหารเรียบร้อย" : `กำลังทำคิว #${order.nowServing}`}
               </p>
             </div>
-            {!done && (
+            {!done && !cancelled && (
               <p className="text-right">
                 <span className="block text-2xl font-bold">
                   {ready ? "พร้อมรับ" : `${formatRange(order.etaMinutes)} นาที`}
@@ -102,7 +118,7 @@ function OrderDetail() {
         >
           <ol>
             {ORDER_STEPS.map((step, index) => {
-              const reached = index <= statusIndex;
+              const reached = cancelled ? Boolean(order.statusTimes[step.status]) : index <= statusIndex;
               const current = index === statusIndex && !done;
               const last = index === ORDER_STEPS.length - 1;
               return (

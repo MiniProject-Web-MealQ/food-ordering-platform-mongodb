@@ -13,7 +13,9 @@ const walletSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0
-    }
+    },
+    ledger_keys: { type: [String], default: [], select: false },
+    ledger_results: { type: mongoose.Schema.Types.Mixed, default: {}, select: false }
   },
   {
     timestamps: true

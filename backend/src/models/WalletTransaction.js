@@ -19,7 +19,8 @@ const walletTransactionSchema = new mongoose.Schema(
       enum: [
         "topup",
         "payment",
-        "refund"
+        "refund",
+        "adjustment"
       ],
       required: true
     },
@@ -43,7 +44,10 @@ const walletTransactionSchema = new mongoose.Schema(
     description: {
       type: String,
       default: ""
-    }
+    },
+    direction: { type: String, enum: ["credit", "debit"], default: "credit" },
+    idempotency_key: { type: String },
+    metadata: { type: mongoose.Schema.Types.Mixed, default: {} }
   },
   {
     timestamps: true
@@ -54,6 +58,7 @@ walletTransactionSchema.index({
   user_id: 1,
   createdAt: -1
 });
+walletTransactionSchema.index({ idempotency_key: 1 }, { unique: true, sparse: true });
 
 walletTransactionSchema.index({
   order_id: 1

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { HeartIcon } from "@/components/icons";
-import { ImagePlaceholder } from "@/components/ui/image-placeholder";
+import { CatalogImage } from "@/features/customer/components/catalog-image";
 import { buttonClasses, focusRing } from "@/components/ui/styles";
 import { getRestaurant, getRestaurantCategories, getRestaurantMenu, priceCart } from "@/features/customer/catalog";
+import { getRestaurantReviews } from "@/features/customer/api";
 import { MenuItemRow } from "@/features/customer/components/menu-item-row";
 import { CartSummaryCard } from "@/features/customer/components/cart-summary-card";
 import { BackButton } from "@/features/customer/components/page-header";
@@ -32,7 +33,7 @@ function MenuTab({ restaurantId }) {
     filter === "bestseller"
       ? menu.toSorted((a, b) => Number(a.soldOut) - Number(b.soldOut) || b.weeklyOrders - a.weeklyOrders)
       : menu.filter((m) => m.category === filter);
-  const heading = filter === "bestseller" ? "🔥 ขายดีสัปดาห์นี้" : filters.find((f) => f.id === filter).label;
+  const heading = filter === "bestseller" ? "🔥 เมนูแนะนำ" : filters.find((f) => f.id === filter)?.label || "เมนู";
 
   return (
     <div className="space-y-4">
@@ -86,6 +87,17 @@ function InfoTab({ restaurant }) {
 }
 
 function ReviewsTab({ restaurant }) {
+  const [reviews, setReviews] = useState(null);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let disposed = false;
+    getRestaurantReviews(restaurant.id).then((result) => {
+      if (disposed) return;
+      if (result.ok) setReviews(result.data.reviews);
+      else setError(result.error?.message || "โหลดรีวิวไม่สำเร็จ");
+    });
+    return () => { disposed = true; };
+  }, [restaurant.id]);
   return (
     <div className="space-y-3">
       <p className="text-ink">
@@ -93,11 +105,11 @@ function ReviewsTab({ restaurant }) {
         <span className="text-ink-soft">จาก {restaurant.reviewCount.toLocaleString("th-TH")} รีวิว</span>
       </p>
       <ul className="grid gap-3 md:grid-cols-2">
-        {restaurant.reviews.map((review) => (
+        {(reviews || []).map((review) => (
           <li key={review.id} className="rounded-3xl bg-cream p-4">
             <div className="flex items-center justify-between">
               <p className="font-semibold text-ink">{review.author}</p>
-              <p className="text-sm text-ink-soft">{review.daysAgo} วันก่อน</p>
+              <p className="text-sm text-ink-soft">{review.createdAt ? new Date(review.createdAt).toLocaleDateString("th-TH") : ""}</p>
             </div>
             <p className="text-amber" aria-label={`${review.rating} ดาว`}>
               {"★".repeat(review.rating)}
@@ -107,6 +119,9 @@ function ReviewsTab({ restaurant }) {
           </li>
         ))}
       </ul>
+      {error && <p role="alert" className="text-danger">{error}</p>}
+      {!error && reviews === null && <p role="status" className="text-ink-soft">กำลังโหลดรีวิว…</p>}
+      {reviews?.length === 0 && <p className="text-ink-soft">ร้านนี้ยังไม่มีรีวิว</p>}
     </div>
   );
 }
@@ -130,7 +145,8 @@ function RestaurantDetail() {
     <>
       <main className="flex-1 pb-8 lg:pb-16">
         <div className="relative lg:mx-auto lg:max-w-6xl lg:px-8 lg:pt-8">
-          <ImagePlaceholder
+          <CatalogImage
+            src={restaurant.coverImage}
             label={`Cover ${restaurant.name}`}
             className="aspect-video border-x-0 border-t-0 lg:aspect-auto lg:h-80 lg:rounded-4xl lg:border-2"
           />
@@ -144,7 +160,7 @@ function RestaurantDetail() {
           <div className="space-y-5 lg:flex lg:items-end lg:justify-between lg:gap-8 lg:space-y-0">
             <div className="space-y-5 lg:flex lg:items-end lg:gap-5 lg:space-y-0">
               <div className="-mt-10 flex items-end gap-3 lg:-mt-14">
-                <ImagePlaceholder compact label="โลโก้" className="size-20 rounded-full ring-4 ring-white lg:size-28" />
+                <CatalogImage src={restaurant.logo} compact label="โลโก้" className="size-20 rounded-full ring-4 ring-white lg:size-28" />
                 <p
                   className={cx(
                     "mb-2 rounded-full px-3 py-1 text-xs font-semibold lg:hidden",

@@ -1,10 +1,10 @@
 import { Link } from "react-router";
-import { currentStatus, getRestaurant, orderProgress, statusLabel } from "../catalog";
+import { currentStatus, getOrderRestaurant, orderProgress, statusLabel } from "../catalog";
 import { formatBaht, formatRange } from "../format";
 
 /** Espresso card for an order that has not been picked up yet. */
 export function ActiveOrderCard({ order, variant = "home" }) {
-  const restaurant = getRestaurant(order.restaurantId);
+  const restaurant = getOrderRestaurant(order);
   const status = currentStatus(order);
   const itemCount = order.items.reduce((sum, item) => sum + item.qty, 0);
   const ready = status === "READY";

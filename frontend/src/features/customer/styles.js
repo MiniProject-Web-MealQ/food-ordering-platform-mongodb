@@ -24,10 +24,10 @@ export function chipClasses({ selected = false, tone = "light" } = {}) {
 export const cardLinkClass = `block rounded-3xl transition-shadow hover:shadow-card ${focus}`;
 
 /** Page width + side gutters shared by the customer header and every customer page. */
-export const containerClass = "mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8";
+export const containerClass = "mx-auto min-w-0 w-full max-w-6xl px-4 sm:px-6 lg:px-8";
 
 /** Sidebars on desktop two-column pages stay in view below the 72px header. */
-export const stickySidebarClass = "lg:sticky lg:top-24";
+export const stickySidebarClass = "min-w-0 lg:sticky lg:top-24";
 
 /** Rows in a horizontally scrolling strip bleed to the screen edge but keep the container's first/last inset. */
 export const scrollStripClass =

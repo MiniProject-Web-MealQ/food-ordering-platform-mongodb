@@ -7,6 +7,7 @@ async function optionalAuth(req, _res, next) {
     const token = tokenFromRequest(req);
     const payload = verifySessionToken(token);
     req.user = payload ? await User.findById(payload.sub) : null;
+    if (req.user && (req.user.status === "suspended" || (payload.ver ?? 0) !== (req.user.session_version ?? 0))) req.user = null;
     next();
   } catch (error) {
     next(error);
@@ -21,6 +22,8 @@ async function requireAuth(req, res, next) {
 
     const user = await User.findById(payload.sub);
     if (!user) return sendError(res, 401, "AUTH_REQUIRED", "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+    if (user.status === "suspended") return sendError(res, 403, "ACCOUNT_SUSPENDED", "บัญชีนี้ถูกระงับการใช้งาน");
+    if ((payload.ver ?? 0) !== (user.session_version ?? 0)) return sendError(res, 401, "AUTH_REQUIRED", "กรุณาเข้าสู่ระบบใหม่");
 
     req.user = user;
     next();

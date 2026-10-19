@@ -6,4 +6,7 @@ const router = express.Router();
 router.get("/restaurants", asyncHandler(controller.listRestaurants));
 router.get("/restaurants/:id", asyncHandler(controller.getRestaurant));
 router.get("/restaurants/:id/menu", asyncHandler(controller.getRestaurantMenu));
+router.get("/restaurants/:id/reviews", asyncHandler(controller.getRestaurantReviews));
+router.get("/menus", asyncHandler(controller.listMenus));
+router.get("/promotions", asyncHandler(controller.listPromotions));
 module.exports = router;

@@ -1,7 +1,7 @@
 /** "★ 4.8 (642)" with a screen-reader friendly label. */
 export function Rating({ value, count }) {
   return (
-    <span>
+    <span className="relative">
       <span aria-hidden="true" className="text-amber">★ </span>
       <span className="sr-only">คะแนน </span>
       {value.toFixed(1)}

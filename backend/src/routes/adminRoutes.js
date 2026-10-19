@@ -1,0 +1,18 @@
+const express = require("express");
+const controller = require("../controllers/adminController");
+const { requireAuth, requireRole } = require("../middleware/auth");
+const { asyncHandler } = require("../utils/http");
+const { sendError } = require("../utils/http");
+
+const router = express.Router();
+router.use(requireAuth, requireRole("admin"));
+router.get("/state", asyncHandler(controller.state));
+router.use((req, res, next) => req.user.must_change_password ? sendError(res, 403, "PASSWORD_CHANGE_REQUIRED", "กรุณาเปลี่ยนรหัสผ่านก่อนใช้งาน") : next());
+router.patch("/stores/:id", asyncHandler(controller.updateStore));
+router.patch("/users/:id", asyncHandler(controller.updateUser));
+router.post("/users", asyncHandler(controller.createAdmin));
+router.post("/promotions", asyncHandler(controller.createPromotion));
+router.patch("/promotions/:id", asyncHandler(controller.updatePromotion));
+router.post("/orders/:id/cancel", asyncHandler(controller.cancelOrder));
+router.post("/wallets/:id/adjust", asyncHandler(controller.adjustWallet));
+module.exports = router;

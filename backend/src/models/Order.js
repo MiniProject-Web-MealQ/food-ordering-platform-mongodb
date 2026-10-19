@@ -36,6 +36,17 @@ const orderSchema = new mongoose.Schema(
     total_price: { type: Number, required: true, min: 0 },
     promotion: orderPromotionSchema,
     payment_method: { type: String, default: "promptpay" },
+    payment_status: { type: String, enum: ["pending", "paid", "simulated", "refunded", "failed"], default: "pending" },
+    payment_mode: { type: String, enum: ["wallet", "sandbox"], default: "sandbox" },
+    cancelled_reason: { type: String, default: "" },
+    cancelled_by: { type: String, enum: ["customer", "merchant", "admin", "system"], default: null },
+    cancelled_at: { type: Date, default: null },
+    review: {
+      rating: { type: Number, min: 1, max: 5 },
+      tags: { type: [String], default: undefined },
+      text: { type: String, default: "" },
+      updated_at: Date,
+    },
     status: {
       type: String,
       enum: ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"],

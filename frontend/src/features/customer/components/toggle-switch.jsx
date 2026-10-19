@@ -2,8 +2,8 @@ import { cx } from "@/lib/cx";
 
 export function ToggleSwitch({ id, label, checked, onChange, tone = "light" }) {
   return (
-    <label htmlFor={id} className="flex cursor-pointer items-center justify-between gap-4">
-      <span className={cx("font-semibold", tone === "dark" ? "text-white" : "text-ink")}>{label}</span>
+    <label htmlFor={id} className="flex min-w-0 cursor-pointer items-center justify-between gap-4">
+      <span className={cx("min-w-0 font-semibold wrap-anywhere", tone === "dark" ? "text-white" : "text-ink")}>{label}</span>
       <span className="relative inline-flex shrink-0">
         <input
           id={id}

@@ -6,7 +6,7 @@ import { StoreStatusBadge } from "@/features/admin/components/badges";
 import { DataList } from "@/features/admin/components/data-list";
 import { FilterRow, SearchField, SelectField } from "@/features/admin/components/fields";
 import { formatBaht } from "@/features/admin/format";
-import { byId, startOfDay, startOfMonth } from "@/features/admin/stats";
+import { byId, isSale, startOfDay, startOfMonth } from "@/features/admin/stats";
 import { useAdmin } from "@/features/admin/store";
 import { pageClass } from "@/features/merchant/styles";
 import { useNow } from "@/features/merchant/use-now";
@@ -43,11 +43,11 @@ function Stores() {
   for (const o of state.orders) {
     const row = statsByStore.get(o.store_id) ?? { today: 0, month: 0 };
     if (o.order_date >= today) row.today += 1;
-    if (o.order_date >= month && o.status !== "cancelled") row.month += o.total_price;
+    if (o.order_date >= month && isSale(o)) row.month += o.total_price;
     statsByStore.set(o.store_id, row);
   }
 
-  const categories = [...new Set(state.stores.map((s) => s.category))].sort((a, b) => a.localeCompare(b, "th"));
+  const categories = [...new Set(state.stores.map((s) => s.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "th"));
   const q = query.trim().toLowerCase();
   const rows = state.stores
     .filter((s) => matchesStatus(s, status) && (category === "all" || s.category === category))
@@ -71,7 +71,7 @@ function Stores() {
     },
     { key: "owner", header: "เจ้าของ", render: (s) => byId(state.users, s.owner_id)?.name ?? "–" },
     { key: "status", header: "สถานะ", render: (s) => <StoreStatusBadge store={s} /> },
-    { key: "rating", header: "คะแนน", className: "tabular-nums", render: (s) => (s.rating.count ? `★ ${s.rating.average.toFixed(1)}` : "–") },
+    { key: "rating", header: "คะแนน", className: "tabular-nums", render: (s) => (s.rating?.count ? `★ ${s.rating.average.toFixed(1)}` : "–") },
     { key: "today", header: "ออเดอร์วันนี้", className: "text-right tabular-nums", render: (s) => statsByStore.get(s._id)?.today ?? 0 },
     { key: "month", header: "ยอดขายเดือนนี้", className: "text-right tabular-nums", render: (s) => formatBaht(statsByStore.get(s._id)?.month ?? 0) },
   ];
