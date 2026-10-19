@@ -90,8 +90,9 @@
 .random-experience__switches label > span:first-child { font-size: 12px; font-weight: 500; }
 .random-experience__switches p { margin-top: -3px; padding-right: 65px; color: #a58b7d; font-size: 10px; line-height: 1.8; }
 .random-experience__switches input[role="switch"] { height: 25px; width: 43px; }
-.random-experience__switches input[role="switch"] + span { width: 17px; height: 17px; }
-.random-experience__switches input[role="switch"]:checked + span { transform: translateX(18px); }
+/* Override Tailwind's individual translate so it cannot add to a second transform. */
+.random-experience__switches input[role="switch"] + span { width: 17px; height: 17px; translate: 0 0; transform: none; transition: translate .2s ease; }
+.random-experience__switches input[role="switch"]:checked + span { translate: 18px 0; }
 .random-experience__pool { position: relative; margin: 0 -24px; padding: 23px 24px; background: linear-gradient(110deg, #d77f3f0e, transparent); }
 .random-experience__pool > div { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #dbbc9f; }
 .random-experience__pool > div svg { width: 13px; height: 13px; }

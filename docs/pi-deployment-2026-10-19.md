@@ -4,7 +4,7 @@
 
 - SSH: linapspi4@100.112.221.80 (Tailscale)
 - LAN: 192.168.1.121
-- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-random-experience
+- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-random-switch-fix
 - Current symlink: /home/linapspi4/mealq-app/current
 - Compose project mealq: รุ่นคูปองอัปเดตเฉพาะ API และ web; MongoDB, Tunnel และ volume mealq_db_data ไม่ถูกเปลี่ยน
 - เว็บรับเฉพาะ loopback 127.0.0.1:8088 จาก Tunnel ไม่มีการเปิด API/MongoDB บน public port
@@ -22,7 +22,7 @@
 
 เก็บ images mealq-api:before-20261019 และ mealq-web:before-20261019 สำหรับ rollback โดยใช้ compose เดิมและ MEALQ_RELEASE=before-20261019 หลังคืน environment เดิม ไม่ต้องลบ volume หรือ restore DB เพื่อ rollback โค้ด เพราะ schema ที่เพิ่มรองรับข้อมูลเก่า ห้ามใช้ compose down -v
 
-รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-random-experience` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
+รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-random-switch-fix` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
 
 ```sh
 docker compose -p mealq --env-file /home/linapspi4/mealq-app/shared/compose.env -f /home/linapspi4/mealq-app/current/deploy/compose.yaml up -d --no-deps --no-build --wait api web
@@ -152,3 +152,12 @@ API/web health ผ่าน, SMTP authentication ผ่าน, capabilities แ�
 - API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนเปลี่ยน ไม่มีการแก้ฐานข้อมูล/บัญชี สร้างออเดอร์ หรือส่งข้อความจริง ใช้ release/image ใหม่แยกและเก็บรุ่นเก่าทั้งหมด
 - สำรอง source ก่อนแก้: `C:\Users\game_\MealQBackups\source-before-random-experience-20261019T231350`; rollback: `shared/backups/activation-20261019-random-experience-20261019T162913Z-359400`
 - สำรองเต็มก่อนสลับ `20261019T232931+0700-359958` และหลังสลับ `20261019T233008+0700-360582`; สำเนานอก Pi แบบเข้ารหัส 146,106 ไบต์ผ่าน decryption/SHA/HMAC แล้ว
+
+## รุ่น Random switch fix
+
+- ขึ้น web-only release `20261019-random-switch-fix` สำเร็จประมาณ 23:34 น. หลังผู้ใช้ส่งภาพวงกลมสวิตช์ที่เปิดอยู่เลื่อนหลุดแถบ พบว่า individual `translate` ของ Tailwind ถูกนำไปรวมกับ `transform: translateX(...)` ที่กำหนดเฉพาะหน้า จึงเลื่อนสองครั้ง
+- แก้ CSS เฉพาะหน้า Random ให้ใช้ `translate` แหล่งเดียว ระยะเปิด 18px สำหรับ track 43px/thumb 17px/inset ข้างละ 4px และ reset `transform` ไม่เปลี่ยนสถานะตัวกรอง, keyboard หรือสวิตช์หน้าอื่น
+- full ESLint และ build ผ่าน; ตรวจ HTTPS HTML no-store, JS/CSS/dependency 22 assets และรูปตัวอย่าง 8 ภาพตรง SHA256, compiled CSS มี checked `translate:18px` และ reset transform, health/database/Google/email พร้อม, www 308 และ muaysart 200 ยังไม่ได้ควบคุม browser ที่ถูกปฏิเสธสิทธิ์จึงไม่อ้างการตรวจภาพจริง
+- API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนเปลี่ยน เก็บ release/image ก่อนหน้าและไม่แก้ฐานข้อมูล
+- สำรอง source: `C:\Users\game_\MealQBackups\source-before-random-switch-fix-20261019T233205`; rollback: `shared/backups/activation-20261019-random-switch-fix-20261019T163321Z-362206`
+- สำรองเต็มก่อนสลับ `20261019T233339+0700-362738` และหลังสลับ `20261019T233427+0700-363463`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว
