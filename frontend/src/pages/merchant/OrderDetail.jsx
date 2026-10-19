@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { buttonClasses } from "@/components/ui/styles";
 import { PageHeader } from "@/features/customer/components/page-header";
+import { ItemOptions } from "@/features/merchant/components/item-options";
 import { OrderTimeline } from "@/features/merchant/components/order-timeline";
 import { ReceiveCodeCard } from "@/features/merchant/components/receive-code-card";
 import { ReceiveCodeForm } from "@/features/merchant/components/receive-code-form";
@@ -192,6 +193,7 @@ function OrderDetail() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-ink">{item.name}</p>
+                    <ItemOptions item={item} className="text-sm" />
                     {item.note && <p className="text-sm font-medium text-brand-ink">หมายเหตุ: {item.note}</p>}
                     <p className="text-xs text-ink-soft">{formatBaht(item.price)} / ที่</p>
                   </div>

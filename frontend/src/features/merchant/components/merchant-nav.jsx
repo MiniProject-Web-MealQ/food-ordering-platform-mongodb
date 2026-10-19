@@ -38,9 +38,14 @@ export function MerchantSidebar() {
       </Link>
 
       <StoreStatusPill isOpen={state.store.is_open} compact className="mx-auto mt-4 xl:hidden" />
-      <div className="mx-4 mt-6 hidden rounded-2xl bg-cream p-4 xl:block">
-        <p className="truncate font-semibold text-ink">{state.store.name}</p>
-        <StoreStatusPill isOpen={state.store.is_open} className="mt-2" />
+      <div className="mx-4 mt-6 hidden items-center gap-3 rounded-2xl bg-cream p-4 xl:flex">
+        {state.store.logo && (
+          <img src={state.store.logo} alt="" className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-ink">{state.store.name}</p>
+          <StoreStatusPill isOpen={state.store.is_open} className="mt-2" />
+        </div>
       </div>
 
       <nav aria-label="เมนูร้านค้า" className="mt-6 flex-1 px-3 xl:px-4">

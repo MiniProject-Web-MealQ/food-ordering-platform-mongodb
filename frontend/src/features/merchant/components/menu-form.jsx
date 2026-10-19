@@ -10,6 +10,7 @@ import { cx } from "@/lib/cx";
 import { MENU_LIMITS, readMenuImage, toMenuFields, validateMenu } from "../menu-form";
 import { MENU_CATEGORIES } from "../constants";
 import { fieldClass, panelClass } from "../styles";
+import { OptionGroupsEditor } from "./option-groups-editor";
 
 /** ลำดับช่องกรอก ใช้ย้าย focus ไปช่องแรกที่ผิดตอนกดบันทึก */
 const FIELD_IDS = { name: "menu-name", category: "menu-category", price: "menu-price", cook_time: "menu-cook-time", description: "menu-description" };
@@ -77,8 +78,10 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
     if (saving) return;
     setSubmitted(true);
     if (errorCount > 0) {
+      // ช่องปกติก่อน แล้วค่อยช่องในตัวเลือกเสริม (key ของตัวเลือกเสริมคือ id ของช่องนั้นเลย)
       const first = Object.keys(FIELD_IDS).find((field) => errors[field]);
-      document.getElementById(FIELD_IDS[first])?.focus();
+      const target = first ? FIELD_IDS[first] : Object.keys(errors).find((key) => key.startsWith("og-"));
+      document.getElementById(target)?.focus();
       return;
     }
     setSaving(true);
@@ -95,99 +98,110 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
 
   return (
     <form onSubmit={handleSubmit} noValidate className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-6">
-      <div className={cx(panelClass, "space-y-5")}>
-        {submitted && errorCount > 0 && (
-          <Alert tone="error" title={`ยังบันทึกไม่ได้ มี ${errorCount} ช่องที่ต้องแก้`} />
-        )}
-        {saveError && <Alert tone="error" title="บันทึกไม่สำเร็จ">{saveError}</Alert>}
-
-        <TextField label="ชื่อเมนู" placeholder="เช่น ข้าวกะเพราหมูกรอบ" required {...fieldProps("name")} />
-
-        <div className="space-y-2">
-          <label htmlFor={FIELD_IDS.category} className="block text-sm font-semibold text-ink">
-            หมวดหมู่
-          </label>
-          <select
-            id={FIELD_IDS.category}
-            name="category"
-            required
-            value={values.category}
-            onChange={(e) => set("category", e.target.value)}
-            onBlur={() => setTouched((current) => ({ ...current, category: true }))}
-            aria-invalid={Boolean(errorFor("category")) || undefined}
-            aria-describedby={errorFor("category") ? "menu-category-error" : "menu-category-hint"}
-            className={cx(fieldClass, "h-14 rounded-full px-6")}
-          >
-            <option value="" disabled>
-              เลือกหมวดหมู่
-            </option>
-            {categoryOptions.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-          {errorFor("category") ? (
-            <p id="menu-category-error" className="px-1 text-sm font-medium text-danger">
-              {errorFor("category")}
-            </p>
-          ) : (
-            <p id="menu-category-hint" className="px-1 text-sm text-ink-soft">
-              ลูกค้าใช้หมวดนี้กรองเมนูในแอป
-            </p>
+      <div className="min-w-0 space-y-4">
+        <div className={cx(panelClass, "space-y-5")}>
+          {submitted && errorCount > 0 && (
+            <Alert tone="error" title={`ยังบันทึกไม่ได้ มี ${errorCount} ช่องที่ต้องแก้`} />
           )}
-        </div>
+          {saveError && <Alert tone="error" title="บันทึกไม่สำเร็จ">{saveError}</Alert>}
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextField
-            label="ราคา"
-            inputMode="numeric"
-            placeholder="0"
-            required
-            trailing={<Unit>บาท</Unit>}
-            {...fieldProps("price")}
-          />
-          <TextField
-            label="เวลาทำโดยประมาณ"
-            inputMode="numeric"
-            placeholder="0"
-            required
-            hint="ใช้คำนวณเวลารอให้ลูกค้า"
-            trailing={<Unit>นาที</Unit>}
-            {...fieldProps("cook_time")}
-          />
-        </div>
+          <TextField label="ชื่อเมนู" placeholder="เช่น ข้าวกะเพราหมูกรอบ" required {...fieldProps("name")} />
 
-        <div className="space-y-2">
-          <div className="flex items-baseline justify-between gap-3">
-            <label htmlFor={FIELD_IDS.description} className="text-sm font-semibold text-ink">
-              คำอธิบาย <span className="font-normal text-ink-soft">(ไม่บังคับ)</span>
+          <div className="space-y-2">
+            <label htmlFor={FIELD_IDS.category} className="block text-sm font-semibold text-ink">
+              หมวดหมู่
             </label>
-            <span
-              aria-hidden="true"
-              className={cx("text-xs", values.description.length > MENU_LIMITS.descriptionMax ? "text-danger" : "text-ink-soft")}
+            <select
+              id={FIELD_IDS.category}
+              name="category"
+              required
+              value={values.category}
+              onChange={(e) => set("category", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, category: true }))}
+              aria-invalid={Boolean(errorFor("category")) || undefined}
+              aria-describedby={errorFor("category") ? "menu-category-error" : "menu-category-hint"}
+              className={cx(fieldClass, "h-14 rounded-full px-6")}
             >
-              {values.description.length}/{MENU_LIMITS.descriptionMax}
-            </span>
+              <option value="" disabled>
+                เลือกหมวดหมู่
+              </option>
+              {categoryOptions.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            {errorFor("category") ? (
+              <p id="menu-category-error" className="px-1 text-sm font-medium text-danger">
+                {errorFor("category")}
+              </p>
+            ) : (
+              <p id="menu-category-hint" className="px-1 text-sm text-ink-soft">
+                ลูกค้าใช้หมวดนี้กรองเมนูในแอป
+              </p>
+            )}
           </div>
-          <textarea
-            id={FIELD_IDS.description}
-            name="description"
-            value={values.description}
-            onChange={(e) => set("description", e.target.value)}
-            onBlur={() => setTouched((current) => ({ ...current, description: true }))}
-            rows={3}
-            placeholder="วัตถุดิบ รสชาติ หรือสิ่งที่ลูกค้าควรรู้"
-            aria-invalid={Boolean(descriptionError) || undefined}
-            aria-describedby={descriptionError ? "menu-description-error" : undefined}
-            className={cx(fieldClass, "resize-y")}
-          />
-          {descriptionError && (
-            <p id="menu-description-error" className="px-1 text-sm font-medium text-danger">
-              {descriptionError}
-            </p>
-          )}
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField
+              label="ราคา"
+              inputMode="numeric"
+              placeholder="0"
+              required
+              trailing={<Unit>บาท</Unit>}
+              {...fieldProps("price")}
+            />
+            <TextField
+              label="เวลาทำโดยประมาณ"
+              inputMode="numeric"
+              placeholder="0"
+              required
+              hint="ใช้คำนวณเวลารอให้ลูกค้า"
+              trailing={<Unit>นาที</Unit>}
+              {...fieldProps("cook_time")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between gap-3">
+              <label htmlFor={FIELD_IDS.description} className="text-sm font-semibold text-ink">
+                คำอธิบาย <span className="font-normal text-ink-soft">(ไม่บังคับ)</span>
+              </label>
+              <span
+                aria-hidden="true"
+                className={cx("text-xs", values.description.length > MENU_LIMITS.descriptionMax ? "text-danger" : "text-ink-soft")}
+              >
+                {values.description.length}/{MENU_LIMITS.descriptionMax}
+              </span>
+            </div>
+            <textarea
+              id={FIELD_IDS.description}
+              name="description"
+              value={values.description}
+              onChange={(e) => set("description", e.target.value)}
+              onBlur={() => setTouched((current) => ({ ...current, description: true }))}
+              rows={3}
+              placeholder="วัตถุดิบ รสชาติ หรือสิ่งที่ลูกค้าควรรู้"
+              aria-invalid={Boolean(descriptionError) || undefined}
+              aria-describedby={descriptionError ? "menu-description-error" : undefined}
+              className={cx(fieldClass, "resize-y")}
+            />
+            {descriptionError && (
+              <p id="menu-description-error" className="px-1 text-sm font-medium text-danger">
+                {descriptionError}
+              </p>
+            )}
+          </div>
         </div>
+
+        <OptionGroupsEditor
+          groups={values.option_groups}
+          onChange={(groups) => set("option_groups", groups)}
+          errors={errors}
+          showErrors={submitted}
+          menus={menus}
+          editingId={editingId}
+        />
       </div>
 
       <div className="space-y-4 lg:sticky lg:top-6">
@@ -204,7 +218,7 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
             <label
               className={cx(
                 buttonClasses({ variant: "cocoa-outline", size: "sm" }),
-                "cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink",
+                "relative cursor-pointer has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink",
               )}
             >
               <ImagePlus aria-hidden="true" className="size-4" />

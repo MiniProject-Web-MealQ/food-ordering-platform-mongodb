@@ -4,6 +4,7 @@ import { buttonClasses, focusRing } from "@/components/ui/styles";
 import { cx } from "@/lib/cx";
 import { formatBaht, formatClock, formatElapsed, formatQueue } from "../format";
 import { nextStep } from "../status";
+import { ItemOptions } from "./item-options";
 import { OrderStatusBadge } from "./status-badge";
 
 const MINUTE = 60 * 1000;
@@ -70,6 +71,7 @@ export function OrderCard({ order, queue, now, busy = false, onAdvance }) {
         {order.items.map((item, index) => (
           <li key={`${item.menu_id}-${index}`}>
             <span className="font-bold text-cocoa">{item.quantity}×</span> {item.name}
+            <ItemOptions item={item} className="pl-5" />
             {item.note && <span className="block pl-5 text-xs font-medium text-brand-ink">หมายเหตุ: {item.note}</span>}
           </li>
         ))}

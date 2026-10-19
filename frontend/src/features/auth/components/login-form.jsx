@@ -5,10 +5,10 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PasswordField } from "@/components/ui/password-field";
-import { buttonClasses, focusRing, textLinkClass } from "@/components/ui/styles";
+import { buttonClasses, textLinkClass } from "@/components/ui/styles";
 import { TextField } from "@/components/ui/text-field";
 import { getCapabilities, getSession, googleSignInUrl, login } from "../api";
-import { loginDestination, ROLE_HOME } from "../types";
+import { loginDestination } from "../types";
 import { RoleSegmented } from "./role-picker";
 
 function remainingAttempts(error) {
@@ -147,15 +147,6 @@ export function LoginForm() {
           {pending ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}
         </Button>
       </form>
-
-      <p className="text-center text-sm">
-        <Link
-          to={ROLE_HOME.CUSTOMER}
-          className={`rounded text-ink underline-offset-4 hover:underline ${focusRing}`}
-        >
-          ไปที่หน้า Customer Home <span aria-hidden="true">→</span>
-        </Link>
-      </p>
 
       {googleEnabled && <>
       <div className="flex items-center gap-4 text-sm text-ink-soft/80" role="separator">

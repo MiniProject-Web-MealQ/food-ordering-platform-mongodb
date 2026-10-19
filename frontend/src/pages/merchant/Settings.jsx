@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { buttonClasses } from "@/components/ui/styles";
 import { TextField } from "@/components/ui/text-field";
 import { PageHeader } from "@/features/customer/components/page-header";
+import { StoreImagesCard } from "@/features/merchant/components/store-images-card";
 import { StoreOpenCard } from "@/features/merchant/components/store-open-card";
 import { useMerchant } from "@/features/merchant/store";
 import { fieldClass, pageClass, panelClass } from "@/features/merchant/styles";
@@ -208,7 +209,10 @@ function Settings() {
     <div className={pageClass}>
       <PageHeader title="ตั้งค่าร้าน" subtitle={state.store.name} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
-        <StoreInfoForm />
+        <div className="min-w-0 space-y-4">
+          <StoreImagesCard />
+          <StoreInfoForm />
+        </div>
 
         <div className="space-y-4 lg:sticky lg:top-6">
           <StoreOpenCard id="settings-store-open" />
