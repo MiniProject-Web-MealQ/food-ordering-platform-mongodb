@@ -72,8 +72,11 @@ function response() {
 
 test("production cannot report unconfigured external payment as successful", async (t) => {
   const original = process.env.NODE_ENV;
+  const paymentMode = process.env.PAYMENT_MODE;
   t.after(() => { if (original === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = original; });
+  t.after(() => { if (paymentMode === undefined) delete process.env.PAYMENT_MODE; else process.env.PAYMENT_MODE = paymentMode; });
   process.env.NODE_ENV = "production";
+  process.env.PAYMENT_MODE = "wallet";
   const res = response();
   await createOrder({ body: { items: [item], paymentMethod: "promptpay" } }, res);
   assert.equal(res.statusCode, 501);

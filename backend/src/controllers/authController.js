@@ -7,8 +7,12 @@ const { userView } = require("../services/user-view");
 const { sendError } = require("../utils/http");
 const { validEmail, validPassword, normalizeRole } = require("../services/auth-validation");
 const { mailConfigured, sendResetEmail } = require("../services/mail");
+const { accountStore } = require("../services/merchant-store");
+const { paymentCapabilities } = require("../services/payment-config");
+const { startRegistration, resendOtp, consumeOtp } = require("../services/registration-otp");
 
 async function ensureMerchantStore(user) {
+  if (user.role === "staff") return accountStore(user);
   if (user.role !== "merchant") return null;
   let store = await Store.findOne({ owner_id: user._id });
   if (!store) {
@@ -16,7 +20,8 @@ async function ensureMerchantStore(user) {
       owner_id: user._id,
       name: user.name || "ร้านของฉัน",
       description: "ร้านค้าที่สร้างจากบัญชี Merchant",
-      is_open: true,
+      status: "pending",
+      is_open: false,
     });
   }
   return store;
@@ -37,20 +42,36 @@ async function register(req, res) {
   const exists = await User.findOne({ email: normalizedEmail });
   if (exists) return sendError(res, 409, "EMAIL_EXISTS", "อีเมลนี้ถูกใช้งานแล้ว");
 
-  const user = await User.create({
-    name: name.trim(),
-    email: normalizedEmail,
-    phone: phone || null,
-    password_hash: await hashPassword(String(password)),
-    role: accountRole,
-  });
+  try {
+    const challenge = await startRegistration({ name: name.trim(), email: normalizedEmail, phone: phone || null, password, role: accountRole }, req.ip);
+    return res.status(202).json(challenge);
+  } catch (error) {
+    if (error.status && error.code) return sendError(res, error.status, error.code, error.message, error.details);
+    throw error;
+  }
+}
 
-  const store = await ensureMerchantStore(user);
-  setSessionCookie(res, user._id, true, user.session_version);
-  return res.status(201).json({
-    user: userView(user),
-    store: store ? { id: String(store._id), name: store.name } : null,
-  });
+async function resendRegistrationOtp(req, res) {
+  try {
+    return res.json(await resendOtp(req.body?.registrationId, req.ip));
+  } catch (error) {
+    if (error.status && error.code) return sendError(res, error.status, error.code, error.message, error.details);
+    throw error;
+  }
+}
+
+async function verifyRegistration(req, res) {
+  try {
+    const draft = await consumeOtp(req.body?.registrationId, req.body?.code, req.ip);
+    const user = await User.create({ name: draft.name, email: draft.email, phone: draft.phone, password_hash: draft.password_hash, role: draft.role, email_verified_at: new Date() });
+    const store = await ensureMerchantStore(user);
+    setSessionCookie(res, user._id, true, user.session_version);
+    return res.status(201).json({ user: userView(user), store: store ? { id: String(store._id), name: store.name } : null });
+  } catch (error) {
+    if (error.code === 11000) return sendError(res, 409, "EMAIL_EXISTS", "อีเมลนี้ถูกใช้งานแล้ว กรุณาเข้าสู่ระบบ");
+    if (error.status && error.code) return sendError(res, error.status, error.code, error.message, error.details);
+    throw error;
+  }
 }
 
 async function login(req, res) {
@@ -149,11 +170,11 @@ async function changePassword(req, res) {
 }
 
 function capabilities(_req, res) {
-  return res.json({ google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), email: mailConfigured(), paymentMode: process.env.NODE_ENV === "production" ? "live" : "sandbox" });
+  return res.json({ google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), email: mailConfigured(), registrationRequiresOtp: true, ...paymentCapabilities() });
 }
 
 function googleNotConfigured(_req, res) {
   return sendError(res, 501, "GOOGLE_AUTH_NOT_CONFIGURED", "Google Sign-In ยังไม่ได้ตั้งค่าในโปรเจกต์นี้");
 }
 
-module.exports = { register, login, logout, me, forgotPassword, resetPassword, changePassword, capabilities, googleNotConfigured, ensureMerchantStore };
+module.exports = { register, verifyRegistration, resendRegistrationOtp, login, logout, me, forgotPassword, resetPassword, changePassword, capabilities, googleNotConfigured, ensureMerchantStore };

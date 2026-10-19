@@ -32,7 +32,7 @@ export function ActiveOrderCard({ order, variant = "home" }) {
           </h3>
           <p className="truncate text-sm text-white/75">
             {variant === "home"
-              ? `คิวของคุณ #${order.queueNumber} · กำลังทำคิว #${order.nowServing}`
+              ? `คิวของคุณ #${order.queueNumber} · ${order.nowServing ? `กำลังทำคิว #${order.nowServing}` : "รอร้านเริ่มทำอาหาร"}`
               : order.items.map((item) => `${item.qty}× ${item.name}`).join(" · ")}
           </p>
         </div>

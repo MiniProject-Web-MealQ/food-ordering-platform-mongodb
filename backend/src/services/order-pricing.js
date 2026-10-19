@@ -7,6 +7,7 @@ function money(value) {
 }
 
 function validateOrderInput(input) {
+  require("./coupon-input").couponSelection(input || {});
   if (!Array.isArray(input?.items) || input.items.length === 0) invalid("EMPTY_ORDER", "ตะกร้ายังไม่มีรายการอาหาร");
   if (input.items.length > 50) invalid("TOO_MANY_ITEMS", "สั่งได้ไม่เกิน 50 รายการต่อออเดอร์");
   for (const item of input.items) {
@@ -29,6 +30,7 @@ function priceOrderItem(menu, input) {
   const groupIds = new Set(groups.map((group) => group.id));
   if (Object.keys(selections).some((key) => !groupIds.has(key))) invalid("INVALID_OPTIONS", "มีกลุ่มตัวเลือกอาหารที่ไม่มีในเมนู");
   const clean = {};
+  const selectedOptions = [];
   let extra = 0;
   for (const group of groups) {
     const selected = selections[group.id] || [];
@@ -36,7 +38,7 @@ function priceOrderItem(menu, input) {
       invalid("INVALID_OPTIONS", "ตัวเลือกอาหารซ้ำหรือไม่ถูกต้อง");
     }
     const min = group.required ? Math.max(1, Number(group.min || 1)) : Number(group.min || 0);
-    const max = group.multiple ? Number(group.max || group.options?.length || 0) : 1;
+    const max = group.multiple ? Number(group.max ?? group.options?.length ?? 0) : 1;
     if (selected.length < min || selected.length > max) invalid("INVALID_OPTIONS", `กรุณาเลือก ${group.label || group.id} ให้ครบและถูกต้อง`);
     for (const id of selected) {
       const option = (group.options || []).find((candidate) => candidate.id === id);
@@ -44,6 +46,7 @@ function priceOrderItem(menu, input) {
       const surcharge = Number(option.price || 0);
       if (!Number.isFinite(surcharge) || surcharge < 0) invalid("INVALID_MENU_PRICE", "ราคาเมนูไม่ถูกต้อง", 409);
       extra += surcharge;
+      selectedOptions.push({ groupId: group.id, optionId: id, groupLabel: group.label || group.id, label: option.label || id, price: surcharge });
     }
     clean[group.id] = selected;
   }
@@ -52,7 +55,7 @@ function priceOrderItem(menu, input) {
   return {
     menu_id: menu._id, client_menu_id: menu.client_id, name: menu.name,
     price, quantity: input.quantity, total_price: money(price * input.quantity),
-    selections: clean, note: (input.note || "").trim(),
+    selections: clean, selected_options: selectedOptions, cook_time: Number(menu.cook_time || 5), note: (input.note || "").trim(),
   };
 }
 

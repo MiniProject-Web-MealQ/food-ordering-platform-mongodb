@@ -28,15 +28,14 @@ function SummaryRow({ label, value, strong = false }) {
   );
 }
 
-function CancelPanel({ queueLabel, busy, onConfirm, onBack }) {
+function CancelPanel({ queueLabel, order, busy, onConfirm, onBack }) {
   return (
     <div role="group" aria-labelledby="cancel-title" className="space-y-3 rounded-2xl bg-alert/10 p-4">
       <p id="cancel-title" className="font-semibold text-danger">
         ยกเลิกคิว {queueLabel}?
       </p>
-      {/* TODO(api): API ยังไม่มีระบบคืนเงิน ข้อความจึงบอกให้ร้านคืนเงินเอง */}
       <p className="text-sm text-ink">
-        ยกเลิกแล้วย้อนกลับไม่ได้ ระบบยังไม่คืนเงินให้อัตโนมัติ ต้องคืนเงินให้ลูกค้าเอง
+        {order.payment_method === "wallet" ? "เมื่อยกเลิก ระบบจะคืนยอดเข้า Wallet ของลูกค้าอัตโนมัติ ไม่ต้องคืนซ้ำด้วยตนเอง" : order.payment_mode === "sandbox" ? "ออเดอร์ทดสอบนี้ไม่มีการตัดเงินจริง จึงไม่มีเงินที่ต้องคืน" : "ตรวจสอบสถานะการชำระเงินก่อนดำเนินการคืนเงิน"}
       </p>
       <div className="flex flex-wrap gap-2">
         <button
@@ -132,6 +131,7 @@ function ActionPanel({ order, queue, now, focusCode, scannedCode, handedOver, on
       {canCancel(order.status) &&
         (confirmingCancel ? (
           <CancelPanel
+            order={order}
             queueLabel={queueLabel}
             busy={busy}
             onConfirm={() => run(() => actions.cancel(order))}

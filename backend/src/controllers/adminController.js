@@ -12,13 +12,43 @@ const { hashPassword } = require("../services/password");
 const { sendError } = require("../utils/http");
 const { changeBalance } = require("../services/wallet");
 const { cancelOrder: cancelOrderWithRefund } = require("../services/order-lifecycle");
+const SystemSettings = require("../models/SystemSettings");
+const { getSettings } = require("../services/settings");
+const { capabilities, forgotPassword } = require("./authController");
+
+async function settings(req, res) {
+  const config = await getSettings();
+  let services;
+  capabilities(req, { json: (value) => { services = value; } });
+  return res.json({ settings: config, services });
+}
+
+async function updateSettings(req, res) {
+  const { service_fee, accepting_orders } = req.body || {};
+  if (!Number.isFinite(service_fee) || service_fee < 0 || service_fee > 1000 || Math.abs(service_fee * 100 - Math.round(service_fee * 100)) > 1e-7 || typeof accepting_orders !== "boolean") return sendError(res, 400, "VALIDATION_ERROR", "ตรวจสอบค่าบริการ 0–1,000 บาทและสถานะรับออเดอร์");
+  const config = await SystemSettings.findByIdAndUpdate("global", { $set: { service_fee, accepting_orders } }, { upsert: true, returnDocument: "after", runValidators: true });
+  await audit(req, "settings.update", "settings", config, `ค่าบริการ ${service_fee} บาท · รับออเดอร์ ${accepting_orders}`);
+  return res.json({ ok: true, settings: config });
+}
+
+async function resetUserPassword(req, res) {
+  if (!validId(req.params.id)) return sendError(res, 404, "NOT_FOUND", "ไม่พบผู้ใช้");
+  const user = await User.findById(req.params.id);
+  if (!user) return sendError(res, 404, "NOT_FOUND", "ไม่พบผู้ใช้");
+  if (user.status === "suspended") return sendError(res, 409, "ACCOUNT_SUSPENDED", "เปิดใช้งานบัญชีก่อนส่งคำขอตั้งรหัสผ่าน");
+  // Capture the shared reset flow so the administrator action is audited before responding.
+  const response = { code: 200, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } };
+  await forgotPassword({ body: { email: user.email } }, response);
+  if (response.code === 200) await audit(req, "user.resetPassword", "user", user);
+  return res.status(response.code).json(response.body);
+}
 
 const validId = (id) => mongoose.isValidObjectId(id);
 const id = (value) => value == null ? null : String(value);
 const time = (value) => value ? new Date(value).getTime() : null;
 const plain = (document) => ({ ...document, _id: id(document._id), created_at: time(document.createdAt), updated_at: time(document.updatedAt) });
 const userFields = (user) => ({
-  _id: id(user._id), name: user.name, email: user.email, phone: user.phone || null,
+  _id: id(user._id), name: user.name, email: user.email, phone: user.phone || null, store_id: id(user.store_id),
   role: user.role, status: user.status || "active", status_note: user.status_note || null,
   must_change_password: Boolean(user.must_change_password), created_at: time(user.createdAt), updated_at: time(user.updatedAt),
 });
@@ -55,8 +85,8 @@ async function state(req, res) {
   return res.json({
     session: sessionFields(req.user),
     users: users.map(userFields),
-    stores: stores.map((store) => ({ ...plain(store), owner_id: id(store.owner_id), status: store.status || "active" })),
-    menus: menus.map((menu) => ({ ...plain(menu), store_id: id(menu.store_id) })),
+    stores: stores.map((store) => ({ ...plain(store), logo: require("../services/media").imageUrl(store, "logo", "store"), cover_image: require("../services/media").imageUrl(store, "cover_image", "store"), owner_id: id(store.owner_id), status: store.status || "active" })),
+    menus: menus.map((menu) => ({ ...plain(menu), image: require("../services/media").imageUrl(menu, "image", "menu"), store_id: id(menu.store_id) })),
     orders: orders.map((order) => ({
       ...plain(order), customer_id: id(order.customer_id), store_id: id(order.store_id), order_date: time(order.order_date || order.createdAt), receive_time: time(order.receive_time),
       queue: queuesByOrder.has(id(order._id)) ? { ...queuesByOrder.get(id(order._id)), _id: id(queuesByOrder.get(id(order._id))._id) } : { queue_number: null, receive_code: "–" },
@@ -121,8 +151,16 @@ async function updateUser(req, res) {
   if (status !== undefined) { changes.status = status; changes.status_note = String(reason).trim() || null; }
   const oldRole = user.role;
   if (role !== undefined) changes.role = role;
+  if ((role || user.role) === "staff" && (role !== undefined || req.body?.storeId !== undefined)) {
+    const storeId = req.body?.storeId || user.store_id;
+    if (!validId(storeId) || !await Store.exists({ _id: storeId })) return sendError(res, 400, "STORE_REQUIRED", "กรุณาเลือกร้านที่พนักงานทำงาน");
+    changes.store_id = storeId;
+  } else if (role !== undefined && role !== "staff") changes.store_id = null;
   if (!Object.keys(changes).length) return sendError(res, 400, "VALIDATION_ERROR", "ระบุสถานะหรือประเภทบัญชีที่ต้องการแก้ไข");
   await User.findByIdAndUpdate(user._id, { $set: changes, $inc: { session_version: 1 } }, { runValidators: true });
+  if (["merchant", "staff"].includes(user.role) && (status === "suspended" || (role !== undefined && role !== user.role))) {
+    await Store.updateMany({ owner_id: user._id }, { $set: { is_open: false } });
+  }
   req.app.get("io")?.in(`user:${user._id}`).disconnectSockets(true);
   await audit(req, role !== undefined ? "user.role" : status === "suspended" ? "user.suspend" : "user.activate", "user", user, role !== undefined ? `${oldRole} → ${role}` : String(reason).trim() || null);
   return res.json({ ok: true });
@@ -139,8 +177,10 @@ async function createAdmin(req, res) {
 }
 
 function promotionFields(body, previous = {}) {
-  const fields = { ...previous };
+  const fields = {};
   for (const key of ["code", "title", "description", "discount_type", "discount_value", "max_discount", "minimum_order", "start_date", "expire_date", "usage_limit", "per_user_limit", "store_id", "is_active"]) {
+    // Quota counters and claim receipts belong to atomic checkout updates only.
+    if (Object.hasOwn(previous, key)) fields[key] = previous[key];
     if (Object.hasOwn(body, key)) fields[key] = body[key];
   }
   fields.code = String(fields.code || "").trim().toUpperCase();
@@ -203,4 +243,4 @@ async function adjustWallet(req, res) {
   return res.json({ ok: true, balance: result.wallet.balance });
 }
 
-module.exports = { state, updateStore, updateUser, createAdmin, createPromotion, updatePromotion, cancelOrder, adjustWallet };
+module.exports = { settings, updateSettings, resetUserPassword, state, updateStore, updateUser, createAdmin, createPromotion, updatePromotion, cancelOrder, adjustWallet };

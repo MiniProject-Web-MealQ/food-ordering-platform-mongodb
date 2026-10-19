@@ -1,9 +1,12 @@
+import { Play } from "lucide-react";
+import { Link } from "react-router";
+import { buttonClasses } from "@/components/ui/styles";
 import { cx } from "@/lib/cx";
 
 // Flat mint tints that deepen step by step.
 const STEPS = [
   { title: "เลือกร้าน", description: "ดูคิวและเวลารอก่อนสั่ง", tone: "bg-mint/60" },
-  { title: "สั่งและจ่าย", description: "PromptPay หรือบัตร จ่ายจบในแอป", tone: "bg-mint" },
+  { title: "สั่งและจ่าย", description: "PromptPay หรือ Wallet แบบ Demo ไม่มีการตัดเงินจริง", tone: "bg-mint" },
   { title: "รอแจ้งเตือน", description: "เห็นคิวปัจจุบันแบบเรียลไทม์", tone: "bg-mint/60" },
   { title: "เดินมารับ", description: "แสดงรหัส 4 หลักหรือ QR ที่ร้าน", tone: "bg-mint" },
 ];
@@ -20,8 +23,11 @@ export function HowItWorks() {
           <h2 id="how-it-works-title" className="text-3xl font-bold text-ink lg:text-5xl">
             ใช้งานอย่างไร
           </h2>
-          <p className="mt-1 text-ink-soft lg:mt-3 lg:text-lg">4 ขั้นตอน เสร็จใน 1 นาที</p>
+          <p className="mt-1 text-ink-soft lg:mt-3 lg:text-lg">จากเลือกเมนู จนถึงรับอาหารที่ร้าน</p>
         </div>
+        <Link to="/demo" className={cx(buttonClasses({ variant: "cocoa-outline", size: "md" }), "mt-5 lg:mt-0")}>
+          <Play aria-hidden="true" className="size-4" />ดูสาธิตตั้งแต่ต้นจนจบ
+        </Link>
       </div>
 
       <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:mt-10 lg:grid-cols-4 lg:gap-5">

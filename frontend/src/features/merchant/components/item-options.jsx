@@ -6,7 +6,7 @@ import { useMerchant } from "../store";
 export function ItemOptions({ item, className }) {
   const { state } = useMerchant();
   const menu = state.menus.find((m) => m._id === item.menu_id || m.client_id === item.menu_id);
-  const labels = selectionLabels(item.selections, menu);
+  const labels = selectionLabels(item.selections, menu, item.selected_options);
   if (labels.length === 0) return null;
   return (
     <span className={cx("block text-xs text-ink", className)}>

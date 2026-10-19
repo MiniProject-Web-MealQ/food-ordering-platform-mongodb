@@ -1,5 +1,7 @@
 # สัญญา API ฝั่งผู้ดูแลระบบ (Admin API) — ฉบับร่าง
 
+> **อัปเดต 19 ตุลาคม 2026:** เอกสารด้านล่างเก็บไว้เป็นร่างออกแบบเดิม ระบบจริงเชื่อม Backend แล้ว อ้างอิงเส้นทางปัจจุบันจาก `backend/src/routes/adminRoutes.js` และ [README หลัก](../README.md) มี `GET/PATCH /api/v1/admin/settings`, `POST /api/v1/admin/users/:id/reset-password` และ `PATCH /api/v1/admin/users/:id` รองรับ `role: staff` พร้อม `storeId`
+
 > **สถานะ:** ร่างเพื่อขอความเห็นจากทีม backend · ยังไม่มีโค้ดฝั่งไหนใช้
 > **ผู้ร่าง:** ฝั่ง frontend (merchant/admin) · หน้าเว็บที่ใช้ดูได้ที่ `/admin` (ตอนนี้ใช้ข้อมูลจำลอง)
 > **วิธีให้ความเห็น:** คอมเมนต์ใน PR หรือแก้ไฟล์นี้ตรง ๆ ได้เลย ทุกชื่อ field / endpoint เปลี่ยนได้ ขอแค่ตกลงกันก่อนเริ่มทำ

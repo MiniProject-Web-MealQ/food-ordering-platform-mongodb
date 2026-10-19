@@ -1,14 +1,15 @@
 import { createContext, use } from "react";
-import { COUPONS, cartLineKey, getMenuItem, getOrderRestaurant, getRestaurant, isOrderable, optionLabels } from "./catalog";
+import { cartLineKey, getMenuItem, getOrderRestaurant, getRestaurant, isOrderable, optionLabels } from "./catalog.js";
+import { mergeCollectedCoupon } from "./coupons.js";
 
 export const STORAGE_KEY = "mealq.customer.v2";
 export const CustomerContext = createContext(null);
 export const storageKey = (userId) => STORAGE_KEY + ":" + (userId || "guest");
-export const emptyCart = () => ({ restaurantId: null, couponCode: null, items: [], removedItems: [] });
+export const emptyCart = () => ({ restaurantId: null, couponId: null, couponCode: null, items: [], removedItems: [] });
 
 export function loadState(userId) {
   const initial = {
-    cart: emptyCart(), orders: [], favorites: { restaurants: [], menus: [] }, notifications: [],
+    cart: emptyCart(), orders: [], coupons: [], favorites: { restaurants: [], menus: [] }, notifications: [],
     settings: { notifyReady: true, promotions: false, paymentMethod: "promptpay" }, user: null,
   };
   let stored;
@@ -40,7 +41,6 @@ function withoutUnavailable(cart) {
     valid.push({ ...line, menuId: menu.id, selections: cleaned, note, qty: Math.max(1, Math.min(99, Number.parseInt(line.qty, 10) || 1)), key: cartLineKey(menu.id, cleaned, note) });
   }
   return { ...cart, restaurantId: valid.length ? getMenuItem(valid[0].menuId).restaurantId : null,
-    couponCode: COUPONS[cart.couponCode] ? cart.couponCode : null,
     items: valid, removedItems: [...new Set([...(cart.removedItems || []), ...removed])] };
 }
 
@@ -65,11 +65,12 @@ export function mapOrder(order) {
       const menuId = item.clientMenuId || item.menuId;
       const menu = getMenuItem(menuId);
       return { key: order.id + "-" + index, menuId, name: item.name, unitPrice: Number(item.price), qty: Number(item.quantity),
-        selections: item.selections || {}, optionLabels: menu ? optionLabels(menu, item.selections || {}) : [], note: item.note || "" };
+        selections: item.selections || {}, optionLabels: item.selectedOptions ? item.selectedOptions.map((option) => option.label) : menu ? optionLabels(menu, item.selections || {}) : [], note: item.note || "" };
     }),
     subtotal: Number(order.subtotal), serviceFee: Number(order.serviceFee), discount: Number(order.discount), total: Number(order.totalPrice),
     paymentMethod: order.paymentMethod, paymentStatus: order.paymentStatus, paymentMode: order.paymentMode,
-    queueNumber: order.queueNumber, nowServing: restaurant?.nowServing || 0, etaMinutes: restaurant?.waitMinutes || [5, 10],
+    queueNumber: order.queueNumber, nowServing: restaurant?.nowServing ?? null, etaMinutes: restaurant?.waitMinutes || [5, 10],
+    queuesAhead: (restaurant?.activeNumbers || []).filter((number) => number < order.queueNumber).length,
     pickupCode: order.pickupCode, status, statusTimes, review: order.review || null,
   };
 }
@@ -90,6 +91,8 @@ export function reducer(state, action) {
     case "profile/set": return { ...state, user: action.user };
     case "catalogue/reconcile": return { ...state, cart: withoutUnavailable(state.cart) };
     case "favorites/sync": return { ...state, favorites: action.favorites };
+    case "coupons/sync": return { ...state, coupons: action.coupons };
+    case "coupons/collect": return { ...state, coupons: mergeCollectedCoupon(state.coupons, action.coupon) };
     case "cart/add": {
       const { menuId, selections, note, qty } = action;
       const menuItem = getMenuItem(menuId);
@@ -107,8 +110,21 @@ export function reducer(state, action) {
       return { ...state, cart: items.length > 0 ? { ...state.cart, items } : emptyCart() };
     }
     case "cart/dismissRemoved": return { ...state, cart: { ...state.cart, removedItems: [] } };
-    case "cart/applyCoupon": return { ...state, cart: { ...state.cart, couponCode: action.code } };
-    case "cart/removeCoupon": return { ...state, cart: { ...state.cart, couponCode: null } };
+    case "cart/applyCoupon": return { ...state, cart: { ...state.cart, couponId: action.id, couponCode: action.code } };
+    case "cart/removeCoupon": return { ...state, cart: { ...state.cart, couponId: null, couponCode: null } };
+    case "promotions/sync": {
+      if (!state.settings.promotions) return state;
+      const notices = action.promotions.map((promotion) => ({
+        id: `promo-${promotion.id}-${promotion.updatedAt || promotion.expiresAt}`, kind: "promo", title: promotion.title || promotion.label,
+        body: `ใช้โค้ด ${promotion.code}${promotion.description ? ` · ${promotion.description}` : ""}`,
+        restaurantId: promotion.restaurantId || null, at: new Date(promotion.updatedAt || Date.now()).getTime(), read: false,
+        promotionId: promotion.id, code: promotion.code, description: promotion.description || "", storeId: promotion.storeId || null,
+        storeName: promotion.storeName || null, discountType: promotion.discountType, discountValue: promotion.discountValue,
+        minimumOrder: promotion.minimumOrder, maxDiscount: promotion.maxDiscount, startsAt: promotion.startsAt, expiresAt: promotion.expiresAt,
+      }));
+      const fresh = notices.filter((notice) => !state.notifications.some((saved) => saved.id === notice.id));
+      return fresh.length ? { ...state, notifications: [...fresh, ...state.notifications].slice(0, 100) } : state;
+    }
     case "cart/reorder": {
       let next = { ...state, cart: emptyCart() };
       for (const item of action.order.items) {
@@ -131,7 +147,7 @@ export function reducer(state, action) {
         const notice = (changed || firstReady) && notificationFor(order, order.status, order.statusTimes[order.status] || order.statusTimes.PLACED);
         if (notice && (order.status !== "READY" || state.settings.notifyReady) && !notifications.some((item) => item.id === notice.id)) notifications = [notice, ...notifications];
       }
-      return { ...state, orders, notifications: notifications.filter((notice) => orders.some((order) => order.id === notice.orderId)).slice(0, 100) };
+      return { ...state, orders, notifications: notifications.filter((notice) => !notice.orderId || orders.some((order) => order.id === notice.orderId || order.backendOrderId === notice.orderId)).slice(0, 100) };
     }
     case "order/place": {
       const order = mapOrder(action.order);
@@ -146,6 +162,7 @@ export function reducer(state, action) {
       const list = state.favorites[action.kind];
       return { ...state, favorites: { ...state.favorites, [action.kind]: list.includes(action.id) ? list.filter((id) => id !== action.id) : [...list, action.id] } };
     }
+    case "notifications/sync": return { ...state, notifications: [...action.notifications, ...state.notifications.filter((notice) => notice.kind === "promo")].slice(0, 100) };
     case "notifications/read": return { ...state, notifications: state.notifications.map((notice) => notice.id === action.id ? { ...notice, read: true } : notice) };
     case "notifications/readAll": return { ...state, notifications: state.notifications.map((notice) => ({ ...notice, read: true })) };
     case "settings/set": return { ...state, settings: { ...state.settings, [action.key]: action.value } };
@@ -160,8 +177,7 @@ export function useCustomer() {
 }
 
 export const actions = {
-  applyCoupon(code) {
-    const normalized = code.trim().toUpperCase();
-    return COUPONS[normalized] ? { type: "cart/applyCoupon", code: normalized } : null;
+  applyCoupon(coupon) {
+    return coupon?.id && coupon?.code ? { type: "cart/applyCoupon", id: coupon.id, code: coupon.code } : null;
   },
 };

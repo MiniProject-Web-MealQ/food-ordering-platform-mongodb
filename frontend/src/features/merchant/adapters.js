@@ -1,4 +1,4 @@
-import { QUEUE_STATUS_FOR_ORDER } from "./status";
+import { QUEUE_STATUS_FOR_ORDER } from "./status.js";
 
 /**
  * API ของร้านค้าตอบกลับเป็น camelCase (ดู storeView/menuView ใน publicController.js และ
@@ -18,10 +18,15 @@ export function storeFromApi(store) {
     name: store.name ?? "",
     description: store.description ?? "",
     phone: store.phone ?? "",
+    coordinates: store.coordinates || null,
     address: store.address ?? {},
     rating: store.rating ?? null,
-    is_open: Boolean(store.isOpen),
+    is_open: Boolean(store.manualOpen ?? store.isOpen),
+    effective_open: Boolean(store.isOpen),
+    status: store.status || "active",
+    status_note: store.statusNote || null,
     opening_hours: {
+      automatic: Boolean(store.openingHours?.automatic),
       open_time: store.openingHours?.open_time ?? "",
       close_time: store.openingHours?.close_time ?? "",
     },
@@ -41,6 +46,7 @@ export function menuFromApi(menu) {
     store_id: menu.storeId,
     name: menu.name ?? "",
     description: menu.description ?? "",
+    cuisine: menu.cuisine || "thai", ingredients: menu.ingredients || [],
     category: menu.category ?? "",
     price: Number(menu.price) || 0,
     image: menu.image ?? null,
@@ -72,8 +78,7 @@ function optionGroupFromApi(group) {
 
 /**
  * แปลงออเดอร์ 1 รายการจาก API เป็น Order + ตั๋วคิว (Queue) ตามที่ model เก็บ
- * TODO(api): API ไม่ส่ง Queue.called_at / completed_at และ Order.receive_time มาให้ จึงใช้ updatedAt แทน
- * ซึ่งถูกต้องเฉพาะขั้นล่าสุด (ตอนออเดอร์พร้อมรับ หรือตอนส่งอาหารแล้ว) ขั้นก่อนหน้าจะไม่รู้เวลา
+ * ใช้เวลาในคิวและเวลารับอาหารจาก API พร้อม fallback สำหรับข้อมูลเก่า
  */
 export function orderFromApi(order) {
   const updatedAt = time(order.updatedAt);
@@ -94,12 +99,15 @@ export function orderFromApi(order) {
         note: item.note ?? "",
         // ตัวเลือกเสริมที่ลูกค้าเลือก { groupId: [optionId] } แปลงเป็นชื่อด้วย selectionLabels()
         selections: item.selections ?? {},
+        selected_options: item.selectedOptions,
       })),
       subtotal: Number(order.subtotal) || 0,
       service_fee: Number(order.serviceFee) || 0,
       discount: Number(order.discount) || 0,
       total_price: Number(order.totalPrice) || 0,
       payment_method: order.paymentMethod,
+      payment_status: order.paymentStatus,
+      payment_mode: order.paymentMode,
       status: order.status,
       order_date: time(order.createdAt),
       receive_time: handedOver,
@@ -124,6 +132,8 @@ export function menuToApi(fields) {
   const body = {};
   if (fields.name !== undefined) body.name = fields.name;
   if (fields.description !== undefined) body.description = fields.description;
+  if (fields.cuisine !== undefined) body.cuisine = fields.cuisine;
+  if (fields.ingredients !== undefined) body.ingredients = fields.ingredients.map((row) => ({ ingredientId: row.ingredient_id, quantity: Number(row.quantity), unit: row.unit }));
   if (fields.category !== undefined) body.category = fields.category;
   if (fields.price !== undefined) body.price = fields.price;
   if (fields.image !== undefined) body.image = fields.image;
@@ -149,18 +159,18 @@ export function menuToApi(fields) {
   return body;
 }
 
-/** PATCH /merchant/store รับแค่ name, description, phone, isOpen และ openingHours */
+/** Map editable store fields to the API contract. */
 export function storeToApi(changes) {
   const body = {};
   if (changes.name !== undefined) body.name = changes.name;
   if (changes.description !== undefined) body.description = changes.description;
   if (changes.phone !== undefined) body.phone = changes.phone;
+  if (changes.coordinates !== undefined) body.coordinates = changes.coordinates;
   if (changes.is_open !== undefined) body.isOpen = changes.is_open;
-  // TODO(api): PATCH /merchant/store ยังไม่รับ logo / coverImage (ดู README หัวข้อรูปร้าน)
   if (changes.logo !== undefined) body.logo = changes.logo;
   if (changes.cover_image !== undefined) body.coverImage = changes.cover_image;
   if (changes.opening_hours) {
-    body.openingHours = { open: changes.opening_hours.open_time, close: changes.opening_hours.close_time };
+    body.openingHours = { automatic: Boolean(changes.opening_hours.automatic), open: changes.opening_hours.open_time, close: changes.opening_hours.close_time };
   }
   if (changes.address) {
     body.address = {

@@ -6,9 +6,14 @@ const { asyncHandler } = require("../utils/http");
 
 const router = express.Router();
 router.post("/register", asyncHandler(controller.register));
+router.post("/register/verify", asyncHandler(controller.verifyRegistration));
+router.post("/register/resend", asyncHandler(controller.resendRegistrationOtp));
 router.post("/login", asyncHandler(controller.login));
 router.post("/logout", controller.logout);
 router.get("/me", requireAuth, asyncHandler(controller.me));
+const orderEmail = require("../services/order-email");
+router.get("/notification-preferences", requireAuth, asyncHandler(orderEmail.getPreferences));
+router.patch("/notification-preferences", requireAuth, asyncHandler(orderEmail.updatePreferences));
 router.post("/forgot-password", asyncHandler(controller.forgotPassword));
 router.post("/reset-password", asyncHandler(controller.resetPassword));
 router.patch("/password", requireAuth, asyncHandler(controller.changePassword));

@@ -1,8 +1,7 @@
-import { ORDER_STATUS_LABEL } from "./status";
+import { ORDER_STATUS_LABEL } from "./status.js";
 
 /**
- * ข้อความที่อาจอยู่ใน QR รับอาหารของลูกค้า ตอนนี้แอปลูกค้ายังไม่มี QR ที่สแกนได้จริง
- * (features/customer/components/pickup-code.jsx วาดลายตกแต่ง) ตัวสแกนจึงรับหลายรูปแบบที่น่าจะถูกเลือกใช้:
+ * QR ใหม่ระบุเลขออเดอร์พร้อมรหัสรับอาหาร รองรับรูปแบบเก่าที่ไม่คลุมเครือด้วย:
  *   "MEALQ:<order_number>:<receive_code>"   เช่น MEALQ:MQ599608373:9667  (แนะนำ)
  *   "<receive_code>"                         เช่น 9667
  *   JSON ที่มี orderNumber + pickupCode / receiveCode / code
@@ -32,6 +31,7 @@ export function matchPickupScan(entries, scan) {
     ({ order, queue }) =>
       queue?.receive_code === scan.code && (!scan.orderNumber || order.order_number === scan.orderNumber),
   );
+  if (!scan.orderNumber && matches.length > 1) return { message: "รหัสนี้ตรงกับหลายออเดอร์ ให้ลูกค้าเปิด QR ใหม่ หรือเลือกออเดอร์และตรวจรายการก่อนกรอกรหัส" };
   const ready = matches.find(({ order }) => order.status === "ready");
   if (ready) return { entry: ready };
   const other = matches[0];

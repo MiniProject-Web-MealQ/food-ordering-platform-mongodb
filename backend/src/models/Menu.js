@@ -15,6 +15,7 @@ const menuSchema = new mongoose.Schema(
     store_id: { type: mongoose.Schema.Types.ObjectId, ref: "Store", required: true },
     name: { type: String, required: true },
     description: { type: String, default: "" },
+    cuisine: { type: String, enum: ["thai", "japanese", "korean", "fastfood", "drink", "dessert"], default: undefined },
     category: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
     image: { type: String, default: null },

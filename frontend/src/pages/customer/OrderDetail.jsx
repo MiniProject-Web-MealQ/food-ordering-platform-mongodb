@@ -4,6 +4,7 @@ import { CheckIcon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/styles";
 import { currentStatus, getOrderRestaurant, ORDER_STEPS, statusLabel } from "@/features/customer/catalog";
 import { cancelOrder } from "@/features/customer/api";
+import { findCustomerOrder } from "@/features/customer/order-lookup";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { PickupCode } from "@/features/customer/components/pickup-code";
 import { formatBaht, formatClock, formatRange } from "@/features/customer/format";
@@ -31,11 +32,11 @@ function stepDetail(status, order, restaurant) {
 
 function OrderDetail() {
   const { id } = useParams();
-  usePageTitle(`ออเดอร์ #${id}`);
-  const { state, dispatch } = useCustomer();
+  const { state, dispatch, refreshCoupons } = useCustomer();
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState(null);
-  const order = state.orders.find((o) => o.id === id);
+  const order = findCustomerOrder(state.orders, id);
+  usePageTitle(order ? `ออเดอร์ #${order.id}` : "ไม่พบออเดอร์");
 
   if (!order) return <NotFoundPage />;
 
@@ -51,7 +52,11 @@ function OrderDetail() {
     if (cancelling || !window.confirm("ยืนยันยกเลิกออเดอร์นี้?")) return;
     setCancelling(true);
     const result = await cancelOrder(order.id);
-    if (result.ok) { dispatch({ type: "order/upsert", order: result.data.order }); setError(null); }
+    if (result.ok) {
+      dispatch({ type: "order/upsert", order: result.data.order });
+      setError(null);
+      await refreshCoupons();
+    }
     else setError(result.error?.message || "ยกเลิกออเดอร์ไม่สำเร็จ");
     setCancelling(false);
   }
@@ -89,7 +94,7 @@ function OrderDetail() {
             <div>
               <p className="font-display text-6xl leading-none font-black lg:text-8xl">#{order.queueNumber}</p>
               <p className="mt-2 text-sm text-white/75">
-                {cancelled ? "ยกเลิกออเดอร์แล้ว" : done ? "รับอาหารเรียบร้อย" : `กำลังทำคิว #${order.nowServing}`}
+                {cancelled ? "ยกเลิกออเดอร์แล้ว" : done ? "รับอาหารเรียบร้อย" : order.nowServing ? `กำลังทำคิว #${order.nowServing}` : "รอร้านเริ่มทำอาหาร"}
               </p>
             </div>
             {!done && !cancelled && (
@@ -108,7 +113,7 @@ function OrderDetail() {
             <h2 id="ready-code" className="mb-3 text-center font-bold text-ink">
               แสดงรหัสนี้ตอนรับอาหาร
             </h2>
-            <PickupCode code={order.pickupCode} />
+            <PickupCode code={order.pickupCode} orderNumber={order.id} />
           </section>
         )}
 

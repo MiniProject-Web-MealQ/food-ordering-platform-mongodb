@@ -14,6 +14,7 @@ const walletSchema = new mongoose.Schema(
       default: 0,
       min: 0
     },
+    blocked_keys: { type: [String], default: [], select: false },
     ledger_keys: { type: [String], default: [], select: false },
     ledger_results: { type: mongoose.Schema.Types.Mixed, default: {}, select: false }
   },

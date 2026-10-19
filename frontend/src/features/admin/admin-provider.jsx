@@ -9,7 +9,7 @@ function requestFor(action) {
     case "store/forceClose": return [`/admin/stores/${action.storeId}`, "PATCH", { is_open: false, reason: action.reason }];
     case "store/update": return [`/admin/stores/${action.storeId}`, "PATCH", { address: action.address, maxQueue: action.maxQueue }];
     case "user/setStatus": return [`/admin/users/${action.userId}`, "PATCH", { status: action.status, reason: action.reason }];
-    case "user/setRole": return [`/admin/users/${action.userId}`, "PATCH", { role: action.role }];
+    case "user/setRole": return [`/admin/users/${action.userId}`, "PATCH", { role: action.role, ...(action.storeId ? { storeId: action.storeId } : {}) }];
     case "user/addAdmin": return ["/admin/users", "POST", action.user];
     case "user/changePassword": return ["/auth/password", "PATCH", { currentPassword: action.currentPassword, newPassword: action.password }];
     case "order/cancel": return [`/admin/orders/${action.orderId}/cancel`, "POST", { reason: action.reason }];

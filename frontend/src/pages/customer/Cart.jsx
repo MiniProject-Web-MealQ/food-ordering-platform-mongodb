@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router";
 import { AlertTriangleIcon, TicketIcon, XIcon } from "@/components/icons";
 import { CatalogImage } from "@/features/customer/components/catalog-image";
@@ -7,7 +6,7 @@ import { getRestaurant, priceCart } from "@/features/customer/catalog";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { QtyStepper } from "@/features/customer/components/qty-stepper";
 import { formatBaht } from "@/features/customer/format";
-import { actions, useCustomer } from "@/features/customer/store";
+import { useCustomer } from "@/features/customer/store";
 import { containerClass, stickySidebarClass } from "@/features/customer/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -44,81 +43,29 @@ function SoldOutNotice({ names, restaurantId, onDismiss }) {
   );
 }
 
-function CouponField({ coupon, onApply, onRemove }) {
-  const [code, setCode] = useState("");
-  const [error, setError] = useState("");
-
-  if (coupon) {
-    return (
-      <div className="flex items-center gap-3 rounded-full border-2 border-haze px-5 py-3">
-        <TicketIcon className="size-5 shrink-0 text-alert" />
-        <p className="flex-1 font-medium text-ink">
-          {coupon.code} — {coupon.label}
-        </p>
-        <span className="text-sm font-semibold text-brand-ink">ใช้แล้ว</span>
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`ยกเลิกคูปอง ${coupon.code}`}
-          className={`-mr-2 grid size-8 place-items-center rounded-full text-ink-soft hover:bg-haze ${focusRing}`}
-        >
-          <XIcon className="size-4" />
-        </button>
-      </div>
-    );
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    if (!onApply(code)) setError("โค้ดนี้ใช้ไม่ได้");
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-1" noValidate>
-      <div className="flex items-center gap-2 rounded-full border-2 border-haze py-1.5 pr-1.5 pl-5 focus-within:border-brand">
-        <TicketIcon className="size-5 shrink-0 text-ink-soft" />
-        <label htmlFor="coupon-code" className="sr-only">
-          โค้ดส่วนลด
-        </label>
-        <input
-          id="coupon-code"
-          placeholder="กรอกโค้ดส่วนลด"
-          autoCapitalize="characters"
-          value={code}
-          aria-invalid={Boolean(error) || undefined}
-          aria-describedby={error ? "coupon-error" : undefined}
-          onChange={(e) => {
-            setCode(e.target.value);
-            setError("");
-          }}
-          className="min-w-0 flex-1 bg-transparent text-ink uppercase placeholder:text-ink-soft/70 placeholder:normal-case focus:outline-none"
-        />
-        <button type="submit" disabled={!code.trim()} className={buttonClasses({ variant: "soft", size: "sm" })}>
-          ใช้โค้ด
-        </button>
-      </div>
-      {error && (
-        <p id="coupon-error" className="px-5 text-sm font-medium text-danger">
-          {error}
-        </p>
-      )}
-    </form>
-  );
+function CouponField({ priced, selected, onRemove }) {
+  return <section className="space-y-3 rounded-3xl border border-haze bg-cream p-5">
+    <div className="flex items-center gap-3">
+      <TicketIcon className="size-5 shrink-0 text-cocoa" />
+      <h2 className="flex-1 font-bold text-ink">คูปองส่วนลด</h2>
+      {selected && <button type="button" onClick={onRemove} aria-label="ไม่ใช้คูปองที่เลือก" className={`grid size-8 place-items-center rounded-full text-ink-soft hover:bg-haze ${focusRing}`}><XIcon className="size-4" /></button>}
+    </div>
+    <p className="text-sm text-ink">{selected ? `เลือกไว้: ${priced.selectedCoupon?.code || selected}` : "ยังไม่ได้เลือกคูปอง"}</p>
+    {priced.couponIssue && <p role="alert" className="text-sm text-danger">{priced.couponIssue} เลือกใหม่หรือกดยกเลิกคูปองก่อนชำระเงิน</p>}
+    <div className="flex flex-wrap gap-2">
+      <Link to="/customer/checkout#checkout-coupons" className={buttonClasses({ variant: "cocoa-outline", size: "sm" })}>{selected ? "เปลี่ยนคูปอง" : "เลือกคูปองที่เก็บไว้"}</Link>
+      <Link to="/customer/coupons" className={buttonClasses({ variant: "soft", size: "sm" })}>ดูและเก็บคูปอง</Link>
+    </div>
+    <p className="text-xs text-ink-soft">ใช้ได้ 1 คูปองต่อออเดอร์ ตรวจสอบสิทธิ์อีกครั้งก่อนจ่าย</p>
+  </section>;
 }
-
 function Cart() {
   usePageTitle("ตะกร้า");
   const { state, dispatch } = useCustomer();
   const { cart } = state;
-  const priced = priceCart(cart);
+  const priced = priceCart(cart, state.coupons);
   const restaurant = cart.restaurantId ? getRestaurant(cart.restaurantId) : null;
   const empty = priced.lines.length === 0;
-
-  function applyCoupon(code) {
-    const action = actions.applyCoupon(code);
-    if (action) dispatch(action);
-    return Boolean(action);
-  }
 
   const checkoutLink = restaurant && (
     <Link
@@ -181,6 +128,7 @@ function Cart() {
                 {priced.lines.map((line) => (
                   <li key={line.key} className="flex gap-3 py-4 lg:gap-5 lg:py-5">
                     <CatalogImage
+                      src={line.menuItem.image}
                       compact
                       label={line.menuItem.shortLabel}
                       className="size-16 shrink-0 rounded-2xl lg:size-20"
@@ -210,8 +158,8 @@ function Cart() {
 
             <aside className={cx("space-y-4", stickySidebarClass)}>
               <CouponField
-                coupon={priced.coupon}
-                onApply={applyCoupon}
+                priced={priced}
+                selected={cart.couponId || cart.couponCode}
                 onRemove={() => dispatch({ type: "cart/removeCoupon" })}
               />
 

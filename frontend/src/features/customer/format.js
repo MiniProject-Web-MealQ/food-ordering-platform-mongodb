@@ -7,7 +7,7 @@ const clockFormat = new Intl.DateTimeFormat("th-TH", {
 const dateFormat = new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" });
 
 export function formatBaht(amount) {
-  return `฿${amount.toLocaleString("th-TH")}`;
+  return `฿${amount.toLocaleString("th-TH", { maximumFractionDigits: 2 })}`;
 }
 
 /** 1726470660000 → "12:31" */
@@ -31,7 +31,7 @@ export function formatRange([min, max]) {
 
 export function formatDistance(meters) {
   if (meters === null || meters === undefined) return "รับอาหารที่ร้าน";
-  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${meters} ม.`;
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
 }
 
 export function greeting(now = new Date()) {

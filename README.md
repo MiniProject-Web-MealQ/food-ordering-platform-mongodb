@@ -7,7 +7,7 @@ React/Vite frontend, Express/Socket.IO backend and MongoDB. Customer and Merchan
 MongoDB must be available before starting the backend. If Docker Desktop is installed, open it and run:
 
 ```powershell
-cd E:\Work\food-ordering-platform-mongodb-publish
+cd E:\Work\food-ordering-platform-team-test
 docker compose up -d
 ```
 
@@ -16,7 +16,7 @@ Alternatively, use an existing MongoDB instance and set `MONGO_URI` in `backend/
 Backend terminal:
 
 ```powershell
-cd E:\Work\food-ordering-platform-mongodb-publish\backend
+cd E:\Work\food-ordering-platform-team-test\backend
 npm.cmd install
 if (!(Test-Path .env)) { Copy-Item .env.example .env }
 npm.cmd run seed
@@ -26,7 +26,7 @@ npm.cmd run dev
 Frontend terminal:
 
 ```powershell
-cd E:\Work\food-ordering-platform-mongodb-publish\frontend
+cd E:\Work\food-ordering-platform-team-test\frontend
 npm.cmd install
 if (!(Test-Path .env)) { Copy-Item .env.example .env }
 npm.cmd run dev
@@ -46,19 +46,29 @@ Seed inserts missing demo records, a global `LUNCH10` coupon and an initial demo
 
 ## Working flows
 
-- Customer: live restaurant/menu catalogue, cart, server-priced checkout, persisted order history, favorites, profile and preferences, cancellation before preparation, reviews after completion, real pickup QR and numeric code.
-- Merchant: live store/menu/order data, menu CRUD, store settings, order transitions, pickup-code verification and Socket.IO updates.
-- Admin: real accounts/stores/orders/promotions, role/status management, Wallet adjustments, reports and durable audit history. New administrator accounts must change their initial password before privileged operations.
+- Customer: live catalogue, validated cart options, checkout with retry protection and amount checks, Wallet balance/history, persisted orders/favorites/profile, in-app order/promotion notices, cancellation/refunds, reviews and order-specific pickup QR.
+- Merchant: live store/menu/order data, menu/options CRUD, store images/coordinates/settings, order transitions, pickup-code verification and Socket.IO updates. New stores start pending and closed; only an Admin can approve them before the merchant opens sales. Admin can assign staff accounts to a store.
+- Admin: accounts/stores/orders/promotions, staff assignment, role/status management, Wallet adjustments, reports, password-reset requests, service fees and pausing new orders, with durable audit history. Suspending an owner closes their stores. New administrators must change their initial password before privileged operations.
 - Wallet: atomic balance updates, insufficient-funds checks, retry-safe topups/adjustments/refunds, automatic Wallet refund when an order is cancelled.
-- Auth: role checks, suspended accounts, session revocation after password/role changes, database-backed single-use password-reset tokens.
+- Auth: password signup requires a six-digit email OTP before account/session creation, role checks, suspended accounts, session revocation after password/role changes, database-backed single-use password-reset tokens. Existing accounts remain usable; Google signup relies on Google's verified email.
 
 ## External services and remaining limits
 
-External payments and development Wallet topups are a sandbox: no real money is charged. Production rejects unconfigured external payment/topup attempts. Real card/PromptPay/banking payments still require a payment provider and verified payment callbacks.
+The application defaults to `PAYMENT_MODE=demo`, independently of `NODE_ENV`. Checkout offers simulated PromptPay and a demo Wallet. Customers can add 1–10,000 demo baht per request at `/customer/wallet`, including on a deployed demo; there is no real transfer, QR payment or bank charge. Wallet demo orders debit the test balance and cancellation refunds it. An unfinished checkout cannot be cancelled or accepted by the kitchen until payment/queue creation finishes.
 
-Google OAuth is implemented behind `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI`; the button appears only when configured. SMTP password-reset mail uses the `SMTP_*` variables. Development exposes a local reset link; production requires SMTP. These external-provider flows require their credentials and have not been verified with a live provider account.
+Set `PAYMENT_MODE=wallet` to disable PromptPay simulation and self-service demo topups. This is a Wallet-only mode, not a real payment-provider integration. Card/banking methods are not advertised. No production payment provider is connected.
 
-Admin global Settings is currently an informational page; connection settings come from environment files. Merchant menu images are stored as resized data URLs. Production file storage, production email/payment setup and broader operational testing remain required before a public release.
+New merchants can prepare menus and store information while waiting for approval. Admin approves them at `/admin/stores`; the merchant then switches on sales. Pending, rejected and suspended stores cannot open themselves or accept checkout requests. Existing stores retain their saved status. Seed demo stores are explicitly preapproved.
+
+Store coordinates can be entered in Merchant Settings; sorting by distance asks the customer for location only after they select that sort. Stores without coordinates sort last. Order notifications/read receipts are stored on the server. Customers can enable background Web Push per device from Profile on HTTPS/localhost. Browser permission/background support is required; VAPID keys persist privately in MongoDB.
+
+Google OAuth is implemented behind `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI`; the button appears only when configured. Follow the [localhost Google Login setup](docs/google-login-localhost.md). Google merchant signup uses the same pending-approval flow. SMTP signup OTP and password-reset mail use the `SMTP_*` variables. Development exposes a local password-reset link; production requires SMTP. Delivery to a real inbox must be checked with the intended recipient.
+
+Password signup now sends an OTP through SMTP and returns HTTP 202 with `verificationRequired`, `registrationId`, `email`, `expiresAt` and `resendAfter`. Submit `{ registrationId, code }` to `POST /api/v1/auth/register/verify` to create the account and session; `POST /api/v1/auth/register/resend` sends a fresh code. OTPs expire after 10 minutes, allow five guesses, and can be resent after 60 seconds (five sends per email/hour; 20 sends and 100 verification requests per IP/hour). Unfinished drafts expire after 24 hours. OTPs/passwords are hashed on the server; neither is returned to the browser or logged. There is no development OTP bypass. [Gmail OTP setup and verification](docs/email-otp-registration.md).
+
+Admin Settings persists service fees and the global acceptance of new orders in MongoDB. Provider credentials remain in environment files. Merchant/menu images are resized and stored as data URLs, but catalogue/admin responses return separate cacheable media URLs; routes and images load on demand. Production file storage, email/payment credentials and browser/device acceptance testing remain required before public release. MongoDB Compose uses host port 27018; `.env.example` matches that port.
+
+Checkout clients should send a stable `Idempotency-Key` header (8–100 letters, digits, underscores or hyphens), reuse it on retries, and supply `expectedTotal`. A successful retry returns the same order. Different content with the same key returns `IDEMPOTENCY_CONFLICT`; a concurrent request can return `CHECKOUT_IN_PROGRESS` or `STORE_BUSY` and should be retried with the same key. Older clients without a key remain compatible but do not receive retry protection. A recovery worker runs on startup and every 30 seconds: attempts older than two minutes with expired store leases are cancelled, Wallet debits/ledger entries are reconciled and refunded once, reserved stock and coupon quotas are restored, and queues are cancelled. Recovered failed attempts release their checkout key for a safe retry.
 
 ## Checks
 
@@ -67,6 +77,12 @@ cd backend
 npm.cmd test
 npm.cmd run check
 npm.cmd run test:integration
+npm.cmd run test:regression
+npm.cmd run test:otp
+npm.cmd run test:extensions
+npm.cmd run test:push
+# Check configured SMTP credentials without sending any email:
+npm.cmd run mail:check
 
 # Optional live MongoDB concurrency check (creates and removes its own fixture wallet)
 $env:RUN_DB_TESTS = 'true'
@@ -74,10 +90,23 @@ npm.cmd test
 Remove-Item Env:RUN_DB_TESTS
 
 cd ..\frontend
+npm.cmd test
 npm.cmd run lint
 npm.cmd run build
 ```
 
-Integration verification requires a running local backend/MongoDB and the seeded Admin account. It creates disposable Customer/Merchant fixtures and removes only its own records. `CHECK_ADMIN_EMAIL`, `CHECK_ADMIN_PASSWORD` and `API_BASE` may override the local test account/base URL.
+Workflow, regression and OTP integration checks require local MongoDB. They start their own local Backend/SMTP inbox, create uniquely named temporary databases, and remove them after checking. They never use the configured Gmail sender or the application's user database. Workflow checks seed their own Admin; `CHECK_ADMIN_EMAIL` and `CHECK_ADMIN_PASSWORD` can name that test fixture. `API_BASE` is no longer used for workflow checks.
+
+`test:regression` requires local MongoDB and starts its own backend processes in development and production mode against a uniquely named disposable database. It removes that database after the run. It verifies store approval, demo PromptPay/Wallet topup/refund, concurrent checkout, cancellation during a delayed payment, snapshots, images/options, queues, staff assignment, suspension, settings and Wallet-only mode without modifying the application's database.
 
 For a built frontend served by Express, run `npm.cmd run build` in `frontend`, then `npm.cmd start` in `backend`, and open `http://localhost:5000`.
+
+## October 19 follow-up and Pi deployment
+
+- Email changes use a separate authenticated OTP flow; direct unverified email updates are refused and prior sessions/reset tokens are revoked after verification.
+- Merchant Settings links to Inventory. Create ingredients there, then set quantities per serving in menu recipes. Checkout reserves stock atomically; cancellation/recovery restores once. Low stock is highlighted and public menus become unavailable when ingredients run out.
+- Menu cuisine is editable separately from menu category. A guarded backfill fills only unchanged demo menus with a missing cuisine.
+- Optional automatic daily opening hours use Asia/Bangkok, support overnight hours and preserve the manual pause switch. Existing stores keep manual mode until the merchant enables automation.
+- Merchant revenue/weekly bestsellers include only paid/simulated noncancelled checkouts. Favorites ignore deleted items and failed saves can be retried.
+- See [implementation and verification](docs/follow-up-fixes-2026-10-19.md) and [Pi deployment](docs/pi-deployment-2026-10-19.md). Payments remain demo-only.
+- See [production API acceptance and demo account locations](docs/live-acceptance-2026-10-19.md), [Web Push verification](docs/push-verification.md), and [daily/off-Pi encrypted backups and restore drill](docs/backups-2026-10-19.md). Private credentials are Git-ignored and excluded from deployment archives.

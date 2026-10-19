@@ -1,0 +1,12 @@
+# Separate from the existing cloudflared service and from other projects.
+services:
+  tunnel:
+    image: cloudflare/cloudflared:2026.8.3
+    restart: unless-stopped
+    user: "1000:1000"
+    network_mode: host
+    command: ["tunnel", "--no-autoupdate", "run", "--token-file", "/run/secrets/tunnel-token"]
+    volumes:
+      - /home/linapspi4/mealq-app/shared/mealq-tunnel.token:/run/secrets/tunnel-token:ro
+    mem_limit: 192m
+    cpus: 0.5

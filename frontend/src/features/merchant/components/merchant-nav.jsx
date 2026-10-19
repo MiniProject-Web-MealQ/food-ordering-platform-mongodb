@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { LogoMark } from "@/components/brand/logo";
 import { focusRing } from "@/components/ui/styles";
@@ -19,7 +19,7 @@ function navLabel(item, pending) {
  */
 export function MerchantSidebar() {
   const { pathname } = useLocation();
-  const { state } = useMerchant();
+  const { state, loggingOut } = useMerchant();
   const { logout } = useMerchantActions();
   const pending = pendingCount(state);
 
@@ -37,14 +37,14 @@ export function MerchantSidebar() {
         <span className="sr-only xl:hidden">MealQ สำหรับร้านค้า</span>
       </Link>
 
-      <StoreStatusPill isOpen={state.store.is_open} compact className="mx-auto mt-4 xl:hidden" />
+      <StoreStatusPill isOpen={state.store.effective_open ?? state.store.is_open} compact className="mx-auto mt-4 xl:hidden" />
       <div className="mx-4 mt-6 hidden items-center gap-3 rounded-2xl bg-cream p-4 xl:flex">
         {state.store.logo && (
-          <img src={state.store.logo} alt="" className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white" />
+          <img loading="lazy" decoding="async" src={state.store.logo} alt="" className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white" />
         )}
         <div className="min-w-0">
           <p className="truncate font-semibold text-ink">{state.store.name}</p>
-          <StoreStatusPill isOpen={state.store.is_open} className="mt-2" />
+          <StoreStatusPill isOpen={state.store.effective_open ?? state.store.is_open} className="mt-2" />
         </div>
       </div>
 
@@ -76,16 +76,18 @@ export function MerchantSidebar() {
       </nav>
 
       <div className="border-t border-haze p-3 xl:p-4">
+        {state.session.accountRole === "merchant" && <Link to="/merchant/settings#merchant-notifications" className={cx("mb-2 flex items-center justify-center gap-2 rounded-2xl px-2 py-3 text-sm text-ink-soft hover:bg-cream xl:justify-start xl:px-4", focusRing)} aria-label="แจ้งเตือนร้าน"><Bell aria-hidden="true" className="size-5" /><span className="hidden xl:block">แจ้งเตือนร้าน</span></Link>}
         <button
           type="button"
           onClick={logout}
+          disabled={loggingOut}
           className={cx(
             "flex w-full flex-col items-center gap-1 rounded-2xl px-2 py-3 text-xs font-semibold text-ink-soft transition-colors hover:bg-cream hover:text-ink xl:flex-row xl:gap-3 xl:px-4 xl:text-sm",
             focusRing,
           )}
         >
           <LogOut aria-hidden="true" className="size-6 xl:size-5" />
-          ออกจากระบบ
+          {loggingOut ? "กำลังออก…" : "ออกจากระบบ"}
         </button>
       </div>
     </aside>
@@ -103,7 +105,8 @@ export function MerchantTopBar() {
           <LogoMark className="size-8 text-sm" />
         </Link>
         <p className="min-w-0 flex-1 truncate font-semibold text-ink">{state.store.name}</p>
-        <StoreStatusPill isOpen={state.store.is_open} />
+        {state.session.accountRole === "merchant" && <Link to="/merchant/settings#merchant-notifications" aria-label="แจ้งเตือนร้าน" className={cx("rounded-full p-2 text-ink", focusRing)}><Bell aria-hidden="true" className="size-5" /></Link>}
+        <StoreStatusPill isOpen={state.store.effective_open ?? state.store.is_open} />
       </div>
     </header>
   );

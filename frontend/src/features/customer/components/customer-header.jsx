@@ -15,7 +15,7 @@ const iconButton = `relative grid size-11 shrink-0 place-items-center rounded-fu
 export function CustomerHeader() {
   const { pathname } = useLocation();
   const { state } = useCustomer();
-  const cart = priceCart(state.cart);
+  const cart = priceCart(state.cart, state.coupons);
   const hasUnread = state.notifications.some((n) => !n.read);
   const profile = NAV_ITEMS.at(-1);
   const mainItems = NAV_ITEMS.slice(0, -1);

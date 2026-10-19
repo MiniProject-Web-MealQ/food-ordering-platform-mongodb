@@ -11,6 +11,8 @@ import { ROLE_HOME } from "../types";
 import { validateRegistration } from "../validation";
 import { PasswordStrength } from "./password-strength";
 import { RoleCards } from "./role-picker";
+import { RegistrationOtpForm } from "./registration-otp-form";
+import { loadRegistrationChallenge, saveRegistrationChallenge } from "../registration-challenge";
 
 export function RegisterForm({ defaultRole }) {
   const navigate = useNavigate();
@@ -23,6 +25,12 @@ export function RegisterForm({ defaultRole }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
+  const [challenge, setChallenge] = useState(loadRegistrationChallenge);
+
+  function updateChallenge(value) {
+    saveRegistrationChallenge(value);
+    setChallenge(value);
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -41,8 +49,11 @@ export function RegisterForm({ defaultRole }) {
       setError(result.error);
       return;
     }
-    navigate(ROLE_HOME[result.data.role]);
+    setPassword("");
+    updateChallenge(result.data);
   }
+
+  if (challenge) return <RegistrationOtpForm challenge={challenge} onChallenge={updateChallenge} onBack={() => updateChallenge(null)} onVerified={(verifiedRole) => { updateChallenge(null); navigate(ROLE_HOME[verifiedRole], { replace: true }); }} />;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
@@ -127,7 +138,7 @@ export function RegisterForm({ defaultRole }) {
       </div>
 
       <Button type="submit" fullWidth disabled={pending} aria-busy={pending}>
-        {pending ? "กำลังสร้างบัญชี…" : "สร้างบัญชี"}
+        {pending ? "กำลังส่ง OTP…" : "สมัครและรับ OTP ทางอีเมล"}
       </Button>
 
       <p className="text-center text-sm text-ink-soft">

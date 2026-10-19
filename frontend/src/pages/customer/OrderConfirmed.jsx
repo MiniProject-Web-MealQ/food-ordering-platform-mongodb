@@ -42,7 +42,7 @@ function OrderConfirmed() {
             <p className="text-xs font-semibold tracking-[0.3em] text-cocoa">คิวของคุณ</p>
             <p className="font-display text-7xl leading-tight font-black lg:text-8xl">#{order.queueNumber}</p>
             <p className="text-ink-soft">
-              กำลังทำคิว #{order.nowServing} · {ahead > 0 ? `เหลืออีก ${ahead} คิว` : "ถึงคิวคุณแล้ว"}
+              {order.nowServing ? `กำลังทำคิว #${order.nowServing}` : "รอร้านเริ่มทำอาหาร"} · {ahead > 0 ? `มี ${ahead} คิวก่อนคุณ` : "ไม่มีคิวก่อนคุณ"}
             </p>
             <dl className="mt-5 grid grid-cols-2 border-t border-haze pt-4">
               <div>
@@ -62,7 +62,7 @@ function OrderConfirmed() {
             <h2 id="pickup-title" className="mb-4 text-center text-lg font-bold">
               แสดงรหัสนี้ตอนรับอาหาร
             </h2>
-            <PickupCode code={order.pickupCode} />
+            <PickupCode code={order.pickupCode} orderNumber={order.id} />
             <p className="mt-2 text-center text-sm text-ink-soft">ให้ร้านสแกน QR หรือบอกรหัส 4 หลัก</p>
           </section>
         </div>

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 /*
   AppRoutes.jsx
   --------------------------------------------------
@@ -41,11 +42,11 @@ import {
 // ==================================================
 
 // Layout หลักของฝั่งลูกค้า
-import CustomerLayout from "../layouts/CustomerLayout";
+const CustomerLayout = lazy(() => import("../layouts/CustomerLayout"));
 
 // Layout หลักของฝั่งร้านค้า
 // จะมี Sidebar ของ Merchant
-import MerchantLayout from "../layouts/MerchantLayout";
+const MerchantLayout = lazy(() => import("../layouts/MerchantLayout"));
 
 
 // ==================================================
@@ -54,73 +55,79 @@ import MerchantLayout from "../layouts/MerchantLayout";
 
 // หน้าแรก (Landing) และหน้า Auth ที่ออกแบบแล้ว
 // มี Header/Footer ของตัวเอง จึงไม่อยู่ใน CustomerLayout
-import HomePage from "../pages/home";
-import AuthLayout from "../pages/auth/auth-layout";
-import LoginPage from "../pages/auth/login";
-import RegisterPage from "../pages/auth/register";
-import ForgotPasswordPage from "../pages/auth/forgot-password";
-import ResetPasswordPage from "../pages/auth/reset-password";
-import NotFoundPage from "../pages/not-found";
-import InformationPage from "../pages/information";
+const HomePage = lazy(() => import("../pages/home"));
+const AuthLayout = lazy(() => import("../pages/auth/auth-layout"));
+const LoginPage = lazy(() => import("../pages/auth/login"));
+const RegisterPage = lazy(() => import("../pages/auth/register"));
+const ForgotPasswordPage = lazy(() => import("../pages/auth/forgot-password"));
+const ResetPasswordPage = lazy(() => import("../pages/auth/reset-password"));
+const CopyOtpPage = lazy(() => import("../pages/auth/copy-otp"));
+const DemoPage = lazy(() => import("../pages/demo"));
+const NotFoundPage = lazy(() => import("../pages/not-found"));
+const InformationPage = lazy(() => import("../pages/information"));
 
 // Layout ย่อยของลูกค้าที่มีแถบเมนูด้านล่าง
-import CustomerTabLayout from "../layouts/CustomerTabLayout";
+const CustomerTabLayout = lazy(() => import("../layouts/CustomerTabLayout"));
 
-import Home from "../pages/customer/Home";
-import Restaurants from "../pages/customer/Restaurants";
-import Search from "../pages/customer/Search";
-import RestaurantDetail from "../pages/customer/RestaurantDetail";
-import FoodDetail from "../pages/customer/FoodDetail";
-import Cart from "../pages/customer/Cart";
-import Checkout from "../pages/customer/Checkout";
-import Payment from "../pages/customer/Payment";
-import OrderConfirmed from "../pages/customer/OrderConfirmed";
-import Orders from "../pages/customer/Orders";
-import OrderDetail from "../pages/customer/OrderDetail";
-import Review from "../pages/customer/Review";
-import RandomFood from "../pages/customer/RandomFood";
-import Favorites from "../pages/customer/Favorites";
-import Notifications from "../pages/customer/Notifications";
-import Profile from "../pages/customer/Profile";
+const Home = lazy(() => import("../pages/customer/Home"));
+const Restaurants = lazy(() => import("../pages/customer/Restaurants"));
+const Search = lazy(() => import("../pages/customer/Search"));
+const RestaurantDetail = lazy(() => import("../pages/customer/RestaurantDetail"));
+const FoodDetail = lazy(() => import("../pages/customer/FoodDetail"));
+const Cart = lazy(() => import("../pages/customer/Cart"));
+const Checkout = lazy(() => import("../pages/customer/Checkout"));
+const Payment = lazy(() => import("../pages/customer/Payment"));
+const OrderConfirmed = lazy(() => import("../pages/customer/OrderConfirmed"));
+const Orders = lazy(() => import("../pages/customer/Orders"));
+const OrderDetail = lazy(() => import("../pages/customer/OrderDetail"));
+const Review = lazy(() => import("../pages/customer/Review"));
+const RandomFood = lazy(() => import("../pages/customer/RandomFood"));
+const Favorites = lazy(() => import("../pages/customer/Favorites"));
+const Notifications = lazy(() => import("../pages/customer/Notifications"));
+const Profile = lazy(() => import("../pages/customer/Profile"));
+const Wallet = lazy(() => import("../pages/customer/Wallet"));
+const Coupons = lazy(() => import("../pages/customer/Coupons"));
 
 
 // ==================================================
 // Merchant Pages
 // ==================================================
 
-import MerchantLogin from "../pages/merchant/MerchantLogin";
-import Dashboard from "../pages/merchant/Dashboard";
-import MerchantOrders from "../pages/merchant/Orders";
-import MerchantOrderDetail from "../pages/merchant/OrderDetail";
-import Menu from "../pages/merchant/Menu";
-import AddMenu from "../pages/merchant/AddMenu";
-import EditMenu from "../pages/merchant/EditMenu";
-import Settings from "../pages/merchant/Settings";
+const MerchantLogin = lazy(() => import("../pages/merchant/MerchantLogin"));
+const Dashboard = lazy(() => import("../pages/merchant/Dashboard"));
+const MerchantOrders = lazy(() => import("../pages/merchant/Orders"));
+const MerchantOrderDetail = lazy(() => import("../pages/merchant/OrderDetail"));
+const Menu = lazy(() => import("../pages/merchant/Menu"));
+const AddMenu = lazy(() => import("../pages/merchant/AddMenu"));
+const EditMenu = lazy(() => import("../pages/merchant/EditMenu"));
+const Inventory = lazy(() => import("../pages/merchant/Inventory"));
+const Settings = lazy(() => import("../pages/merchant/Settings"));
 
 
 // ==================================================
 // Admin Pages (ผู้ดูแลระบบ)
 // ==================================================
 
-import AdminLayout from "../layouts/AdminLayout";
-import AdminLogin from "../pages/admin/AdminLogin";
-import AdminDashboard from "../pages/admin/Dashboard";
-import AdminStores from "../pages/admin/Stores";
-import AdminStoreDetail from "../pages/admin/StoreDetail";
-import AdminUsers from "../pages/admin/Users";
-import AdminUserDetail from "../pages/admin/UserDetail";
-import AdminOrders from "../pages/admin/Orders";
-import AdminOrderDetail from "../pages/admin/OrderDetail";
-import AdminPromotions from "../pages/admin/Promotions";
-import AdminWallets from "../pages/admin/Wallets";
-import AdminReports from "../pages/admin/Reports";
-import AdminSettings from "../pages/admin/Settings";
-import AdminActivity from "../pages/admin/Activity";
-import AdminAccount from "../pages/admin/Account";
+const AdminLayout = lazy(() => import("../layouts/AdminLayout"));
+const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
+const AdminDashboard = lazy(() => import("../pages/admin/Dashboard"));
+const AdminStores = lazy(() => import("../pages/admin/Stores"));
+const AdminStoreDetail = lazy(() => import("../pages/admin/StoreDetail"));
+const AdminUsers = lazy(() => import("../pages/admin/Users"));
+const AdminUserDetail = lazy(() => import("../pages/admin/UserDetail"));
+const AdminOrders = lazy(() => import("../pages/admin/Orders"));
+const AdminOrderDetail = lazy(() => import("../pages/admin/OrderDetail"));
+const AdminPromotions = lazy(() => import("../pages/admin/Promotions"));
+const AdminWallets = lazy(() => import("../pages/admin/Wallets"));
+const AdminReports = lazy(() => import("../pages/admin/Reports"));
+const AdminSettings = lazy(() => import("../pages/admin/Settings"));
+const AdminActivity = lazy(() => import("../pages/admin/Activity"));
+const AdminAccount = lazy(() => import("../pages/admin/Account"));
 
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<main role="status" className="p-8 text-center">กำลังโหลดหน้า…</main>}>
     <Routes>
 
       {/* หน้าแรก */}
@@ -132,6 +139,8 @@ function AppRoutes() {
       <Route path="/help" element={<InformationPage kind="help" />} />
       <Route path="/terms" element={<InformationPage kind="terms" />} />
       <Route path="/privacy" element={<InformationPage kind="privacy" />} />
+      <Route path="/copy-otp" element={<CopyOtpPage />} />
+      <Route path="/demo" element={<DemoPage />} />
 
 
       {/* ==================================================
@@ -185,6 +194,8 @@ function AppRoutes() {
           <Route path="random" element={<RandomFood />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="wallet" element={<Wallet />} />
+          <Route path="coupons" element={<Coupons />} />
         </Route>
 
         {/* หน้าที่มีปุ่มด้านล่างของตัวเอง (ไม่มีแถบเมนู) */}
@@ -306,6 +317,7 @@ function AppRoutes() {
         />
 
 
+        <Route path="inventory" element={<Inventory />} />
         {/* หน้าตั้งค่าร้าน */}
         <Route
           path="settings"
@@ -361,6 +373,7 @@ function AppRoutes() {
       />
 
     </Routes>
+    </Suspense>
   );
 }
 

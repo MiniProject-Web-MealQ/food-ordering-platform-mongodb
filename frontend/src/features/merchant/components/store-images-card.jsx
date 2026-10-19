@@ -123,14 +123,14 @@ export function StoreImagesCard() {
       {/* ตัวอย่างแบบหน้าร้านฝั่งลูกค้า: แบนเนอร์เต็มความกว้าง รูปโปรไฟล์วงกลมทับมุมล่างซ้าย */}
       <figure aria-label="ตัวอย่างหน้าร้านที่ลูกค้าเห็น" className="overflow-hidden rounded-3xl bg-cream ring-1 ring-haze">
         {banner ? (
-          <img src={banner} alt="แบนเนอร์ร้าน" className="aspect-video w-full object-cover" />
+          <img loading="lazy" decoding="async" src={banner} alt="แบนเนอร์ร้าน" className="aspect-video w-full object-cover" />
         ) : (
           <ImagePlaceholder label="ยังไม่มีแบนเนอร์" className="aspect-video w-full border-x-0 border-t-0" />
         )}
         <div className="flex items-end gap-3 px-4 pb-4">
           <div className="-mt-10 shrink-0">
             {logo ? (
-              <img src={logo} alt="รูปโปรไฟล์ร้าน" className="size-20 rounded-full object-cover ring-4 ring-white" />
+              <img loading="lazy" decoding="async" src={logo} alt="รูปโปรไฟล์ร้าน" className="size-20 rounded-full object-cover ring-4 ring-white" />
             ) : (
               <ImagePlaceholder compact label="โลโก้" className="size-20 rounded-full ring-4 ring-white" />
             )}

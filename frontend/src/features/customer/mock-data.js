@@ -27,13 +27,14 @@ export const CUISINES = [
 ];
 
 export const PAYMENT_METHODS = [
+  { id: "wallet", label: "MealQ Wallet", description: "ชำระจากยอดคงเหลือใน Wallet · โหมด Demo เติมยอดเองได้ ไม่มีการตัดเงินจริง", cta: "MealQ Wallet" },
   {
     id: "promptpay",
-    label: "PromptPay QR",
-    description: "สแกนจ่ายผ่านแอปธนาคาร · ไม่มีค่าธรรมเนียม",
-    cta: "PromptPay QR",
+    label: "PromptPay (Demo)",
+    description: "จำลองการชำระเงิน ไม่ต้องสแกนหรือโอนเงินจริง",
+    cta: "PromptPay (Demo)",
   },
-  { id: "card", label: "บัตรเครดิต / เดบิต", description: "•••• 4821 · Visa", cta: "บัตร •••• 4821" },
+  { id: "card", label: "บัตรเครดิต / เดบิต (ทดสอบ)", description: "จำลองการจ่ายผ่านบัตร ไม่มีการตัดเงินจริง", cta: "บัตร (ทดสอบ)" },
   {
     id: "banking",
     label: "Online banking",

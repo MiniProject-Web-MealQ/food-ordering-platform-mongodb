@@ -2,7 +2,7 @@ import { Logo } from "@/components/brand/logo";
 
 const BENEFITS = [
   "ดูคิวและเวลารอก่อนสั่ง",
-  "จ่ายจบในแอป ด้วย PromptPay หรือบัตร",
+  "ทดลองจ่ายด้วย PromptPay หรือ Wallet Demo",
   "แจ้งเตือนทันทีเมื่ออาหารพร้อม",
 ];
 

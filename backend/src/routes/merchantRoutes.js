@@ -5,6 +5,16 @@ const { asyncHandler } = require("../utils/http");
 
 const router = express.Router();
 router.use(requireAuth, requireRole("merchant", "staff", "admin"));
+const notifications = require("../services/notifications");
+router.get("/notifications", requireRole("merchant"), asyncHandler(notifications.list));
+router.patch("/notifications/:id/read", requireRole("merchant"), asyncHandler(notifications.read));
+router.get("/push/key", requireRole("merchant"), asyncHandler(notifications.publicKey));
+router.post("/push/subscribe", requireRole("merchant"), asyncHandler(notifications.subscribe));
+router.post("/push/unsubscribe", requireRole("merchant"), asyncHandler(notifications.unsubscribe));
+const inventory = require("../controllers/inventoryController");
+router.get("/inventory", asyncHandler(inventory.list));
+router.post("/inventory", asyncHandler(inventory.create));
+router.patch("/inventory/:id", asyncHandler(inventory.adjust));
 router.get("/dashboard", asyncHandler(controller.dashboard));
 router.get("/orders", asyncHandler(controller.listOrders));
 router.get("/orders/:id", asyncHandler(controller.getOrder));

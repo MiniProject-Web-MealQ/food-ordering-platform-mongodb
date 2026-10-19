@@ -1,6 +1,7 @@
 import { apiUrl, getJson, postJson, UNEXPECTED_RESPONSE } from "@/lib/api-client";
 import { isUserRole } from "./types";
 import { normalizePhone } from "./validation";
+import { isRegistrationChallenge } from "./registration-challenge";
 
 // The role always comes from the server response; the portal/role sent by the client is only a hint.
 function readAuthenticatedUser(result) {
@@ -26,7 +27,7 @@ export const getCapabilities = () => getJson("/auth/capabilities");
 
 export async function register(input) {
   const phone = normalizePhone(input.phone);
-  return readAuthenticatedUser(
+  return readRegistrationChallenge(
     await postJson("/auth/register", {
       role: input.role,
       name: input.name.trim(),
@@ -35,6 +36,19 @@ export async function register(input) {
       password: input.password,
     }),
   );
+}
+
+function readRegistrationChallenge(result) {
+  if (!result.ok) return result;
+  return isRegistrationChallenge(result.data) ? result : { ok: false, error: UNEXPECTED_RESPONSE };
+}
+
+export async function verifyRegistration(registrationId, code) {
+  return readAuthenticatedUser(await postJson("/auth/register/verify", { registrationId, code }));
+}
+
+export async function resendRegistrationOtp(registrationId) {
+  return readRegistrationChallenge(await postJson("/auth/register/resend", { registrationId }));
 }
 
 export async function requestPasswordReset(email) {

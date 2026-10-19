@@ -1,5 +1,6 @@
+import { Link, useLocation } from "react-router";
 import { LogOut } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { buttonClasses } from "@/components/ui/styles";
@@ -12,6 +13,10 @@ import { fieldClass, pageClass, panelClass } from "@/features/merchant/styles";
 import { useMerchantActions } from "@/features/merchant/use-merchant-actions";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
+import { StoreLocationCard } from "@/features/merchant/components/store-location-card";
+import { PushSettings } from "@/features/customer/components/push-settings";
+import { EmailOrderSettings } from "@/features/customer/components/email-order-settings";
+import { MerchantOrderNotifications } from "@/features/merchant/components/order-notifications";
 
 /** ลำดับช่องกรอก ใช้ย้าย focus ไปช่องแรกที่ผิดตอนกดบันทึก */
 const FIELD_IDS = {
@@ -31,6 +36,7 @@ function storeToValues(store) {
     description: store.description ?? "",
     pickup_point: store.address?.detail ?? "",
     max_queue: String(store.queue?.max_queue ?? 50),
+    automatic: Boolean(store.opening_hours.automatic),
     open_time: store.opening_hours.open_time,
     close_time: store.opening_hours.close_time,
   };
@@ -47,7 +53,7 @@ function validate(values) {
   if (!Number.isInteger(maxQueue) || maxQueue < 1 || maxQueue > 500) errors.max_queue = "จำนวนคิวสูงสุดต้องอยู่ระหว่าง 1–500";
   if (!values.open_time) errors.open_time = "เลือกเวลาเปิด";
   if (!values.close_time) errors.close_time = "เลือกเวลาปิด";
-  else if (values.open_time && values.close_time <= values.open_time) errors.close_time = "เวลาปิดต้องหลังเวลาเปิด";
+
   return errors;
 }
 
@@ -110,7 +116,7 @@ function StoreInfoForm() {
       description: values.description.trim(),
       address: { ...state.store.address, detail: values.pickup_point.trim() },
       queue: { max_queue: Number.parseInt(values.max_queue, 10) },
-      opening_hours: { open_time: values.open_time, close_time: values.close_time },
+      opening_hours: { automatic: values.automatic, open_time: values.open_time, close_time: values.close_time },
     });
     setSaving(false);
     setResult(saved);
@@ -181,6 +187,8 @@ function StoreInfoForm() {
         <h2 id="store-hours-title" className="text-lg font-bold text-ink">
           เวลาเปิด-ปิด
         </h2>
+        <label className="flex items-center gap-3"><input type="checkbox" checked={values.automatic} onChange={(event) => setValues((current) => ({ ...current, automatic: event.target.checked }))} />เปิด–ปิดอัตโนมัติตามเวลา (ประเทศไทย)</label>
+        <p className="text-sm text-ink-soft">สวิตช์เปิดรับออเดอร์ต้องเปิดไว้ เวลาเปิดเท่าปิดหมายถึง 24 ชั่วโมง เวลาปิดก่อนเปิดหมายถึงปิดวันถัดไป</p>
         <div className="grid gap-5 sm:grid-cols-2">
           <TimeField id={FIELD_IDS.open_time} label="เวลาเปิด" value={values.open_time} error={shown.open_time} onChange={set("open_time")} />
           <TimeField id={FIELD_IDS.close_time} label="เวลาปิด" value={values.close_time} error={shown.close_time} onChange={set("close_time")} />
@@ -202,20 +210,31 @@ function StoreInfoForm() {
 
 function Settings() {
   usePageTitle("ตั้งค่าร้าน");
-  const { state } = useMerchant();
+  const { state, loggingOut } = useMerchant();
   const { logout } = useMerchantActions();
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === "#merchant-notifications") document.getElementById("merchant-notifications")?.scrollIntoView({ block: "start" });
+  }, [hash]);
 
   return (
     <div className={pageClass}>
       <PageHeader title="ตั้งค่าร้าน" subtitle={state.store.name} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
         <div className="min-w-0 space-y-4">
+          <Link to="/merchant/inventory" className="block rounded-3xl bg-mint p-5 font-bold">จัดการสต็อกวัตถุดิบ →</Link>
           <StoreImagesCard />
           <StoreInfoForm />
+          <StoreLocationCard />
+          {state.session.accountRole === "merchant" && <MerchantOrderNotifications userId={state.session.id} />}
         </div>
 
         <div className="space-y-4 lg:sticky lg:top-6">
           <StoreOpenCard id="settings-store-open" />
+          {state.session.accountRole === "merchant" ? <>
+            <PushSettings userId={state.session.id} prefix="/merchant" />
+            <EmailOrderSettings userId={state.session.id} email={state.session.email} merchant />
+          </> : <p className="rounded-3xl bg-cream p-5 text-sm text-ink-soft">แจ้งเตือนออเดอร์บนอุปกรณ์และอีเมลตั้งค่าได้จากบัญชีเจ้าของร้าน</p>}
 
           <section aria-labelledby="account-title" className={cx(panelClass, "space-y-3")}>
             <h2 id="account-title" className="text-lg font-bold text-ink">
@@ -224,9 +243,9 @@ function Settings() {
             <p className="text-sm text-ink-soft">
               เข้าสู่ระบบเป็น <span className="font-semibold break-all text-ink">{state.session.email}</span>
             </p>
-            <button type="button" onClick={logout} className={buttonClasses({ variant: "cocoa-outline", size: "md", fullWidth: true })}>
+            <button type="button" onClick={logout} disabled={loggingOut} className={buttonClasses({ variant: "cocoa-outline", size: "md", fullWidth: true })}>
               <LogOut aria-hidden="true" className="size-4" />
-              ออกจากระบบ
+              {loggingOut ? "กำลังออกจากระบบ…" : "ออกจากระบบ"}
             </button>
           </section>
         </div>

@@ -99,7 +99,7 @@ export async function loadEverything() {
 
   return {
     type: "load/succeeded",
-    session: { name: me.data.user.name, email: me.data.user.email },
+    session: { id: me.data.user.id, accountRole: me.data.user.accountRole, name: me.data.user.name, email: me.data.user.email },
     store: storeFromApi(store.data.store),
     menus: menus.data.menus.map(menuFromApi),
     ...ordersFromApi(orders.data.orders),
@@ -111,4 +111,10 @@ export async function loadOrders() {
   const result = await getOrders();
   if (!result.ok) return isSessionLost(result) ? sessionLost : null;
   return { type: "orders/loaded", ...ordersFromApi(result.data.orders) };
+}
+
+export async function loadStore() {
+  const result = await getStore();
+  if (!result.ok) return isSessionLost(result) ? sessionLost : null;
+  return { type: "store/saved", store: storeFromApi(result.data.store) };
 }

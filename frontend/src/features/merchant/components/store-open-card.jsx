@@ -12,6 +12,7 @@ export function StoreOpenCard({ id = "store-open" }) {
   const [error, setError] = useState("");
   const { store } = state;
   const hours = store.opening_hours;
+  const canOpen = store.status === "active";
 
   async function toggle(isOpen) {
     setSaving(true);
@@ -31,13 +32,17 @@ export function StoreOpenCard({ id = "store-open" }) {
         tone="dark"
         label="เปิดรับออเดอร์"
         checked={store.is_open}
+        disabled={saving || !canOpen}
         onChange={(isOpen) => {
-          if (!saving) toggle(isOpen);
+          if (!saving && canOpen) toggle(isOpen);
         }}
       />
       <p role="status" className="mt-1 text-sm text-white/75">
-        {saving
+        {!canOpen
+          ? store.status === "pending" ? "รอแอดมินอนุมัติร้านก่อนเปิดรับออเดอร์" : "ร้านยังเปิดรับออเดอร์ไม่ได้ กรุณาตรวจสอบสถานะร้าน"
+          : saving
           ? "กำลังบันทึก…"
+          : store.is_open && store.opening_hours.automatic && !store.effective_open ? "พักรับออเดอร์ตามเวลา ร้านจะเปิดอัตโนมัติเมื่อถึงเวลาเปิด"
           : store.is_open
             ? "ร้านเปิดอยู่ ลูกค้าเห็นร้านและสั่งอาหารได้"
             : "ร้านปิดอยู่ ลูกค้าสั่งใหม่ไม่ได้ ออเดอร์ที่ค้างอยู่ยังทำต่อได้ตามปกติ"}

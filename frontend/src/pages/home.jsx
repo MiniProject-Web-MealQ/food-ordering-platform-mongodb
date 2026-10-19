@@ -7,18 +7,20 @@ import { RandomFoodCta } from "@/features/landing/components/random-food-cta";
 import { SiteFooter } from "@/features/landing/components/site-footer";
 import { SiteHeader } from "@/features/landing/components/site-header";
 import { usePageTitle } from "@/lib/use-page-title";
+import { usePublicCatalogue } from "@/features/landing/use-public-catalogue";
 
 export default function HomePage() {
   usePageTitle();
+  const catalogue = usePublicCatalogue();
 
   return (
     <div className="flex flex-1 flex-col bg-white">
       <SiteHeader />
       <main className="flex-1">
-        <Hero />
+        <Hero catalogueState={catalogue} />
         <QueuePortal />
         <HowItWorks />
-        <PopularRestaurants />
+        <PopularRestaurants catalogueState={catalogue} />
         <RandomFoodCta />
         <Faq />
       </main>

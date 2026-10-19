@@ -136,7 +136,7 @@ function RestaurantDetail() {
   if (!restaurant) return <NotFoundPage />;
 
   const favorite = state.favorites.restaurants.includes(restaurant.id);
-  const cart = state.cart.restaurantId === restaurant.id ? priceCart(state.cart) : null;
+  const cart = state.cart.restaurantId === restaurant.id ? priceCart(state.cart, state.coupons) : null;
   const openLabel = restaurant.isOpen
     ? `เปิดอยู่ · ปิด ${restaurant.hours.close}`
     : `ปิดอยู่ · เปิด ${restaurant.hours.open}`;

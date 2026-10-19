@@ -22,7 +22,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 
 /** การกระทำแต่ละแบบ: ข้อความใน pop-up และสถานะที่จะเปลี่ยนไป */
 const DIALOGS = {
-  approve: { title: "อนุมัติร้าน", confirm: "อนุมัติ", status: "active", danger: false, requireReason: false, description: "ลูกค้าจะเห็นร้านนี้ในแอปและเริ่มสั่งอาหารได้" },
+  approve: { title: "อนุมัติร้าน", confirm: "อนุมัติ", status: "active", danger: false, requireReason: false, description: "ร้านจะปรากฏในแอป และเจ้าของร้านเปิดรับออเดอร์เองได้เมื่อพร้อม" },
   reject: { title: "ไม่อนุมัติร้าน", confirm: "ไม่อนุมัติ", status: "rejected", description: "ร้านจะไม่แสดงในแอป เจ้าของร้านจะเห็นเหตุผลที่ระบุ" },
   suspend: { title: "ระงับร้าน", confirm: "ระงับร้าน", status: "suspended", description: "ร้านจะถูกปิดและซ่อนจากลูกค้าทันที ออเดอร์ที่ค้างอยู่ยังต้องดูแลต่อ" },
   activate: { title: "ยกเลิกระงับร้าน", confirm: "ยกเลิกระงับ", status: "active", danger: false, requireReason: false, description: "ร้านกลับมาใช้งานได้ (ยังปิดอยู่จนกว่าร้านจะกดเปิดเอง)" },

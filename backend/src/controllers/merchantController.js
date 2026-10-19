@@ -7,9 +7,11 @@ const { menuView, storeView } = require("./publicController");
 const { orderView } = require("./orderController");
 const { sendError } = require("../utils/http");
 const { cancelOrder } = require("../services/order-lifecycle");
+const { menuChanges, imageValue } = require("../services/menu-validation");
+const { accountStore } = require("../services/merchant-store");
 
 async function getMerchantStore(user) {
-  return Store.findOne({ owner_id: user._id });
+  return accountStore(user);
 }
 
 async function requireMerchantStore(req, res) {
@@ -36,7 +38,8 @@ async function orderPayload(order) {
   return { queue, payload: orderView(order, queue) };
 }
 
-function emitOrderStatus(req, store, order) {
+async function emitOrderStatus(req, store, order) {
+  await require("../services/notifications").recordOrder(order).catch((error) => console.error("Notification failed", error.name));
   const customerId = order.customer_id?._id || order.customer_id;
   const event = {
     orderId: String(order._id),
@@ -63,7 +66,7 @@ async function dashboard(req, res) {
     Order.countDocuments({ store_id: store._id, status: "completed", createdAt: { $gte: startOfDay } }),
     Menu.countDocuments({ store_id: store._id }),
     Order.find({ store_id: store._id }).sort({ createdAt: -1 }).limit(5).populate("customer_id", "name email"),
-    Order.find({ store_id: store._id, createdAt: { $gte: startOfDay }, status: { $ne: "cancelled" } }).select("total_price"),
+    Order.find({ store_id: store._id, createdAt: { $gte: startOfDay }, status: { $ne: "cancelled" }, payment_status: { $in: ["paid", "simulated"] }, checkout_completed: { $ne: false } }).select("total_price"),
   ]);
 
   return res.json({
@@ -131,6 +134,7 @@ async function updateOrderStatus(req, res) {
 
   let order = await findMerchantOrder(req.params.id, store._id);
   if (!order) return sendError(res, 404, "ORDER_NOT_FOUND", "ไม่พบออเดอร์ของร้านนี้");
+  if (order.checkout_completed === false) return sendError(res, 409, "CHECKOUT_IN_PROGRESS", "กำลังยืนยันการชำระเงิน กรุณารอให้ออเดอร์เสร็จสมบูรณ์");
 
   if (order.status === status) {
     const { payload } = await orderPayload(order);
@@ -151,7 +155,7 @@ async function updateOrderStatus(req, res) {
     if (!cancelled) return sendError(res, 409, "ORDER_CHANGED", "สถานะออเดอร์เปลี่ยนแล้ว กรุณาโหลดใหม่");
     order = await findMerchantOrder(req.params.id, store._id);
   } else {
-    const updated = await Order.findOneAndUpdate({ _id: order._id, store_id: store._id, status: order.status }, { $set: { status } }, { returnDocument: "after" }).populate("customer_id", "name email");
+    const updated = await Order.findOneAndUpdate({ _id: order._id, store_id: store._id, status: order.status }, { $set: { status, notification_pending: true }, $push: { notification_events: { status, at: new Date(), payment_status: order.payment_status } } }, { returnDocument: "after" }).populate("customer_id", "name email");
     if (!updated) return sendError(res, 409, "ORDER_CHANGED", "สถานะออเดอร์เปลี่ยนแล้ว กรุณาโหลดใหม่");
     order = updated;
   }
@@ -164,7 +168,7 @@ async function updateOrderStatus(req, res) {
   }
 
   const payload = orderView(order, queue);
-  emitOrderStatus(req, store, order);
+  await emitOrderStatus(req, store, order);
   return res.json({ order: payload });
 }
 
@@ -194,7 +198,7 @@ async function receiveOrder(req, res) {
   }
 
   const now = new Date();
-  const completed = await Order.findOneAndUpdate({ _id: order._id, store_id: store._id, status: "ready" }, { $set: { status: "completed", receive_time: now } }, { returnDocument: "after" }).populate("customer_id", "name email");
+  const completed = await Order.findOneAndUpdate({ _id: order._id, store_id: store._id, status: "ready" }, { $set: { status: "completed", receive_time: now, notification_pending: true }, $push: { notification_events: { status: "completed", at: now, payment_status: order.payment_status } } }, { returnDocument: "after" }).populate("customer_id", "name email");
   if (!completed) {
     order = await findMerchantOrder(req.params.id, store._id);
     if (order?.status === "completed") return res.json({ order: orderView(order, await Queue.findOne({ order_id: order._id })) });
@@ -218,7 +222,7 @@ async function receiveOrder(req, res) {
     );
   }
 
-  emitOrderStatus(req, store, order);
+  await emitOrderStatus(req, store, order);
   return res.json({ order: orderView(order, queue) });
 }
 
@@ -232,28 +236,12 @@ async function listMenu(req, res) {
 async function createMenu(req, res) {
   const store = await requireMerchantStore(req, res);
   if (!store) return;
-  const {
-    name,
-    description = "",
-    category = "single",
-    price,
-    image = null,
-    cookTime = 0,
-    isAvailable = true,
-  } = req.body || {};
-  if (!name?.trim() || Number.isNaN(Number(price)) || Number(price) < 0) {
-    return sendError(res, 400, "VALIDATION_ERROR", "กรุณากรอกชื่อเมนูและราคาให้ถูกต้อง");
-  }
-  const menu = await Menu.create({
-    store_id: store._id,
-    name: name.trim(),
-    description: String(description || "").trim(),
-    category: String(category || "single").trim(),
-    price: Number(price),
-    image,
-    cook_time: Math.max(0, Number(cookTime) || 0),
-    is_available: Boolean(isAvailable),
-  });
+  let fields;
+  try { fields = menuChanges(req.body, true); }
+  catch (error) { return sendError(res, error.status || 400, error.code || "VALIDATION_ERROR", error.message); }
+  if (fields.image?.startsWith("/api/v1/media/")) return sendError(res, 400, "INVALID_IMAGE", "กรุณาอัปโหลดรูปเมนูใหม่");
+  await require("../services/inventory").validateRecipe(fields, store._id);
+  const menu = await Menu.create({ store_id: store._id, ...fields });
   return res.status(201).json({ menu: menuView(menu) });
 }
 
@@ -271,29 +259,14 @@ async function updateMenu(req, res) {
   if (!store) return;
   if (!mongoose.isValidObjectId(req.params.id)) return sendError(res, 404, "MENU_NOT_FOUND", "ไม่พบเมนูนี้");
 
-  const allowed = {};
-  const map = {
-    name: "name",
-    description: "description",
-    category: "category",
-    price: "price",
-    image: "image",
-    cookTime: "cook_time",
-    isAvailable: "is_available",
-  };
-  for (const [inputKey, dbKey] of Object.entries(map)) {
-    if (req.body?.[inputKey] !== undefined) allowed[dbKey] = req.body[inputKey];
-  }
-  if (allowed.name !== undefined) allowed.name = String(allowed.name).trim();
-  if (allowed.description !== undefined) allowed.description = String(allowed.description).trim();
-  if (allowed.category !== undefined) allowed.category = String(allowed.category).trim();
-  if (allowed.price !== undefined) allowed.price = Number(allowed.price);
-  if (allowed.cook_time !== undefined) allowed.cook_time = Math.max(0, Number(allowed.cook_time) || 0);
-  if (allowed.is_available !== undefined) allowed.is_available = Boolean(allowed.is_available);
-  if (allowed.name === "" || (allowed.price !== undefined && (!Number.isFinite(allowed.price) || allowed.price < 0))) {
-    return sendError(res, 400, "VALIDATION_ERROR", "กรุณากรอกชื่อเมนูและราคาให้ถูกต้อง");
-  }
+  let allowed;
+  try { allowed = menuChanges(req.body); }
+  catch (error) { return sendError(res, error.status || 400, error.code || "VALIDATION_ERROR", error.message); }
+  if (!Object.keys(allowed).length) return sendError(res, 400, "VALIDATION_ERROR", "ไม่มีข้อมูลเมนูที่ต้องการแก้ไข");
 
+  if (allowed.image?.startsWith(`/api/v1/media/menu/${req.params.id}/image?`)) delete allowed.image;
+  if (allowed.image?.startsWith("/api/v1/media/")) return sendError(res, 400, "INVALID_IMAGE", "กรุณาอัปโหลดรูปเมนูใหม่");
+  await require("../services/inventory").validateRecipe(allowed, store._id);
   const menu = await Menu.findOneAndUpdate({ _id: req.params.id, store_id: store._id }, allowed, {
     returnDocument: "after",
     runValidators: true,
@@ -321,6 +294,16 @@ async function updateStore(req, res) {
   const store = await requireMerchantStore(req, res);
   if (!store) return;
   const { name, description, phone, isOpen, openingHours, address, maxQueue } = req.body || {};
+  if (req.body?.coordinates !== undefined) {
+    const value = req.body.coordinates;
+    if (value !== null && (!Number.isFinite(value?.latitude) || Math.abs(value.latitude) > 90 || !Number.isFinite(value?.longitude) || Math.abs(value.longitude) > 180)) return sendError(res, 400, "VALIDATION_ERROR", "พิกัดร้านไม่ถูกต้อง");
+    store.coordinates = value;
+  }
+  try {
+    for (const [input, field] of [["logo", "logo"], ["coverImage", "cover_image"]]) {
+      if (req.body?.[input] !== undefined && !String(req.body[input]).startsWith(`/api/v1/media/store/${store._id}/${field}?`)) store[field] = imageValue(req.body[input], 450000);
+    }
+  } catch (error) { return sendError(res, 400, "VALIDATION_ERROR", error.message); }
 
   if (name !== undefined) {
     const value = String(name).trim();
@@ -329,9 +312,17 @@ async function updateStore(req, res) {
   }
   if (description !== undefined) store.description = String(description).trim();
   if (phone !== undefined) store.phone = String(phone).trim();
-  if (isOpen !== undefined) store.is_open = Boolean(isOpen);
+  if (isOpen !== undefined) {
+    if (typeof isOpen !== "boolean") return sendError(res, 400, "VALIDATION_ERROR", "สถานะเปิดร้านไม่ถูกต้อง");
+    if (isOpen && store.status !== "active") return sendError(res, 409, "STORE_INACTIVE", "ร้านยังไม่ได้รับอนุมัติหรือถูกระงับ");
+    store.is_open = isOpen;
+  }
 
   if (openingHours) {
+    const { validTime } = require("../services/store-hours");
+    if ((openingHours.open !== undefined && !validTime(openingHours.open)) || (openingHours.close !== undefined && !validTime(openingHours.close)) || (openingHours.automatic !== undefined && typeof openingHours.automatic !== "boolean")) return sendError(res, 400, "INVALID_HOURS", "เวลาเปิดปิดไม่ถูกต้อง");
+    if (openingHours.automatic !== undefined) store.opening_hours.automatic = openingHours.automatic;
+    if (openingHours.automatic && (!validTime(openingHours.open ?? store.opening_hours.open_time) || !validTime(openingHours.close ?? store.opening_hours.close_time))) return sendError(res, 400, "INVALID_HOURS", "กรุณากำหนดเวลาเปิดและปิดก่อนเปิดอัตโนมัติ");
     if (openingHours.open !== undefined) store.opening_hours.open_time = String(openingHours.open);
     if (openingHours.close !== undefined) store.opening_hours.close_time = String(openingHours.close);
   }
@@ -344,7 +335,7 @@ async function updateStore(req, res) {
   }
 
   if (maxQueue !== undefined) {
-    const value = Number.parseInt(maxQueue, 10);
+    const value = maxQueue;
     if (!Number.isInteger(value) || value < 1 || value > 500) {
       return sendError(res, 400, "VALIDATION_ERROR", "จำนวนคิวสูงสุดต้องอยู่ระหว่าง 1-500");
     }

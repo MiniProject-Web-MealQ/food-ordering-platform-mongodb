@@ -81,7 +81,7 @@ export function QueuePortal() {
         style={PORTAL_THEME}
         background={
           <div className="absolute inset-0" style={{ transform: "scale(var(--gp-field-scale,1))" }}>
-            <img
+            <img loading="lazy" decoding="async"
               src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=2000&q=80"
               alt=""
               className="absolute inset-0 size-full object-cover"

@@ -69,6 +69,7 @@ async function run() {
         close_time: restaurant.hours?.close || "",
       },
       is_open: restaurant.isOpen !== false,
+      status: "active",
       ...(restaurant.id === "pa-daeng" ? { owner_id: merchant._id } : {}),
     };
 
@@ -92,6 +93,7 @@ async function run() {
           name: item.name,
           description: item.description || "",
           category: item.category || "single",
+          cuisine: item.cuisine || "thai",
           price: Number(item.price || 0),
           option_groups: item.optionGroups || [],
           sold_quantity: Number(item.weeklyOrders || 0),

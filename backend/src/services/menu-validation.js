@@ -7,6 +7,12 @@ function text(value, label, { empty = true, max = 1000 } = {}) {
   return value.trim();
 }
 
+function imageValue(value, max = 1000000) {
+  if (value === null || value === "") return null;
+  if (typeof value !== "string" || value.length > max || !(/^(https?:\/\/[^\s]+|\/api\/v1\/media\/(menu|store)\/[a-f0-9]{24}\/(image|logo|cover_image)\?v=[a-f0-9]{16}|data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=\r\n]+)$/i.test(value))) fail("รูปภาพไม่ถูกต้องหรือมีขนาดใหญ่เกินกำหนด");
+  return value;
+}
+
 function validateOptionGroups(input) {
   if (!Array.isArray(input) || input.length > 30) fail("กลุ่มตัวเลือกต้องเป็นรายการไม่เกิน 30 กลุ่ม");
   const ids = new Set();
@@ -38,6 +44,19 @@ function menuChanges(input, create = false) {
     if (input[field] !== undefined) result[field] = text(input[field], field, { empty: field === "description", max });
   }
   if (create && !result.name) fail("กรุณากรอกชื่อเมนู");
+  if (input.cuisine !== undefined) {
+    if (!["thai", "japanese", "korean", "fastfood", "drink", "dessert"].includes(input.cuisine)) fail("ประเภทอาหารไม่ถูกต้อง");
+    result.cuisine = input.cuisine;
+  }
+  if (input.ingredients !== undefined) {
+    if (!Array.isArray(input.ingredients) || input.ingredients.length > 100) fail("สูตรวัตถุดิบไม่ถูกต้อง");
+    const ids = new Set();
+    result.ingredients = input.ingredients.map((row) => {
+      if (!/^[a-f0-9]{24}$/i.test(row?.ingredientId || "") || ids.has(row.ingredientId) || !Number.isFinite(row.quantity) || row.quantity <= 0 || row.quantity > 1000000) fail("ปริมาณวัตถุดิบต้องมากกว่า 0 และห้ามซ้ำ");
+      ids.add(row.ingredientId);
+      return { ingredient_id: row.ingredientId, quantity: row.quantity, unit: text(row.unit, "หน่วย", { empty: false, max: 40 }) };
+    });
+  }
   if (input.price !== undefined) {
     if (typeof input.price !== "number" || !Number.isFinite(input.price) || input.price < 0 || input.price > 100000) fail("ราคาเมนูไม่ถูกต้อง");
     result.price = input.price;
@@ -51,8 +70,7 @@ function menuChanges(input, create = false) {
     result.is_available = input.isAvailable;
   }
   if (input.image !== undefined) {
-    if (input.image !== null && (typeof input.image !== "string" || input.image.length > 1_000_000)) fail("รูปภาพเมนูไม่ถูกต้อง");
-    result.image = input.image;
+    result.image = imageValue(input.image);
   }
   if (input.optionGroups !== undefined) result.option_groups = validateOptionGroups(input.optionGroups);
   if (create) {
@@ -64,4 +82,4 @@ function menuChanges(input, create = false) {
   return result;
 }
 
-module.exports = { menuChanges, validateOptionGroups };
+module.exports = { menuChanges, validateOptionGroups, imageValue };

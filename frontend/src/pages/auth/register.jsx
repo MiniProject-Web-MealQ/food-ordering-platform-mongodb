@@ -11,7 +11,7 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <AuthHeader
         title="สมัครสมาชิก"
-        description="ใช้เวลาไม่ถึงหนึ่งนาที"
+        description="สมัครด้วยอีเมลและยืนยันรหัส OTP ก่อนเข้าใช้งาน"
         back={{ href: "/", label: "กลับ" }}
       />
       <RegisterForm

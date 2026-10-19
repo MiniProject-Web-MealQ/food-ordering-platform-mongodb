@@ -8,6 +8,7 @@ const WalletTransaction = require("../models/WalletTransaction");
 const { userView } = require("../services/user-view");
 const { ensureWallet, changeBalance } = require("../services/wallet");
 const { sendError } = require("../utils/http");
+const { demoPaymentsEnabled } = require("../services/payment-config");
 
 async function ensureProfile(userId) {
   try {
@@ -34,7 +35,7 @@ async function updateProfile(req, res) {
   }
   if (email !== undefined) {
     if (typeof email !== "string" || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return sendError(res, 400, "INVALID_EMAIL", "รูปแบบอีเมลไม่ถูกต้อง");
-    changes.email = email.trim().toLowerCase();
+    if (email.trim().toLowerCase() !== req.user.email) return sendError(res, 409, "EMAIL_VERIFICATION_REQUIRED", "กรุณายืนยันอีเมลใหม่ด้วย OTP ก่อนเปลี่ยน");
   }
   if (phone !== undefined) {
     const normalized = phone === null ? null : typeof phone === "string" ? phone.replace(/[\s-]/g, "") : undefined;
@@ -52,7 +53,7 @@ async function updateProfile(req, res) {
 
 async function getFavorites(req, res) {
   const profile = await ensureProfile(req.user._id);
-  return res.json({ favorites: profile.favorites });
+  return res.json({ favorites: { restaurants: await normalizeIds(Store, profile.favorites.restaurants), menus: await normalizeIds(Menu, profile.favorites.menus) } });
 }
 
 async function normalizeIds(model, input) {
@@ -61,8 +62,7 @@ async function normalizeIds(model, input) {
   const objectIds = ids.filter((id) => mongoose.isValidObjectId(id));
   const records = await model.find({ $or: [{ client_id: { $in: ids } }, ...(objectIds.length ? [{ _id: { $in: objectIds } }] : [])] }).select("client_id");
   const byId = new Map(records.flatMap((record) => [[String(record._id), record.client_id || String(record._id)], ...(record.client_id ? [[record.client_id, record.client_id]] : [])]));
-  if (ids.some((id) => !byId.has(id))) return null;
-  return [...new Set(ids.map((id) => byId.get(id)))];
+  return [...new Set(ids.filter((id) => byId.has(id)).map((id) => byId.get(id)))];
 }
 
 async function updateFavorites(req, res) {
@@ -98,11 +98,11 @@ function transactionView(tx) {
 
 async function getWallet(req, res) {
   const [wallet, transactions] = await Promise.all([ensureWallet(req.user._id), WalletTransaction.find({ user_id: req.user._id }).sort({ createdAt: -1 }).limit(100)]);
-  return res.json({ wallet: { balance: wallet.balance }, transactions: transactions.map(transactionView), sandboxTopup: process.env.NODE_ENV !== "production" });
+  return res.json({ wallet: { balance: wallet.balance }, transactions: transactions.map(transactionView), sandboxTopup: demoPaymentsEnabled() });
 }
 
 async function topupWallet(req, res) {
-  if (process.env.NODE_ENV === "production") return sendError(res, 501, "PAYMENT_NOT_CONFIGURED", "ยังไม่ได้เชื่อมต่อผู้ให้บริการเติมเงินจริง");
+  if (!demoPaymentsEnabled()) return sendError(res, 501, "PAYMENT_NOT_CONFIGURED", "ยังไม่ได้เชื่อมต่อผู้ให้บริการเติมเงินจริง");
   const amount = req.body?.amount;
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 1 || amount > 10000 || Math.abs(Math.round(amount * 100) - amount * 100) > 1e-7) return sendError(res, 400, "INVALID_AMOUNT", "เติมเงินทดสอบได้ตั้งแต่ 1-10,000 บาท");
   const requestKey = req.headers["idempotency-key"] || crypto.randomUUID();

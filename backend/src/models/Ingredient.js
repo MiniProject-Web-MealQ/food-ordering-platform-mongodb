@@ -8,6 +8,7 @@ const ingredientSchema = new mongoose.Schema(
       required: true
     },
 
+    reservations: { type: mongoose.Schema.Types.Mixed, default: {}, select: false },
     name: {
       type: String,
       required: true

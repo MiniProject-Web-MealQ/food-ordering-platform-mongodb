@@ -184,7 +184,7 @@ export function toOptionGroupFields(groups) {
 
 /**
  * backend เก็บตัวเลือกที่ส่งไปจริงไหม (เทียบ id ของกลุ่มและจำนวนตัวเลือกกับเมนูที่ API ตอบกลับ)
- * TODO(api): ตอนนี้ POST/PATCH /merchant/menu ยังไม่บันทึก optionGroups (ดู README หัวข้อ 4.2)
+ * ใช้ตรวจว่าข้อมูลที่ตอบกลับตรงกับตัวเลือกที่ส่งไป
  */
 export function optionGroupsStored(sentGroups, savedMenu) {
   const saved = savedMenu?.optionGroups ?? [];
@@ -195,14 +195,15 @@ export function optionGroupsStored(sentGroups, savedMenu) {
 }
 
 /** แปลงตัวเลือกที่ลูกค้าเลือกในออเดอร์ ({ groupId: [optionId] }) เป็นชื่อสำหรับครัว */
-export function selectionLabels(selections, menu) {
+export function selectionLabels(selections, menu, snapshot) {
+  if (Array.isArray(snapshot)) return snapshot.map((option) => ({ key: `${option.groupId}:${option.optionId}`, text: option.label, extra: option.price > 0 }));
   if (!selections || typeof selections !== "object") return [];
   const labels = [];
   for (const [groupId, optionIds] of Object.entries(selections)) {
     const group = menu?.option_groups?.find((g) => g.id === groupId);
     for (const optionId of [].concat(optionIds ?? [])) {
       const option = group?.options.find((o) => o.id === optionId);
-      // TODO(api): ออเดอร์เก็บแค่ id ถ้าร้านลบตัวเลือกไปแล้วจะเหลือแค่ id ขอ backend เก็บชื่อไว้ในออเดอร์ด้วย
+      // Legacy orders without a snapshot fall back to the current menu or raw id.
       const name = option?.label ?? optionId;
       labels.push({ key: `${groupId}:${optionId}`, text: group?.multiple ? `+${name}` : name, extra: (option?.price ?? 0) > 0 });
     }

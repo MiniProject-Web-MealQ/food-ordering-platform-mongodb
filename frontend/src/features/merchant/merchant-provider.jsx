@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { connectSocket } from "@/lib/socket";
-import { initialState, loadEverything, loadOrders, MerchantContext, reducer } from "./store";
+import { initialState, loadEverything, loadOrders, loadStore, MerchantContext, reducer } from "./store";
+import { postJson } from "@/lib/api-client";
+import { reconcileExistingPush } from "@/features/customer/push-subscription";
 
 /** ดึงออเดอร์ซ้ำทุกช่วงเวลานี้ แม้ socket จะเงียบ เผื่อ socket หลุด */
 const POLL_MS = 30000;
@@ -8,11 +10,17 @@ const POLL_MS = 30000;
 export function MerchantProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [loadCount, setLoadCount] = useState(0);
+  const [notificationError, setNotificationError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const signedIn = state.status === "ready";
 
   useEffect(() => {
     let active = true;
-    loadEverything().then((action) => {
+    loadEverything().then(async (action) => {
+      if (active && action.type === "load/succeeded" && action.session.accountRole === "merchant") {
+        try { await reconcileExistingPush({ postJson, prefix: "/merchant" }); if (active) setNotificationError(""); }
+        catch (error) { if (active) setNotificationError(error.message || "เชื่อมต่อแจ้งเตือนร้านไม่สำเร็จ"); }
+      }
       if (active) dispatch(action);
     });
     return () => {
@@ -32,8 +40,8 @@ export function MerchantProvider({ children }) {
     let socket;
 
     const refresh = () =>
-      loadOrders().then((action) => {
-        if (active && action) dispatch(action);
+      Promise.all([loadOrders(), loadStore()]).then((actions) => {
+        if (active) actions.filter(Boolean).forEach(dispatch);
       });
 
     connectSocket()
@@ -67,5 +75,13 @@ export function MerchantProvider({ children }) {
     };
   }, [signedIn]);
 
-  return <MerchantContext value={{ state, dispatch, reload }}>{children}</MerchantContext>;
+  async function retryNotifications() {
+    if (state.session?.accountRole !== "merchant") return;
+    try { await reconcileExistingPush({ postJson, prefix: "/merchant" }); setNotificationError(""); }
+    catch (error) { setNotificationError(error.message || "เชื่อมต่อแจ้งเตือนร้านไม่สำเร็จ"); }
+  }
+  return <MerchantContext value={{ state, dispatch, reload, notificationError, setNotificationError, loggingOut, setLoggingOut }}>
+    {notificationError && signedIn && <div role="alert" className="bg-alert/10 px-4 py-2 text-center text-sm text-danger">{notificationError} <button type="button" className="underline" onClick={retryNotifications}>ลองเชื่อมต่อแจ้งเตือนอีกครั้ง</button></div>}
+    {children}
+  </MerchantContext>;
 }

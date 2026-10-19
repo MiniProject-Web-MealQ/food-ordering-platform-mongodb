@@ -5,6 +5,17 @@ const { asyncHandler } = require("../utils/http");
 
 const router = express.Router();
 router.use(requireAuth, requireRole("customer"));
+const coupons = require("../services/customer-coupons");
+router.get("/coupons", asyncHandler(coupons.list));
+router.post("/coupons/:promotionId/collect", asyncHandler(coupons.collect));
+router.post("/email-change", asyncHandler(require("../services/email-change").start));
+router.post("/email-change/verify", asyncHandler(require("../services/email-change").verify));
+const notifications = require("../services/notifications");
+router.get("/notifications", asyncHandler(notifications.list));
+router.patch("/notifications/:id/read", asyncHandler(notifications.read));
+router.get("/push/key", asyncHandler(notifications.publicKey));
+router.post("/push/subscribe", asyncHandler(notifications.subscribe));
+router.post("/push/unsubscribe", asyncHandler(notifications.unsubscribe));
 router.get("/profile", asyncHandler(controller.getProfile));
 router.patch("/profile", asyncHandler(controller.updateProfile));
 router.get("/favorites", asyncHandler(controller.getFavorites));

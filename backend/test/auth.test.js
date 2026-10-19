@@ -9,6 +9,8 @@ test("public registration cannot create an administrator or accept malformed fie
   assert.equal(normalizeRole({ role: "admin" }), null);
   assert.equal(validEmail({ $ne: null }), false);
   assert.equal(validEmail("wrong-email"), false);
+  assert.equal(validEmail("extra,recipient@example.com"), false);
+  assert.equal(validEmail("test@example.com\r\nBcc:other@example.com"), false);
   assert.equal(validEmail("merchant@mealq.local"), true);
   for (const password of [null, "12345678", "abcdefgh", "Aa1", "Aa1".repeat(50)]) assert.equal(validPassword(password), false);
   assert.equal(validPassword("Customer123!"), true);

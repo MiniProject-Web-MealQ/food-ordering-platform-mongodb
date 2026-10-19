@@ -6,6 +6,13 @@
   "scripts": {
     "test": "node --test",
     "test:integration": "node scripts/check-workflow.js",
+    "test:regression": "node scripts/check-regressions.js",
+    "test:extensions": "node scripts/check-extensions.js",
+    "test:otp": "node scripts/check-registration-otp.js",
+    "test:push": "node scripts/check-push.js",
+    "test:order-notifications": "node scripts/check-order-notifications.js",
+    "test:coupons": "node scripts/check-customer-coupons.js",
+    "mail:check": "node scripts/check-smtp.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed": "node src/scripts/seed.js",
@@ -21,7 +28,8 @@
     "express": "^5.2.1",
     "mongoose": "^9.10.1",
     "nodemailer": "^10.0.13",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

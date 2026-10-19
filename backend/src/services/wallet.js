@@ -33,7 +33,7 @@ async function changeBalance({ userId, amount, type, orderId = null, description
   }
   await ensureWallet(userId);
   const query = { user_id: userId, ledger_keys: { $ne: key } };
-  if (amount < 0) query.balance = { $gte: -amount };
+  if (amount < 0) { query.balance = { $gte: -amount }; query.blocked_keys = { $ne: key }; }
   const before = await Wallet.findOneAndUpdate(query, [{ $set: {
     balance: { $add: ["$balance", amount] },
     ledger_keys: { $concatArrays: [{ $ifNull: ["$ledger_keys", []] }, [key]] },

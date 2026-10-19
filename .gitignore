@@ -11,6 +11,9 @@ dist/
 build/
 coverage/
 
+# Local image originals and operation drafts; web assets live in frontend/public.
+output/
+
 # Logs
 *.log
 npm-debug.log*

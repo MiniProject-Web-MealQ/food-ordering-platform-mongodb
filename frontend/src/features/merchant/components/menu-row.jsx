@@ -15,7 +15,7 @@ export function MenuRow({ menu, busy = false, onToggle }) {
       className={cx("grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-3xl bg-white p-3 ring-1 ring-haze", !menu.is_available && "bg-cream")}
     >
       {menu.image ? (
-        <img src={menu.image} alt="" className={cx("size-16 rounded-2xl object-cover sm:row-span-2 sm:size-20", !menu.is_available && "opacity-50")} />
+        <img loading="lazy" decoding="async" src={menu.image} alt="" className={cx("size-16 rounded-2xl object-cover sm:row-span-2 sm:size-20", !menu.is_available && "opacity-50")} />
       ) : (
         <ImagePlaceholder compact label={menu.name} className={cx("size-16 rounded-2xl sm:row-span-2 sm:size-20", !menu.is_available && "opacity-50")} />
       )}

@@ -9,6 +9,8 @@ const orderItemSchema = new mongoose.Schema(
     quantity: { type: Number, required: true, min: 1 },
     total_price: { type: Number, required: true, min: 0 },
     selections: { type: mongoose.Schema.Types.Mixed, default: {} },
+    selected_options: { type: [mongoose.Schema.Types.Mixed], default: undefined },
+    cook_time: { type: Number, default: 5 },
     note: { type: String, default: "" },
   },
   { _id: false },
@@ -27,8 +29,29 @@ const orderPromotionSchema = new mongoose.Schema(
 const orderSchema = new mongoose.Schema(
   {
     order_number: { type: String, required: true, unique: true, index: true },
+    checkout_key: { type: String, unique: true, sparse: true },
+    checkout_fingerprint: String,
+    stock_requirements: { type: [mongoose.Schema.Types.Mixed], default: [] },
+    compensation_completed: { type: Boolean, default: false },
+    // Legacy orders are complete; createOrder explicitly marks new attempts false.
+    checkout_completed: { type: Boolean, default: true },
+    // Persist events with the state change so an outbox can be rebuilt after a
+    // crash. Valid order transitions visit each status at most once.
+    notification_events: { type: [{
+      _id: false,
+      status: { type: String, enum: ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"], required: true },
+      at: { type: Date, required: true },
+      payment_status: String,
+      cancelled_by: String,
+    }], default: undefined },
+    notification_pending: { type: Boolean, default: false },
     customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     store_id: { type: mongoose.Schema.Types.ObjectId, ref: "Store", required: true },
+    store_snapshot: {
+      id: String,
+      name: String,
+      clientId: String,
+    },
     items: { type: [orderItemSchema], required: true },
     subtotal: { type: Number, required: true, min: 0 },
     service_fee: { type: Number, default: 0, min: 0 },
@@ -60,5 +83,6 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ customer_id: 1, createdAt: -1 });
 orderSchema.index({ store_id: 1, createdAt: -1 });
+orderSchema.index({ notification_pending: 1, updatedAt: 1, _id: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

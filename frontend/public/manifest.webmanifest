@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "MealQ — สั่งก่อน ไม่ต้องต่อคิว",
+  "short_name": "MealQ",
+  "description": "สั่งอาหาร ติดตามคิว และรับแจ้งเตือนออเดอร์สำหรับลูกค้าและร้านค้า",
+  "lang": "th",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff6e5",
+  "theme_color": "#ffa259",
+  "icons": [
+    { "src": "/icons/mealq-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/mealq-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

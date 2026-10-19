@@ -61,6 +61,7 @@ async function callback(req, res) {
     if (!user) user = await User.create({ name: profile.name || profile.email.split("@")[0], email: profile.email.toLowerCase(), google_id: profile.sub, role: state.portal, password_hash: await hashPassword(crypto.randomBytes(32).toString("hex")) });
     else if (!user.google_id) { user.google_id = profile.sub; await user.save(); }
     else if (user.google_id !== profile.sub) return failure("google-failed");
+    if (!user.email_verified_at) { user.email_verified_at = new Date(); await user.save(); }
     await ensureMerchantStore(user);
     setSessionCookie(res, user._id, true, user.session_version);
     return res.redirect(`${state.origin}${state.portal === "merchant" ? "/merchant/dashboard" : "/customer"}`);

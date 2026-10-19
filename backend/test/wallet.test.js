@@ -89,12 +89,14 @@ test("cancellation uses a conditional transition and records its actor", async (
   const order = { _id: "order1", status: "cancelled", payment_method: "promptpay", payment_status: "simulated" };
   let filter;
   let change;
-  t.mock.method(Order, "findOneAndUpdate", async (query, update) => { filter = query; change = update.$set; return order; });
+  t.mock.method(Order, "findOneAndUpdate", async (query, update) => { filter = query; change = update[0].$set; return order; });
   t.mock.method(Queue, "updateOne", async () => ({}));
   const result = await cancelOrder({ _id: "order1", customer_id: "user" }, { by: "customer", reason: "Changed mind" });
   assert.equal(result.status, "cancelled");
   assert.deepEqual(filter.status.$in, ["pending", "confirmed"]);
   assert.equal(filter.customer_id, "user");
   assert.equal(change.cancelled_by, "customer");
-  assert.equal(change.cancelled_reason, "Changed mind");
+  assert.deepEqual(change.cancelled_reason, { $literal: "Changed mind" });
+  assert.ok(change.cancelled_at instanceof Date);
+  assert.equal(change.notification_events.$concatArrays[1][0].payment_status, "$payment_status");
 });

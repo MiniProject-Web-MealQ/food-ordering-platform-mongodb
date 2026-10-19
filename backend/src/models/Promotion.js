@@ -60,6 +60,7 @@ const promotionSchema = new mongoose.Schema(
       default: null
     },
 
+    checkout_claims: { type: mongoose.Schema.Types.Mixed, default: {}, select: false },
     used_count: {
       type: Number,
       default: 0

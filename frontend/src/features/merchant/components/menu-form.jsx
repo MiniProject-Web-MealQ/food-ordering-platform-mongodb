@@ -1,3 +1,4 @@
+import { RecipeEditor } from "./recipe-editor";
 import { ImagePlus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
@@ -105,6 +106,7 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
           )}
           {saveError && <Alert tone="error" title="บันทึกไม่สำเร็จ">{saveError}</Alert>}
 
+          <label className="block space-y-2 text-sm font-semibold">ประเภทอาหาร<select aria-label="ประเภทอาหาร" value={values.cuisine || "thai"} onChange={(event) => set("cuisine", event.target.value)} className={fieldClass}>{[["thai", "อาหารไทย"], ["japanese", "อาหารญี่ปุ่น"], ["korean", "อาหารเกาหลี"], ["fastfood", "ฟาสต์ฟู้ด"], ["drink", "เครื่องดื่ม"], ["dessert", "ของหวาน"]].map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
           <TextField label="ชื่อเมนู" placeholder="เช่น ข้าวกะเพราหมูกรอบ" required {...fieldProps("name")} />
 
           <div className="space-y-2">
@@ -194,6 +196,8 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
           </div>
         </div>
 
+        {submitted && errors.ingredients && <p role="alert" className="text-danger">{errors.ingredients}</p>}
+        <RecipeEditor rows={values.ingredients || []} onChange={(rows) => set("ingredients", rows)} />
         <OptionGroupsEditor
           groups={values.option_groups}
           onChange={(groups) => set("option_groups", groups)}
@@ -210,7 +214,7 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
             รูปเมนู <span className="font-normal text-ink-soft">(ไม่บังคับ)</span>
           </h2>
           {values.image ? (
-            <img src={values.image} alt="รูปเมนูที่เลือก" className="aspect-[4/3] w-full rounded-2xl object-cover max-lg:max-w-64" />
+            <img loading="lazy" decoding="async" src={values.image} alt="รูปเมนูที่เลือก" className="aspect-[4/3] w-full rounded-2xl object-cover max-lg:max-w-64" />
           ) : (
             <ImagePlaceholder label="ยังไม่มีรูป" className="aspect-[4/3] w-full rounded-2xl max-lg:max-w-64" />
           )}

@@ -9,6 +9,7 @@ function userView(user) {
     email: user.email,
     phone: user.phone ?? null,
     role: frontendRole(user.role),
+    accountRole: user.role,
     status: user.status || "active",
     mustChangePassword: Boolean(user.must_change_password),
   };

@@ -11,12 +11,13 @@ export const MENU_LIMITS = {
 };
 
 export function emptyMenuValues() {
-  return { name: "", category: "", price: "", cook_time: "", description: "", image: null, is_available: true, option_groups: [] };
+  return { name: "", cuisine: "thai", ingredients: [], category: "", price: "", cook_time: "", description: "", image: null, is_available: true, option_groups: [] };
 }
 
 export function menuToValues(menu) {
   return {
     name: menu.name,
+    cuisine: menu.cuisine || "thai", ingredients: menu.ingredients || [],
     category: menu.category,
     price: String(menu.price),
     cook_time: String(menu.cook_time),
@@ -54,6 +55,7 @@ export function validateMenu(values, menus, editingId = null) {
   if (values.description.trim().length > MENU_LIMITS.descriptionMax)
     errors.description = `คำอธิบายยาวได้ไม่เกิน ${MENU_LIMITS.descriptionMax} ตัวอักษร`;
 
+  if ((values.ingredients || []).some((row) => !row.ingredient_id || !Number.isFinite(Number(row.quantity)) || Number(row.quantity) <= 0)) errors.ingredients = "เลือกวัตถุดิบและกรอกปริมาณต่อจานมากกว่า 0";
   // ตัวเลือกเสริม: key เป็น id ของช่องในฟอร์ม (og-…) ต่อท้าย field หลัก
   Object.assign(errors, validateOptionGroups(values.option_groups ?? []));
   return errors;
@@ -62,6 +64,7 @@ export function validateMenu(values, menus, editingId = null) {
 export function toMenuFields(values) {
   return {
     name: values.name.trim(),
+    cuisine: values.cuisine, ingredients: values.ingredients || [],
     category: values.category,
     price: Number(values.price),
     cook_time: Number(values.cook_time),

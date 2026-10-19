@@ -1,0 +1,3 @@
+const mongoose = require("mongoose");
+const schema = new mongoose.Schema({ user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true }, event_key: { type: String, unique: true }, kind: String, title: String, body: String, order_id: String, recipient_role: { type: String, enum: ["customer", "merchant"], default: "customer" }, url: { type: String, default: null }, read: { type: Boolean, default: false }, push_sent: { type: Boolean, default: false }, push_delivered_endpoints: { type: [String], default: [], select: false } }, { timestamps: true });
+module.exports = mongoose.model("Notification", schema);

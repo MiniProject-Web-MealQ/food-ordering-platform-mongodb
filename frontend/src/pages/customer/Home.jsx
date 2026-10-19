@@ -20,7 +20,7 @@ function Home() {
   usePageTitle("หน้าแรก");
   const { state } = useCustomer();
   const activeOrder = state.orders.find(isActiveOrder);
-  const cartCount = priceCart(state.cart).itemCount;
+  const cartCount = priceCart(state.cart, state.coupons).itemCount;
   const hasUnread = state.notifications.some((n) => !n.read);
   const bestsellers = getWeeklyBestsellers();
   const nearby = RESTAURANTS.toSorted((a, b) => a.distance - b.distance).slice(0, 6);

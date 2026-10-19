@@ -1,0 +1,152 @@
+const assert = require("node:assert/strict");
+const path = require("node:path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env"), quiet: true });
+const { startIsolatedServer } = require("./fixtures/isolated-server");
+const User = require("../src/models/User");
+const Store = require("../src/models/Store");
+const Menu = require("../src/models/Menu");
+const Order = require("../src/models/Order");
+const Queue = require("../src/models/Queue");
+const Ingredient = require("../src/models/Ingredient");
+const Promotion = require("../src/models/Promotion");
+const EmailChange = require("../src/models/EmailChange");
+const WalletTransaction = require("../src/models/WalletTransaction");
+const Notification = require("../src/models/Notification");
+const { changeBalance } = require("../src/services/wallet");
+const { recoverCheckouts } = require("../src/services/checkout-recovery");
+const { isStoreOpen } = require("../src/services/store-hours");
+let runtime; let passes = 0;
+const pass = (message) => { passes++; console.log(`[PASS] ${message}`); };
+function client() {
+  let cookie = "";
+  return async function request(method, route, body, expected = 200, key) {
+    const response = await fetch(runtime.base + route, { method, headers: { Cookie: cookie, "Content-Type": "application/json", ...(key ? { "Idempotency-Key": key } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    for (const value of response.headers.getSetCookie()) if (value.startsWith("mealq_session=")) cookie = value.split(";")[0];
+    const data = await response.json();
+    assert.equal(response.status, expected, `${method} ${route}: ${JSON.stringify(data)}`);
+    return data;
+  };
+}
+async function signup(request, email, role) {
+  const draft = await request("POST", "/auth/register", { name: "Extension Test", email, role, password: "Extension123!" }, 202);
+  return (await request("POST", "/auth/register/verify", { registrationId: draft.registrationId, code: runtime.mail.codeFor(email) }, 201)).user;
+}
+async function run() {
+  runtime = await startIsolatedServer("mealq_workflow_");
+  const customer = client(); const merchant = client(); const otherDevice = client();
+  const user = await signup(customer, "extensions@mealq.local", "customer");
+  await signup(merchant, "extensions-merchant@mealq.local", "merchant");
+  const store = await Store.findOneAndUpdate({ owner_id: (await User.findOne({ email: "extensions-merchant@mealq.local" }))._id }, { $set: { status: "active", is_open: true } }, { returnDocument: "after" });
+  await customer("POST", "/customer/wallet/topup", { amount: 1000 }, 201, "initial-topup");
+  const ingredient = (await merchant("POST", "/merchant/inventory", { name: "Egg", unit: "piece", quantity: 10, lowStockThreshold: 3 }, 201)).ingredient;
+  const menu = (await merchant("POST", "/merchant/menu", { name: "Japanese bowl", category: "single", cuisine: "japanese", price: 40, ingredients: [{ ingredientId: ingredient.id, quantity: 2, unit: "piece" }] }, 201)).menu;
+  assert.equal((await customer("GET", "/menus")).menus.find((item) => item.id === menu.id).cuisine, "japanese");
+  await merchant("POST", "/merchant/menu", { name: "Bad recipe", price: 1, ingredients: [{ ingredientId: ingredient.id, quantity: 1, unit: "kg" }] }, 400);
+  const foreign = await Ingredient.create({ store_id: new (require("mongoose").Types.ObjectId)(), name: "Other store", unit: "piece", quantity: 9 });
+  await merchant("PATCH", `/merchant/inventory/${foreign._id}`, { adjustment: 1 }, 400);
+  pass("Cuisine and recipe data round-trip through real APIs; inventory enforces store ownership and units");
+
+  const deleted = (await merchant("POST", "/merchant/menu", { name: "Deleted dish", price: 5 }, 201)).menu;
+  await customer("PUT", "/customer/favorites", { restaurants: [], menus: [deleted.id] });
+  await merchant("DELETE", `/merchant/menu/${deleted.id}`);
+  assert.deepEqual((await customer("PUT", "/customer/favorites", { restaurants: [String(store._id)], menus: [deleted.id, menu.id] })).favorites.menus, [menu.id]);
+  pass("Deleted favorites no longer prevent saving other favorites");
+
+  await otherDevice("POST", "/auth/login", { email: user.email, password: "Extension123!", portal: "customer" });
+  await customer("PATCH", "/customer/profile", { email: "unverified@mealq.local" }, 409);
+  const challenge = await customer("POST", "/customer/email-change", { email: "changed@mealq.local" }, 202);
+  const code = runtime.mail.codeFor("changed@mealq.local");
+  assert.equal((await customer("GET", "/auth/me")).user.email, user.email);
+  await customer("POST", "/customer/email-change", { email: "changed@mealq.local" }, 429);
+  await customer("POST", "/customer/email-change/verify", { ticket: challenge.ticket, code: String((Number(code) + 1) % 1000000).padStart(6, "0") }, 400);
+  const verified = await customer("POST", "/customer/email-change/verify", { ticket: challenge.ticket, code });
+  assert.equal(verified.user.email, "changed@mealq.local");
+  assert.ok((await User.findById(user.id)).email_verified_at);
+  await otherDevice("GET", "/auth/me", undefined, 401);
+  await customer("POST", "/customer/email-change/verify", { ticket: challenge.ticket, code }, 410);
+  await customer("POST", "/customer/email-change", { email: "expired@mealq.local" }, 202);
+  await EmailChange.updateOne({ _id: user.id }, { $set: { expires_at: new Date(0) } });
+  const expired = await EmailChange.findById(user.id);
+  await customer("POST", "/customer/email-change/verify", { ticket: expired.ticket, code: runtime.mail.codeFor(expired.email) }, 410);
+  pass("Changing email requires a single-use OTP, enforces cooldown/expiry and revokes prior sessions");
+
+  const scheduled = { is_open: true, status: "active", opening_hours: { automatic: true, open_time: "22:00", close_time: "02:00" } };
+  assert.equal(isStoreOpen(scheduled, new Date("2026-10-19T16:00:00Z")), true);
+  assert.equal(isStoreOpen(scheduled, new Date("2026-10-19T19:00:00Z")), false);
+  assert.equal(isStoreOpen(scheduled, new Date("2026-10-19T18:59:00Z")), true);
+  const minute = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
+  await merchant("PATCH", "/merchant/store", { openingHours: { automatic: true, open: "00:00", close: minute === "00:00" ? "00:01" : "00:00" } });
+  const now = new Date(); const m = (now.getUTCHours() * 60 + now.getUTCMinutes() + 420) % 1440;
+  const time = (offset) => { const n = (m + offset) % 1440; return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`; };
+  await merchant("PATCH", "/merchant/store", { openingHours: { automatic: true, open: time(60), close: time(120) } });
+  assert.equal((await customer("GET", `/restaurants/${store._id}`)).restaurant.isOpen, false);
+  const body = { items: [{ menuId: menu.id, quantity: 2 }], paymentMethod: "wallet" };
+  await customer("POST", "/orders", body, 409, "outside-hours");
+  await merchant("PATCH", "/merchant/store", { openingHours: { automatic: false } });
+  pass("Bangkok schedules support overnight hours and block checkout outside the displayed hours");
+
+  const order = (await customer("POST", "/orders", body, 201, "stock-checkout")).order;
+  assert.equal((await Ingredient.findById(ingredient.id)).quantity, 6);
+  await customer("POST", "/orders", body, 201, "stock-checkout");
+  assert.equal((await Ingredient.findById(ingredient.id)).quantity, 6);
+  await customer("PATCH", `/orders/${order.id}/cancel`, {});
+  await customer("PATCH", `/orders/${order.id}/cancel`, {});
+  assert.equal((await Ingredient.findById(ingredient.id)).quantity, 10);
+  assert.equal((await customer("GET", "/customer/wallet")).wallet.balance, 1000);
+  await merchant("PATCH", `/merchant/inventory/${ingredient.id}`, { adjustment: -9 });
+  assert.equal((await customer("GET", "/menus")).menus.find((item) => item.id === menu.id).isAvailable, false);
+  await customer("POST", "/orders", body, 409, "out-of-stock");
+  assert.equal((await Ingredient.findById(ingredient.id)).quantity, 1);
+  assert.equal((await customer("GET", "/customer/wallet")).wallet.balance, 1000);
+  assert.equal((await merchant("GET", "/merchant/inventory")).ingredients[0].lowStock, true);
+  await merchant("PATCH", `/merchant/inventory/${ingredient.id}`, { adjustment: 9 });
+  pass("Checkout reserves stock once, refunds and restores once, and sold-out menus cannot charge Wallet");
+
+  const promotion = await Promotion.create({ code: "RECOVERY", title: "Recovery", discount_type: "fixed", discount_value: 1, start_date: new Date(0), expire_date: new Date(Date.now() + 86400000) });
+  const stuck = await Order.create({ order_number: "RECOVERY-1", customer_id: user.id, store_id: store._id, items: [{ menu_id: menu.id, name: "Japanese bowl", quantity: 1, price: 40, total_price: 40 }], subtotal: 40, total_price: 43, payment_method: "wallet", checkout_completed: false, checkout_key: "interrupted", promotion: { promotion_id: promotion._id }, stock_requirements: [{ ingredient_id: ingredient.id, quantity: 2, unit: "piece" }] });
+  await Order.collection.updateOne({ _id: stuck._id }, { $set: { createdAt: new Date(Date.now() - 600000) } });
+  await Promotion.updateOne({ _id: promotion._id }, { $set: { [`checkout_claims.${stuck._id}`]: true, used_count: 1, [`usage_by_customer.${user.id}`]: 1 } });
+  await require("../src/services/inventory").reserve(stuck);
+  await changeBalance({ userId: user.id, amount: -43, type: "payment", orderId: stuck._id, key: `order:${stuck._id}:payment` });
+  await WalletTransaction.deleteOne({ idempotency_key: `order:${stuck._id}:payment` });
+  await Queue.create({ order_id: stuck._id, store_id: store._id, queue_number: 100, receive_code: "1234" });
+  await recoverCheckouts(); await recoverCheckouts();
+  const repaired = await Order.findById(stuck._id);
+  assert.equal(repaired.status, "cancelled"); assert.equal(repaired.payment_status, "refunded"); assert.equal(repaired.checkout_completed, true);
+  assert.equal((await customer("GET", "/customer/wallet")).wallet.balance, 1000);
+  assert.equal((await Ingredient.findById(ingredient.id)).quantity, 10);
+  assert.equal((await Promotion.findById(promotion._id)).used_count, 0);
+  assert.equal((await Queue.findOne({ order_id: stuck._id })).status, "cancelled");
+  assert.equal(await WalletTransaction.countDocuments({ order_id: stuck._id, type: "refund" }), 1);
+  await assert.rejects(() => require("../src/services/inventory").reserve(stuck));
+  pass("Recovery repairs a lost Wallet ledger, refunds once, restores stock/quota and cancels an interrupted queue");
+
+  const current = (await customer("POST", "/orders", { ...body, paymentMethod: "promptpay" }, 201, "weekly-sale")).order;
+  await merchant("PATCH", `/merchant/orders/${current.id}/status`, { status: "confirmed" });
+  await merchant("PATCH", `/merchant/orders/${current.id}/status`, { status: "preparing" });
+  await merchant("PATCH", `/merchant/orders/${current.id}/status`, { status: "ready" });
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const notices = (await customer("GET", "/customer/notifications")).notifications;
+  const ready = notices.find((notice) => notice.kind === "ready"); assert.ok(ready);
+  await customer("PATCH", `/customer/notifications/${ready.id}/read`, {});
+  await otherDevice("POST", "/auth/login", { email: "changed@mealq.local", password: "Extension123!", portal: "customer" });
+  assert.equal((await otherDevice("GET", "/customer/notifications")).notifications.find((notice) => notice.id === ready.id).read, true);
+  assert.equal((await customer("GET", "/customer/push/key")).publicKey, (await otherDevice("GET", "/customer/push/key")).publicKey);
+  await customer("POST", "/customer/push/subscribe", { endpoint: "https://127.0.0.1/secrets", keys: { auth: "abc", p256dh: "abc" } }, 400);
+  const menuMetrics = (await customer("GET", "/menus")).menus.find((item) => item.id === menu.id);
+  assert.equal(menuMetrics.weeklyOrders, 2);
+  await Order.create({ order_number: "UNPAID-1", customer_id: user.id, store_id: store._id, items: [], subtotal: 500, total_price: 500, payment_status: "pending" });
+  assert.equal((await merchant("GET", "/merchant/dashboard")).summary.revenue, current.totalPrice);
+  assert.ok(await Notification.countDocuments({ user_id: user.id }));
+  pass("Paid weekly sales exclude cancelled/unpaid orders; notifications and read receipts persist across devices");
+
+  const image = "data:image/png;base64,aGVsbG8=";
+  const photo = (await merchant("PATCH", `/merchant/menu/${menu.id}`, { image })).menu.image;
+  assert.match(photo, /^\/api\/v1\/media\/menu\//);
+  const download = await fetch(new URL(photo, runtime.base)); assert.equal(download.status, 200); assert.equal(await download.text(), "hello");
+  await merchant("PATCH", `/merchant/menu/${menu.id}`, { image: photo, description: "Keep image" });
+  assert.equal((await Menu.findById(menu.id)).image, image);
+  pass("Catalogue returns cacheable image URLs; image bytes and unchanged-image edits remain intact");
+  console.log(`${passes} extension groups passed using isolated MongoDB and local SMTP.`);
+}
+run().catch((error) => { console.error(error); process.exitCode = 1; }).finally(async () => { if (runtime) await runtime.close(); });

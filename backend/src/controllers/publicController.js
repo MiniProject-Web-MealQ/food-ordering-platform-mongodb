@@ -2,11 +2,17 @@ const mongoose = require("mongoose");
 const Store = require("../models/Store");
 const Menu = require("../models/Menu");
 const Order = require("../models/Order");
-const Queue = require("../models/Queue");
 const Promotion = require("../models/Promotion");
 const { sendError } = require("../utils/http");
+const { queueViews } = require("../services/queue-view");
+const { getSettings } = require("../services/settings");
 
-function storeView(store, activeQueue = 0) {
+async function config(_req, res) {
+  const settings = await getSettings();
+  return res.json({ serviceFee: settings.service_fee, acceptingOrders: settings.accepting_orders });
+}
+
+function storeView(store, queue = {}) {
   return {
     id: String(store._id),
     clientId: store.client_id,
@@ -14,13 +20,16 @@ function storeView(store, activeQueue = 0) {
     description: store.description,
     address: store.address,
     phone: store.phone,
+    coordinates: store.coordinates,
     rating: store.rating,
     openingHours: store.opening_hours,
-    queue: { maxQueue: Number(store.queue?.max_queue ?? 50), activeCount: activeQueue },
-    coverImage: store.cover_image,
-    logo: store.logo,
-    isOpen: store.is_open,
+    queue: { maxQueue: Number(store.queue?.max_queue ?? 50), activeCount: 0, nowServing: null, nextNumber: Number(store.queue_sequence || 0) + 1, ...queue },
+    coverImage: require("../services/media").imageUrl(store, "cover_image", "store"),
+    logo: require("../services/media").imageUrl(store, "logo", "store"),
+    isOpen: require("../services/store-hours").isStoreOpen(store),
+    manualOpen: store.is_open,
     status: store.status || "active",
+    statusNote: store.status_note || null,
   };
 }
 
@@ -32,8 +41,11 @@ function menuView(menu) {
     name: menu.name,
     description: menu.description,
     category: menu.category,
+    cuisine: menu.cuisine || ({ drink: "drink", dessert: "dessert" }[menu.category] || "thai"),
+    ingredients: menu.ingredients,
+    weeklyOrders: menu.weekly_orders || 0,
     price: menu.price,
-    image: menu.image,
+    image: require("../services/media").imageUrl(menu, "image", "menu"),
     optionGroups: menu.option_groups,
     soldQuantity: menu.sold_quantity,
     cookTime: menu.cook_time,
@@ -49,33 +61,29 @@ const ACTIVE_STORE = { $or: [{ status: "active" }, { status: { $exists: false } 
 
 async function listRestaurants(_req, res) {
   const stores = await Store.find(ACTIVE_STORE).sort({ name: 1 });
-  const queues = await Queue.aggregate([
-    { $match: { store_id: { $in: stores.map((store) => store._id) }, status: { $in: ["waiting", "preparing", "ready"] } } },
-    { $group: { _id: "$store_id", count: { $sum: 1 } } },
-  ]);
-  const counts = new Map(queues.map((queue) => [String(queue._id), queue.count]));
-  return res.json({ restaurants: stores.map((store) => storeView(store, counts.get(String(store._id)) || 0)) });
+  const queues = await queueViews(stores);
+  return res.json({ restaurants: stores.map((store) => storeView(store, queues.get(String(store._id)))) });
 }
 
 async function getRestaurant(req, res) {
   const store = await Store.findOne({ $and: [storeLookup(req.params.id), ACTIVE_STORE] });
   if (!store) return sendError(res, 404, "RESTAURANT_NOT_FOUND", "ไม่พบร้านอาหาร");
-  const active = await Queue.countDocuments({ store_id: store._id, status: { $in: ["waiting", "preparing", "ready"] } });
-  return res.json({ restaurant: storeView(store, active) });
+  const queues = await queueViews([store]);
+  return res.json({ restaurant: storeView(store, queues.get(String(store._id))) });
 }
 
 async function getRestaurantMenu(req, res) {
   const store = await Store.findOne({ $and: [storeLookup(req.params.id), ACTIVE_STORE] });
   if (!store) return sendError(res, 404, "RESTAURANT_NOT_FOUND", "ไม่พบร้านอาหาร");
   const menus = await Menu.find({ store_id: store._id }).sort({ category: 1, name: 1 });
-  const active = await Queue.countDocuments({ store_id: store._id, status: { $in: ["waiting", "preparing", "ready"] } });
-  return res.json({ restaurant: storeView(store, active), menus: menus.map(menuView) });
+  const queues = await queueViews([store]);
+  return res.json({ restaurant: storeView(store, queues.get(String(store._id))), menus: (await require("../services/catalogue-metrics").enrichMenus(menus)).map(menuView) });
 }
 
 async function listMenus(_req, res) {
   const stores = await Store.find(ACTIVE_STORE).select("_id");
   const menus = await Menu.find({ store_id: { $in: stores.map((store) => store._id) } }).sort({ name: 1 });
-  return res.json({ menus: menus.map(menuView) });
+  return res.json({ menus: (await require("../services/catalogue-metrics").enrichMenus(menus)).map(menuView) });
 }
 
 async function getRestaurantReviews(req, res) {
@@ -94,12 +102,7 @@ async function listPromotions(req, res) {
   const stores = await Store.find(ACTIVE_STORE).select("_id");
   const now = new Date();
   const promotions = await Promotion.find({ is_active: true, start_date: { $lte: now }, expire_date: { $gt: now }, $or: [{ store_id: null }, { store_id: { $in: stores.map((store) => store._id) } }] });
-  return res.json({ promotions: promotions.map((promotion) => ({
-    id: String(promotion._id), storeId: promotion.store_id ? String(promotion.store_id) : null,
-    code: promotion.code, title: promotion.title, description: promotion.description,
-    discountType: promotion.discount_type, discountValue: promotion.discount_value,
-    minimumOrder: promotion.minimum_order, maxDiscount: promotion.max_discount, expiresAt: promotion.expire_date,
-  })) });
+  return res.json({ promotions: promotions.map((promotion) => require("../services/customer-coupons").publicPromotionView(promotion)) });
 }
 
-module.exports = { listRestaurants, getRestaurant, getRestaurantMenu, listMenus, getRestaurantReviews, listPromotions, storeView, menuView };
+module.exports = { config, listRestaurants, getRestaurant, getRestaurantMenu, listMenus, getRestaurantReviews, listPromotions, storeView, menuView };

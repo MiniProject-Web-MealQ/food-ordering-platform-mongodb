@@ -1,3 +1,6 @@
+import { EmailChangeForm } from "@/features/customer/components/email-change-form";
+import { PushSettings } from "@/features/customer/components/push-settings";
+import { EmailOrderSettings } from "@/features/customer/components/email-order-settings";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ChevronRightIcon } from "@/components/icons";
@@ -11,6 +14,7 @@ import { containerClass } from "@/features/customer/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
 import { postJson } from "@/lib/api-client";
+import { logoutWithPushCleanup } from "@/features/customer/push-subscription";
 
 // Roughly how long a walk-in wait would have been per order; drives the "เวลาที่ประหยัด" stat.
 const MINUTES_SAVED_PER_ORDER = 10;
@@ -29,7 +33,7 @@ function Stat({ value, label, highlight }) {
 function Profile() {
   usePageTitle("โปรไฟล์");
   const navigate = useNavigate();
-  const { state, dispatch } = useCustomer();
+  const { state, dispatch, capabilities } = useCustomer();
   const [name, setName] = useState(state.user?.name || "");
   const [phone, setPhone] = useState(state.user?.phone || "");
   const [saving, setSaving] = useState(false);
@@ -54,10 +58,17 @@ function Profile() {
   }
 
   async function handleLogout() {
+    if (loggingOut) return;
     setLoggingOut(true);
-    const result = await postJson("/auth/logout", {});
-    if (result.ok) navigate("/login", { replace: true });
-    else { setMessage(result.error?.message || "ออกจากระบบไม่สำเร็จ"); setLoggingOut(false); }
+    setMessage(null);
+    try {
+      await logoutWithPushCleanup({ postJson });
+      navigate("/login", { replace: true });
+    } catch (error) {
+      setMessage(error.message || "ปิดแจ้งเตือนอุปกรณ์ก่อนออกจากระบบไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -102,8 +113,23 @@ function Profile() {
           <button type="submit" disabled={saving} className={buttonClasses({ variant: "cocoa", size: "md" })}>{saving ? "กำลังบันทึก…" : "บันทึกข้อมูล"}</button>
           {message && <p role="status" className="text-sm text-ink">{message}</p>}
         </form>
+        <EmailChangeForm />
+        <PushSettings userId={state.user?.id} />
+        <EmailOrderSettings userId={state.user?.id} email={state.user?.email} />
         <nav aria-label="บัญชี" className="overflow-hidden rounded-3xl bg-cream">
           <ul className="divide-y divide-haze">
+            <li>
+              <Link to="/customer/wallet" className={rowClass}>
+                <span className="font-semibold">MealQ Wallet</span>
+                <ChevronRightIcon className="size-5 text-ink-soft" />
+              </Link>
+            </li>
+            <li>
+              <Link to="/customer/coupons" className={rowClass}>
+                <span className="font-semibold">คูปองของฉัน</span>
+                <ChevronRightIcon className="size-5 text-ink-soft" />
+              </Link>
+            </li>
             <li>
               <Link to="/customer/orders" className={rowClass}>
                 <span className="font-semibold">คำสั่งซื้อของฉัน</span>
@@ -146,7 +172,7 @@ function Profile() {
               {choosingPayment && (
                 <fieldset id="payment-choices" className="space-y-2 px-5 pb-4">
                   <legend className="sr-only">วิธีชำระเงินที่ใช้ประจำ</legend>
-                  {PAYMENT_METHODS.map((method) => (
+                  {PAYMENT_METHODS.filter((method) => capabilities.paymentMethods.includes(method.id)).map((method) => (
                     <label key={method.id} className="flex cursor-pointer items-center gap-3 text-sm text-ink">
                       <input
                         type="radio"
@@ -168,7 +194,7 @@ function Profile() {
           <div className="px-5 py-4">
             <ToggleSwitch
               id="setting-ready"
-              label="แจ้งเตือนเมื่ออาหารพร้อม"
+              label="แจ้งเตือนในแอปเมื่ออาหารพร้อม"
               checked={state.settings.notifyReady}
               onChange={(value) => setSetting("notifyReady", value)}
             />
@@ -176,7 +202,7 @@ function Profile() {
           <div className="px-5 py-4">
             <ToggleSwitch
               id="setting-promotions"
-              label="โปรโมชันจากร้าน"
+              label="โปรโมชันจากร้านในแอป"
               checked={state.settings.promotions}
               onChange={(value) => setSetting("promotions", value)}
             />

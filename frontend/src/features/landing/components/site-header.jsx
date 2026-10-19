@@ -4,7 +4,7 @@ import { buttonClasses, focusRing } from "@/components/ui/styles";
 
 const NAV = [
   { href: "#how-it-works", label: "ใช้งานอย่างไร" },
-  { href: "#popular", label: "ร้านยอดนิยม" },
+  { href: "#popular", label: "ร้านอาหาร" },
   { href: "#random-food", label: "สุ่มเมนู" },
   { href: "#faq", label: "คำถามที่พบบ่อย" },
 ];

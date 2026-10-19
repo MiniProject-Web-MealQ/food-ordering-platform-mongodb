@@ -67,6 +67,12 @@ function MerchantShell() {
       <MerchantSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <MerchantTopBar />
+        {state.store.status !== "active" && <section role="status" className="mx-4 mt-4 rounded-2xl bg-cream p-4 text-ink sm:mx-6">
+          <p className="font-bold">{state.store.status === "pending" ? "ร้านของคุณอยู่ระหว่างรอแอดมินอนุมัติ" : state.store.status === "rejected" ? "ร้านยังไม่ได้รับอนุมัติ" : "ร้านถูกระงับการขาย"}</p>
+          <p className="mt-1 text-sm">คุณเตรียมข้อมูลร้านและเมนูได้ เมื่อแอดมินอนุมัติแล้วจึงเปิดรับออเดอร์ได้</p>
+          {state.store.status_note && <p className="mt-1 text-sm">เหตุผล: {state.store.status_note}</p>}
+          <button type="button" onClick={reload} className="mt-2 text-sm font-semibold underline">ตรวจสอบสถานะอีกครั้ง</button>
+        </section>}
         <main className="min-w-0 flex-1 pb-24 lg:pb-12">
           <Outlet />
         </main>

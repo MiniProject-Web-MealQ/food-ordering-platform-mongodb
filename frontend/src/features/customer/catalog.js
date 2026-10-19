@@ -1,30 +1,55 @@
-import { MENU_CATEGORIES as KNOWN_CATEGORIES, SERVICE_FEE } from "./mock-data";
+import { CUISINES, MENU_CATEGORIES as KNOWN_CATEGORIES, SERVICE_FEE } from "./mock-data.js";
+import { couponLabel, selectedCoupon } from "./coupons.js";
 
 export const RESTAURANTS = [];
 export const MENU_ITEMS = [];
 export const MENU_CATEGORIES = [];
 export const COUPONS = {};
+export const CONFIG = { serviceFee: SERVICE_FEE, acceptingOrders: true };
 const restaurantsById = new Map();
 const menuById = new Map();
 
+function restaurantCategory(menus, fallback) {
+  if (menus.length === 0) return fallback || "อาหารและเครื่องดื่ม";
+  const cuisines = new Set(menus.map((menu) => menu.cuisine || ({ drink: "drink", dessert: "dessert" }[menu.category])));
+  if ([...cuisines].some((id) => !CUISINES.some((cuisine) => cuisine.id === id))) return "อาหารและเครื่องดื่ม";
+  if (cuisines.size === 1) return CUISINES.find((cuisine) => cuisines.has(cuisine.id)).label;
+  if ([...cuisines].every((id) => id === "drink" || id === "dessert")) return "เครื่องดื่มและของหวาน";
+  if (cuisines.has("drink")) return "อาหารและเครื่องดื่ม";
+  if (cuisines.has("dessert")) return "อาหารและของหวาน";
+  return "อาหารนานาชาติ";
+}
+
 /** Keeps existing page lookups synchronous while the provider loads the current server catalogue. */
-export function setCatalogue({ restaurants, menus, promotions = [] }) {
+export function setCatalogue({ restaurants, menus, promotions = [], config }) {
+  if (config) Object.assign(CONFIG, config);
   restaurantsById.clear();
   menuById.clear();
+  const menusByStore = new Map();
+  for (const menu of menus) {
+    if (!menusByStore.has(menu.storeId)) menusByStore.set(menu.storeId, []);
+    menusByStore.get(menu.storeId).push(menu);
+  }
   const mappedRestaurants = restaurants.map((store) => ({
     id: store.clientId || store.id,
     backendId: store.id,
     name: store.name,
-    category: store.category || "อาหารและเครื่องดื่ม",
+    category: restaurantCategory([
+      ...(menusByStore.get(store.id) || []),
+      ...(store.clientId && store.clientId !== store.id ? menusByStore.get(store.clientId) || [] : []),
+    ], store.category),
     rating: Number(store.rating?.average || 0),
     reviewCount: Number(store.rating?.count || 0),
     location: store.address?.detail || "รับอาหารที่หน้าร้าน",
     pickupPoint: store.pickupPoint || "หน้าร้าน",
     distance: null,
+    coordinates: store.coordinates || null,
     hours: { open: store.openingHours?.open_time || "—", close: store.openingHours?.close_time || "—" },
     isOpen: store.isOpen,
     queueLength: Number(store.queue?.activeCount || 0),
-    nowServing: Number(store.queue?.nowServing || 0),
+    nowServing: store.queue?.nowServing ?? null,
+    nextNumber: store.queue?.nextNumber ?? null,
+    activeNumbers: store.queue?.activeNumbers || [],
     waitMinutes: store.queue?.waitMinutes || [5, 10],
     phone: store.phone || "—",
     about: store.description || "",
@@ -53,7 +78,7 @@ export function setCatalogue({ restaurants, menus, promotions = [] }) {
       image: menu.image,
       rating: store.rating,
       reviewCount: store.reviewCount,
-      weeklyOrders: Number(menu.soldQuantity || 0),
+      weeklyOrders: Number(menu.weeklyOrders || 0),
       prepMinutes: Number(menu.cookTime || 5),
       allergens: menu.allergens || [],
       optionGroups: menu.optionGroups || [],
@@ -69,11 +94,12 @@ export function setCatalogue({ restaurants, menus, promotions = [] }) {
     KNOWN_CATEGORIES.find((category) => category.id === id) || { id, label: id, emoji: "🍽️" },
   );
   MENU_CATEGORIES.splice(0, MENU_CATEGORIES.length, ...categories);
-  for (const code of Object.keys(COUPONS)) delete COUPONS[code];
-  for (const promotion of promotions) COUPONS[promotion.code.toUpperCase()] = {
+  for (const id of Object.keys(COUPONS)) delete COUPONS[id];
+  for (const promotion of promotions) COUPONS[promotion.id] = {
     ...promotion,
-    restaurantId: promotion.storeId ? restaurantsById.get(promotion.storeId)?.id : null,
-    label: promotion.discountType === "percentage" ? "ลด " + promotion.discountValue + "%" : "ลด ฿" + promotion.discountValue,
+    restaurantId: promotion.storeId ? restaurantsById.get(promotion.storeId)?.id || promotion.storeId : null,
+    storeName: promotion.storeName || restaurantsById.get(promotion.storeId)?.name || null,
+    label: couponLabel(promotion),
   };
 }
 
@@ -118,14 +144,19 @@ export function isOrderable(menuItem) {
 export function defaultSelections(menuItem) {
   const selections = {};
   for (const group of menuItem.optionGroups) {
-    const fallback = group.options.find((o) => o.default);
+    const fallback = group.options.find((o) => o.default && o.isAvailable !== false && o.is_available !== false);
     selections[group.id] = fallback && !group.multiple ? [fallback.id] : [];
   }
   return selections;
 }
 
 export function missingRequiredGroups(menuItem, selections) {
-  return menuItem.optionGroups.filter((g) => g.required && !(selections[g.id]?.length > 0));
+  return menuItem.optionGroups.filter((group) => {
+    const selected = selections[group.id] || [];
+    const min = group.required ? Math.max(1, Number(group.min || 1)) : Number(group.min || 0);
+    const max = group.multiple ? Number(group.max ?? group.options.length) : 1;
+    return selected.length < min || selected.length > max || selected.some((id) => !group.options.some((option) => option.id === id && option.isAvailable !== false && option.is_available !== false));
+  });
 }
 
 function selectedOptions(menuItem, selections) {
@@ -135,7 +166,7 @@ function selectedOptions(menuItem, selections) {
 }
 
 export function unitPrice(menuItem, selections) {
-  return menuItem.price + selectedOptions(menuItem, selections).reduce((s, o) => s + o.price, 0);
+  return Math.round((menuItem.price + selectedOptions(menuItem, selections).reduce((s, o) => s + o.price, 0) + Number.EPSILON) * 100) / 100;
 }
 
 export function optionLabels(menuItem, selections) {
@@ -162,31 +193,30 @@ export function resolveCartLines(cart) {
         ...line,
         menuItem,
         unitPrice: price,
-        lineTotal: price * line.qty,
+        lineTotal: Math.round((price * line.qty + Number.EPSILON) * 100) / 100,
         optionLabels: optionLabels(menuItem, line.selections),
       },
     ];
   });
 }
 
-export function priceCart(cart) {
+export function priceCart(cart, savedCoupons = [], now = Date.now()) {
   const lines = resolveCartLines(cart);
-  const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
-  const candidate = cart.couponCode ? COUPONS[cart.couponCode] : null;
-  const coupon = candidate && (!candidate.restaurantId || candidate.restaurantId === cart.restaurantId)
-    && subtotal >= Number(candidate.minimumOrder || 0) ? candidate : null;
-  let discount = coupon ? coupon.discountType === "percentage" ? Math.round(subtotal * Number(coupon.discountValue) / 100) : Number(coupon.discountValue) : 0;
-  if (coupon?.maxDiscount != null) discount = Math.min(discount, Number(coupon.maxDiscount));
-  discount = Math.min(subtotal, discount);
-  const serviceFee = lines.length > 0 ? SERVICE_FEE : 0;
+  const round = (amount) => Math.round((amount + Number.EPSILON) * 100) / 100;
+  const subtotal = round(lines.reduce((sum, l) => sum + round(l.lineTotal), 0));
+  const restaurant = getRestaurant(cart.restaurantId);
+  const selection = selectedCoupon(cart, savedCoupons, { subtotal, now, restaurantIds: [cart.restaurantId, restaurant?.backendId].filter(Boolean) });
+  const serviceFee = lines.length > 0 ? CONFIG.serviceFee : 0;
   return {
     lines,
     itemCount: lines.reduce((sum, l) => sum + l.qty, 0),
     subtotal,
     serviceFee,
-    coupon,
-    discount,
-    total: Math.max(0, subtotal + serviceFee - discount),
+    coupon: selection.coupon,
+    selectedCoupon: selection.selected,
+    couponIssue: selection.issue,
+    discount: selection.discount,
+    total: round(Math.max(0, subtotal + serviceFee - selection.discount)),
   };
 }
 
@@ -227,9 +257,9 @@ export function nextQueueNumber(restaurant, orders) {
   const held = orders
     .filter((o) => o.restaurantId === restaurant.id && isActiveOrder(o))
     .map((o) => o.queueNumber + 1);
-  return Math.max(restaurant.nowServing + restaurant.queueLength + 1, ...held);
+  return Math.max(restaurant.nextNumber || 1, ...held);
 }
 
 export function queuesAhead(order) {
-  return Math.max(0, order.queueNumber - order.nowServing);
+  return order.queuesAhead ?? 0;
 }

@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { CheckIcon, XIcon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/styles";
-import { createOrder } from "@/features/customer/api";
+import { createOrder, getMyCoupons } from "@/features/customer/api";
+import { getSession } from "@/features/auth/api";
 import { getRestaurant, nextQueueNumber, priceCart } from "@/features/customer/catalog";
 import { formatBaht, formatClock } from "@/features/customer/format";
 import { PAYMENT_METHODS } from "@/features/customer/mock-data";
 import { useCustomer } from "@/features/customer/store";
 import { usePageTitle } from "@/lib/use-page-title";
+import { checkoutAttempt, finishCheckout, markCheckoutSubmitted, pendingSubmittedCheckout, submittedCheckout } from "@/features/customer/checkout-attempt";
 
 const PROCESSING_MS = 800;
 const SUCCESS_HOLD_MS = 1000;
@@ -16,51 +18,102 @@ function Payment() {
   usePageTitle("กำลังชำระเงิน");
   const navigate = useNavigate();
   const { state: routeState } = useLocation();
-  const { state, dispatch } = useCustomer();
+  const { state, dispatch, refreshCoupons } = useCustomer();
   const method = PAYMENT_METHODS.find((m) => m.id === routeState?.method);
   const [result, setResult] = useState(null);
   const [summary] = useState(() => {
-    const priced = priceCart(state.cart);
+    const priced = priceCart(state.cart, state.coupons);
+    const recovery = submittedCheckout(state.cart, method?.id, state.user?.id);
     const restaurant = state.cart.restaurantId ? getRestaurant(state.cart.restaurantId) : null;
     return {
       priced,
       cart: state.cart,
-      total: priced.total,
-      hasItems: priced.lines.length > 0,
+      total: recovery?.total ?? priced.total,
+      ownerId: state.user?.id,
+      hasItems: recovery ? state.cart.items.length > 0 : priced.lines.length > 0,
+      recovery: Boolean(recovery),
+      blockedByPending: Boolean(pendingSubmittedCheckout(state.user?.id) && !recovery),
       queueNumber: restaurant ? nextQueueNumber(restaurant, state.orders) : null,
+      requestKey: recovery?.key || (method?.id && state.cart.items.length ? checkoutAttempt(state.cart, method.id, priced.total, state.user?.id) : null),
     };
   });
+  const submitted = useRef(summary.recovery);
+  const currentOwner = useRef(state.user?.id);
+  useEffect(() => { currentOwner.current = state.user?.id; }, [state.user?.id]);
 
   useEffect(() => {
     if (!method || !summary.hasItems || result !== null) return;
     let cancelled = false;
     const timer = setTimeout(async () => {
+      if (summary.blockedByPending || !summary.requestKey) {
+        setResult({ ok: false, at: Date.now(), error: { code: "COUPON_REVIEW_REQUIRED", message: "ยังมีคำขอชำระเงินเดิมที่ไม่ทราบผล กรุณากลับไปตรวจสอบก่อนเริ่มคำสั่งซื้อใหม่" } });
+        return;
+      }
+      const session = await getSession();
+      if (cancelled) return;
+      if (!session.ok || !summary.ownerId || session.data?.user?.id !== summary.ownerId || currentOwner.current !== summary.ownerId) {
+        setResult({ ok: false, at: Date.now(), error: { code: "AUTH_REQUIRED", message: "บัญชีที่เข้าสู่ระบบเปลี่ยนแล้ว กรุณาเข้าสู่ระบบและตรวจสอบตะกร้าใหม่" } });
+        return;
+      }
+      let coupons = [];
+      if (!submitted.current && (summary.cart.couponId || summary.cart.couponCode)) {
+        const wallet = await getMyCoupons();
+        if (cancelled) return;
+        if (!wallet.ok) {
+          setResult({ ok: false, at: Date.now(), error: { code: "COUPON_REVIEW_REQUIRED", message: wallet.error?.message || "ยังตรวจสอบคูปองไม่ได้ กรุณากลับไปชำระเงินแล้วลองใหม่" } });
+          return;
+        }
+        coupons = wallet.data.coupons;
+      }
+      const current = priceCart(summary.cart, coupons);
+      if (!submitted.current && (current.couponIssue || current.total !== summary.total)) {
+        setResult({ ok: false, at: Date.now(), error: { code: "COUPON_REVIEW_REQUIRED", message: current.couponIssue || "ยอดชำระเปลี่ยนแล้ว กรุณากลับไปตรวจสอบราคาและคูปองก่อนยืนยันใหม่" } });
+        return;
+      }
+      if (cancelled) return;
+      if (currentOwner.current !== summary.ownerId) {
+        setResult({ ok: false, at: Date.now(), error: { code: "AUTH_REQUIRED", message: "บัญชีเปลี่ยนแล้ว กรุณาเข้าสู่ระบบและตรวจสอบตะกร้าใหม่" } });
+        return;
+      }
+      submitted.current = true;
+      markCheckoutSubmitted(summary.cart, method.id, summary.total, summary.requestKey, summary.ownerId);
       const response = await createOrder({
         cart: summary.cart,
-        priced: summary.priced,
+        priced: { ...current, total: summary.total },
         paymentMethod: method.id,
+        requestKey: summary.requestKey,
       });
       if (cancelled) return;
+      if (currentOwner.current !== summary.ownerId) {
+        setResult({ ok: false, at: Date.now(), error: { code: "AUTH_REQUIRED", message: "บัญชีเปลี่ยนแล้ว กรุณาตรวจสอบออเดอร์ในบัญชีที่ใช้ชำระเงิน" } });
+        return;
+      }
 
       if (!response.ok) {
-        setResult({ ok: false, at: Date.now(), error: response.error });
+        if (response.status >= 400 && response.status < 500 && response.error?.code !== "CHECKOUT_IN_PROGRESS") {
+          submitted.current = false;
+          finishCheckout(summary.requestKey);
+        }
+        setResult({ ok: false, uncertain: submitted.current, at: Date.now(), error: response.error });
         return;
       }
 
       const order = response.data.order;
+      finishCheckout(summary.requestKey);
       const at = Date.now();
       dispatch({
         type: "order/place",
         order,
       });
       setResult({ ok: true, orderId: order.orderNumber, total: order.totalPrice, paymentMode: order.paymentMode, at });
+      refreshCoupons();
     }, PROCESSING_MS);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [method, summary, result, dispatch]);
+  }, [method, summary, result, dispatch, refreshCoupons]);
 
   useEffect(() => {
     if (!result?.ok) return;
@@ -105,7 +158,8 @@ function Payment() {
             <span className="mx-auto grid size-16 place-items-center rounded-full bg-alert/15 text-danger">
               <XIcon className="size-8" strokeWidth={3} />
             </span>
-            <p className="mt-6 text-2xl font-bold text-ink">ส่งออเดอร์ไม่สำเร็จ</p>
+            <p className="mt-6 text-2xl font-bold text-ink">{result.uncertain ? "ยังไม่ทราบผลคำสั่งซื้อ" : "ส่งออเดอร์ไม่สำเร็จ"}</p>
+            {result.uncertain && <p className="mt-2 text-sm text-ink-soft">คำสั่งซื้ออาจสำเร็จแล้ว ลองตรวจสอบคำขอเดิมอีกครั้ง ระบบใช้รหัสคำขอเดิมเพื่อไม่ตัดยอดซ้ำ</p>}
             <p className="mt-2 text-sm text-ink-soft">
               {result.error?.message || "ไม่สามารถเชื่อมต่อ Backend ได้"}
             </p>
@@ -115,6 +169,7 @@ function Payment() {
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
+                disabled={result.error?.code === "COUPON_REVIEW_REQUIRED"}
                 onClick={() => setResult(null)}
                 className={buttonClasses({ variant: "cocoa", size: "md" })}
               >

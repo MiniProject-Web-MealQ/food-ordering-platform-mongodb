@@ -9,7 +9,7 @@ import { useCustomer } from "../store";
 export function CartSummaryCard({ restaurantId }) {
   const { state } = useCustomer();
   const sameRestaurant = state.cart.restaurantId === restaurantId;
-  const cart = priceCart(state.cart);
+  const cart = priceCart(state.cart, state.coupons);
   const otherRestaurant = !sameRestaurant && cart.lines.length > 0 ? getRestaurant(state.cart.restaurantId) : null;
 
   return (

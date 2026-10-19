@@ -1,6 +1,6 @@
 import { cx } from "@/lib/cx";
 
-export function ToggleSwitch({ id, label, checked, onChange, tone = "light" }) {
+export function ToggleSwitch({ id, label, checked, onChange, tone = "light", disabled = false }) {
   return (
     <label htmlFor={id} className="flex min-w-0 cursor-pointer items-center justify-between gap-4">
       <span className={cx("min-w-0 font-semibold wrap-anywhere", tone === "dark" ? "text-white" : "text-ink")}>{label}</span>
@@ -10,9 +10,10 @@ export function ToggleSwitch({ id, label, checked, onChange, tone = "light" }) {
           type="checkbox"
           role="switch"
           checked={checked}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
           className={cx(
-            "peer h-8 w-14 cursor-pointer appearance-none rounded-full transition-colors checked:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2",
+            "peer h-8 w-14 cursor-pointer appearance-none rounded-full transition-colors checked:bg-brand focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
             tone === "dark" ? "bg-white/20 focus-visible:outline-white" : "bg-haze focus-visible:outline-ink",
           )}
         />

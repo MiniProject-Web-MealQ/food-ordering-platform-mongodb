@@ -1,35 +1,27 @@
-import { Link, useNavigate } from "react-router";
-import { buttonClasses, textLinkClass } from "@/components/ui/styles";
-import { formatWhen } from "@/features/customer/format";
+import { useEffect, useRef, useState } from "react";
+import { textLinkClass } from "@/components/ui/styles";
 import { useCustomer } from "@/features/customer/store";
-import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
+import { NotificationAccordion } from "@/features/notifications/notification-accordion";
+import { notificationDate } from "@/features/notifications/notification-details";
 
-const KIND_ICON = {
-  ready: { emoji: "🔔", className: "bg-brand" },
-  preparing: { emoji: "👩‍🍳", className: "bg-haze" },
-  paid: { emoji: "✓", className: "bg-mint text-ink" },
-  promo: { emoji: "🎟️", className: "bg-mint" },
-  cancelled: { emoji: "✕", className: "bg-alert/15 text-danger" },
-};
-
-function destination(notification) {
-  if (notification.orderId) return `/customer/orders/${notification.orderId}`;
-  if (notification.restaurantId) return `/customer/restaurants/${notification.restaurantId}`;
-  return null;
-}
-
-function Notifications() {
-  usePageTitle("การแจ้งเตือน");
-  const navigate = useNavigate();
-  const { state, dispatch } = useCustomer();
-  const notifications = state.notifications.toSorted((a, b) => b.at - a.at);
+function NotificationInbox({ state, readNotification }) {
+  const [readAllState, setReadAllState] = useState({ busy: false, error: "" });
+  const active = useRef(true);
+  const readingAll = useRef(false);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
+  const notifications = state.notifications.filter((notice) => notice && typeof notice === "object" && typeof notice.id === "string").toSorted((a, b) => (notificationDate(b.at)?.getTime() || 0) - (notificationDate(a.at)?.getTime() || 0));
   const unread = notifications.filter((n) => !n.read).length;
 
-  function open(notification) {
-    dispatch({ type: "notifications/read", id: notification.id });
-    const to = destination(notification);
-    if (to) navigate(to);
+  async function readAll() {
+    if (readingAll.current) return;
+    readingAll.current = true; setReadAllState({ busy: true, error: "" });
+    try {
+      const result = await readNotification("all");
+      if (active.current) setReadAllState({ busy: false, error: result?.ok ? "" : result?.error?.message || "บันทึกการอ่านทั้งหมดไม่สำเร็จ กรุณาลองอีกครั้ง" });
+    } catch (error) {
+      if (active.current) setReadAllState({ busy: false, error: error.message || "บันทึกการอ่านทั้งหมดไม่สำเร็จ" });
+    } finally { readingAll.current = false; }
   }
 
   return (
@@ -39,72 +31,32 @@ function Notifications() {
         {unread > 0 && (
           <button
             type="button"
-            onClick={() => dispatch({ type: "notifications/readAll" })}
-            className={`${textLinkClass} text-sm`}
+            disabled={readAllState.busy}
+            onClick={readAll}
+            className={`${textLinkClass} text-sm disabled:opacity-50`}
           >
-            อ่านทั้งหมด
+            {readAllState.busy ? "กำลังบันทึก…" : "อ่านทั้งหมด"}
           </button>
         )}
       </header>
+      <p className="text-sm text-ink-soft">กดที่รายการเพื่อขยายรายละเอียด แล้วเลือกเปิดออเดอร์หรือคูปองที่เกี่ยวข้อง</p>
+      {readAllState.error && <div role="alert" className="rounded-2xl bg-alert/10 p-3 text-sm text-danger">{readAllState.error} <button type="button" disabled={readAllState.busy} onClick={readAll} className="font-semibold underline">ลองอีกครั้ง</button></div>}
 
       {notifications.length === 0 ? (
         <p className="rounded-3xl bg-cream p-6 text-center text-ink-soft">ยังไม่มีการแจ้งเตือน</p>
       ) : (
         <ul className="space-y-3">
-          {notifications.map((notification) => {
-            const icon = KIND_ICON[notification.kind] || KIND_ICON.preparing;
-            const highlight = notification.kind === "ready" && !notification.read;
-            return (
-              <li
-                key={notification.id}
-                className={cx(
-                  "relative rounded-3xl p-4",
-                  highlight ? "bg-mint/50 ring-2 ring-mint" : "bg-cream",
-                  notification.read && "opacity-80",
-                )}
-              >
-                <div className="flex gap-3">
-                  <span
-                    aria-hidden="true"
-                    className={cx("grid size-11 shrink-0 place-items-center rounded-full text-lg", icon.className)}
-                  >
-                    {icon.emoji}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-ink">
-                      <button
-                        type="button"
-                        onClick={() => open(notification)}
-                        className="text-left after:absolute after:inset-0 after:rounded-3xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-ink"
-                      >
-                        {notification.title}
-                        {!notification.read && <span className="sr-only"> (ยังไม่อ่าน)</span>}
-                      </button>
-                    </p>
-                    <p className="text-sm text-ink-soft">
-                      {notification.body} · {formatWhen(notification.at)}
-                    </p>
-                    {highlight && (
-                      <Link
-                        to={`/customer/orders/${notification.orderId}`}
-                        onClick={() => dispatch({ type: "notifications/read", id: notification.id })}
-                        className={cx(buttonClasses({ variant: "cocoa", size: "sm" }), "relative mt-3")}
-                      >
-                        ดูออเดอร์
-                      </Link>
-                    )}
-                  </div>
-                  {!notification.read && (
-                    <span aria-hidden="true" className="mt-1.5 size-2.5 shrink-0 rounded-full bg-brand" />
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {notifications.map((notification) => <NotificationAccordion key={notification.id} notification={notification} onRead={readNotification} order={state.orders.find((order) => order.id === notification.orderId || order.backendOrderId === notification.orderId)} />)}
         </ul>
       )}
     </div>
   );
+}
+
+function Notifications() {
+  usePageTitle("การแจ้งเตือน");
+  const { state, readNotification } = useCustomer();
+  return <NotificationInbox key={state.user?.id || "guest"} state={state} readNotification={readNotification} />;
 }
 
 export default Notifications;

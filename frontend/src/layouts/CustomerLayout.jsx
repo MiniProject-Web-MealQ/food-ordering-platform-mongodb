@@ -18,7 +18,7 @@ import { useCustomer } from "@/features/customer/store";
 function CustomerContent() {
   const { state } = useCustomer();
   const { pathname, search } = useLocation();
-  const needsAccount = /^\/customer\/(orders|profile|favorites|notifications|checkout)(\/|$)/.test(pathname);
+  const needsAccount = /^\/customer\/(orders|profile|wallet|coupons|favorites|notifications|checkout)(\/|$)/.test(pathname);
   if (needsAccount && !state.user) return <Navigate to="/login" state={{ from: pathname + search }} replace />;
   return (
     <div className="flex min-h-dvh min-w-0 w-full flex-1 flex-col bg-white">

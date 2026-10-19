@@ -26,7 +26,8 @@ const optionRow =
 
 function OptionGroup({ group, selected, onChange }) {
   function toggle(optionId) {
-    if (!group.multiple) return onChange([optionId]);
+    if (!group.multiple) return onChange(selected.includes(optionId) && !group.required ? [] : [optionId]);
+    if (!selected.includes(optionId) && selected.length >= (group.max ?? group.options.length)) return;
     onChange(selected.includes(optionId) ? selected.filter((id) => id !== optionId) : [...selected, optionId]);
   }
 
@@ -35,11 +36,12 @@ function OptionGroup({ group, selected, onChange }) {
       <legend className="w-full">
         <span className="block text-lg font-bold text-ink">{group.label}</span>
         <span className="block text-sm text-ink-soft">
-          {group.multiple ? "เลือกได้หลายอย่าง · ไม่บังคับ" : `เลือก 1 อย่าง${group.required ? " · จำเป็น" : ""}`}
+          {group.multiple ? `เลือก ${group.min || (group.required ? 1 : 0)}–${group.max ?? group.options.length} อย่าง${group.required ? " · จำเป็น" : ""}` : `เลือก 1 อย่าง${group.required ? " · จำเป็น" : " · ไม่บังคับ"}`}
         </span>
       </legend>
       {group.options.map((option) => {
         const checked = selected.includes(option.id);
+        const disabled = option.isAvailable === false || option.is_available === false || (group.multiple && !checked && selected.length >= (group.max ?? group.options.length));
         return (
           <label key={option.id} className={cx(optionRow, "border-haze bg-cream")}>
             <input
@@ -47,6 +49,7 @@ function OptionGroup({ group, selected, onChange }) {
               name={group.id}
               value={option.id}
               checked={checked}
+              disabled={disabled}
               onChange={() => toggle(option.id)}
               className="sr-only"
             />
@@ -65,11 +68,12 @@ function OptionGroup({ group, selected, onChange }) {
                   <span className="size-2 rounded-full bg-white" />
                 ))}
             </span>
-            <span className="flex-1 font-medium text-ink">{option.label}</span>
+            <span className={cx("flex-1 font-medium text-ink", disabled && "opacity-50")}>{option.label}{option.isAvailable === false || option.is_available === false ? " · หมด" : ""}</span>
             {option.price > 0 && <span className="text-sm font-semibold text-ink">+{formatBaht(option.price)}</span>}
           </label>
         );
       })}
+      {!group.required && selected.length > 0 && <button type="button" className="text-sm underline" onClick={() => onChange([])}>ล้างตัวเลือกกลุ่มนี้</button>}
     </fieldset>
   );
 }

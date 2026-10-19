@@ -2,6 +2,8 @@ import { menuFromApi, menuToApi, orderFromApi, storeFromApi, storeToApi } from "
 import * as api from "./api";
 import { nextStep } from "./status";
 import { isSessionLost, sessionLost, useMerchant } from "./store";
+import { postJson } from "@/lib/api-client";
+import { logoutWithPushCleanup } from "@/features/customer/push-subscription";
 
 /**
  * ทุกการแก้ไขส่งไป API ก่อน แล้ว store ค่อยอัปเดตตามข้อมูลที่ server ส่งกลับ
@@ -9,7 +11,7 @@ import { isSessionLost, sessionLost, useMerchant } from "./store";
  * หน้าต่าง ๆ จึงแสดง error.message ได้เมื่อเรียกไม่สำเร็จ
  */
 export function useMerchantActions() {
-  const { dispatch } = useMerchant();
+  const { state, dispatch, loggingOut, setLoggingOut, setNotificationError } = useMerchant();
 
   /** รอผลการเรียก API ถ้า session ร้านหลุดไปแล้ว ให้กลับไปหน้า login */
   async function settle(request) {
@@ -67,9 +69,17 @@ export function useMerchantActions() {
       return result;
     },
     async logout() {
-      const result = await api.logout();
-      dispatch({ type: "load/signedOut" });
-      return result;
+      if (loggingOut) return { ok: false };
+      setLoggingOut(true); setNotificationError("");
+      try {
+        if (state.session?.accountRole === "merchant") await logoutWithPushCleanup({ postJson, prefix: "/merchant" });
+        else { const result = await api.logout(); if (!result.ok) throw new Error(result.error?.message || "ออกจากระบบไม่สำเร็จ"); }
+        dispatch({ type: "load/signedOut" });
+        return { ok: true };
+      } catch (error) {
+        setNotificationError(error.message || "ปิดแจ้งเตือนก่อนออกจากระบบไม่สำเร็จ กรุณาลองใหม่");
+        return { ok: false, error: { message: error.message } };
+      } finally { setLoggingOut(false); }
     },
   };
 }

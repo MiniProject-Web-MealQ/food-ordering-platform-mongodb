@@ -17,13 +17,17 @@ import { OrderStatusBadge } from "@/features/merchant/components/status-badge";
 import { pageClass, panelClass } from "@/features/merchant/styles";
 import { cx } from "@/lib/cx";
 import { usePageTitle } from "@/lib/use-page-title";
+import { postJson } from "@/lib/api-client";
 
 function UserDetail() {
   const { id } = useParams();
   const { state, dispatch } = useAdmin();
   const [dialog, setDialog] = useState(null);
   const [newRole, setNewRole] = useState("");
+  const [staffStore, setStaffStore] = useState("");
   const [notice, setNotice] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetLink, setResetLink] = useState("");
   const user = byId(state.users, id);
   usePageTitle(user ? user.name : "ไม่พบผู้ใช้");
 
@@ -43,6 +47,7 @@ function UserDetail() {
 
   const isSelf = user._id === state.session.user_id;
   const role = newRole || user.role;
+  const selectedStore = staffStore || user.store_id || "";
   const orders = state.orders.filter((o) => o.customer_id === user._id);
   const ownedStores = state.stores.filter((s) => s.owner_id === user._id);
   const adminLog = state.activity.filter((a) => a.actor_id === user._id).slice(0, 8);
@@ -50,6 +55,15 @@ function UserDetail() {
   function done(message) {
     setNotice(message);
     setDialog(null);
+  }
+
+  async function sendReset() {
+    if (resetBusy) return;
+    setResetBusy(true);
+    const result = await postJson(`/admin/users/${user._id}/reset-password`, {});
+    setResetBusy(false);
+    setNotice(result.ok ? result.data.devResetToken ? "สร้างลิงก์ตั้งรหัสผ่านสำหรับทดสอบแล้ว" : "ส่งคำขอตั้งรหัสผ่านแล้ว" : result.error.message);
+    setResetLink(result.ok && result.data.devResetToken ? `/reset-password?token=${result.data.devResetToken}` : "");
   }
 
   return (
@@ -208,7 +222,8 @@ function UserDetail() {
               className="[&_select]:w-full"
               options={Object.entries(ROLE_LABEL).map(([value, label]) => ({ value, label }))}
             />
-            <Button variant="cocoa-outline" size="md" fullWidth disabled={isSelf || role === user.role} onClick={() => setDialog("role")}>
+            {role === "staff" && <SelectField id="staff-store" label="ร้านที่ทำงาน" value={selectedStore} onChange={setStaffStore} options={[{ value: "", label: "เลือกร้าน" }, ...state.stores.map((store) => ({ value: store._id, label: store.name }))]} />}
+            <Button variant="cocoa-outline" size="md" fullWidth disabled={isSelf || (role === user.role && (role !== "staff" || selectedStore === user.store_id)) || (role === "staff" && !selectedStore)} onClick={() => setDialog("role")}>
               <UserCog aria-hidden="true" className="size-4" />
               เปลี่ยนประเภทบัญชี
             </Button>
@@ -219,11 +234,13 @@ function UserDetail() {
               variant="cocoa-outline"
               size="md"
               fullWidth
-              disabled
+              disabled={resetBusy || user.status === "suspended"}
+              onClick={sendReset}
             >
               <KeyRound aria-hidden="true" className="size-4" />
-              ส่งลิงก์ตั้งรหัสผ่านใหม่ (ยังไม่มีบริการอีเมล)
+              {resetBusy ? "กำลังส่ง…" : "ส่งลิงก์ตั้งรหัสผ่านใหม่"}
             </Button>
+            {resetLink && <Link to={resetLink} className={`${textLinkClass} mt-3 block text-sm`}>เปิดลิงก์ตั้งรหัสผ่านทดสอบ</Link>}
           </div>
         </section>
       </div>
@@ -270,7 +287,7 @@ function UserDetail() {
           reasonLabel="หมายเหตุ"
           onClose={() => setDialog(null)}
           onConfirm={async () => {
-            const result = await dispatch(actions.setUserRole(user._id, role));
+            const result = await dispatch(actions.setUserRole(user._id, role, role === "staff" ? selectedStore : undefined));
             if (!result.ok) return result.error?.message || "บันทึกไม่สำเร็จ";
             setNewRole("");
             done(`เปลี่ยน “${user.name}” เป็น${ROLE_LABEL[role]}แล้ว`);

@@ -38,7 +38,7 @@ export function pendingCount(state) {
 /** ตัวเลขสำหรับหน้าภาพรวม ยอดขายนับทุกออเดอร์ที่จ่ายแล้วและไม่ถูกยกเลิก */
 export function todaySummary(state, now) {
   const today = todaysOrders(state, now);
-  const kept = today.filter((o) => o.status !== "cancelled");
+  const kept = today.filter((o) => o.status !== "cancelled" && ["paid", "simulated"].includes(o.payment_status));
   const sold = new Map();
   for (const order of kept) {
     for (const item of order.items) {
@@ -51,7 +51,7 @@ export function todaySummary(state, now) {
 
   return {
     orderCount: today.length,
-    cancelledCount: today.length - kept.length,
+    cancelledCount: today.filter((o) => o.status === "cancelled").length,
     completedCount: today.filter((o) => o.status === "completed").length,
     inKitchen: inKitchenCount(state),
     readyCount: state.orders.filter((o) => o.status === "ready").length,
