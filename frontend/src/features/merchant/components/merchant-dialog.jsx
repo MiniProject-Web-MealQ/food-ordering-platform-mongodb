@@ -7,7 +7,7 @@ import { cx } from "@/lib/cx";
  * pop-up ที่สร้างจาก <dialog>.showModal(): เบราว์เซอร์กัก focus ไว้ในกล่อง ทำให้หน้าด้านหลังกดไม่ได้
  * และปิดด้วยปุ่ม Esc ได้เอง มือถือแสดงเต็มจอ จอใหญ่เป็นกล่องกลางจอที่เลื่อนเนื้อหาข้างในได้
  */
-export function MerchantDialog({ eyebrow, title, subtitle, onClose, children }) {
+export function MerchantDialog({ eyebrow, title, subtitle, onClose, children, size }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -36,7 +36,8 @@ export function MerchantDialog({ eyebrow, title, subtitle, onClose, children }) 
         if (event.target === event.currentTarget) onClose();
       }}
       className={cx(
-        "m-auto h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-4xl overflow-hidden rounded-4xl bg-page p-0 text-ink shadow-float backdrop:bg-forest/60",
+        "m-auto h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-hidden rounded-4xl bg-page p-0 text-ink shadow-float backdrop:bg-forest/60",
+        size === "wide" ? "max-w-6xl" : "max-w-4xl",
         "max-sm:h-dvh max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none",
       )}
     >

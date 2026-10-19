@@ -4,7 +4,7 @@
 
 - SSH: linapspi4@100.112.221.80 (Tailscale)
 - LAN: 192.168.1.121
-- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-home-catalogue-sync
+- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-wallet-layout
 - Current symlink: /home/linapspi4/mealq-app/current
 - Compose project mealq: รุ่นคูปองอัปเดตเฉพาะ API และ web; MongoDB, Tunnel และ volume mealq_db_data ไม่ถูกเปลี่ยน
 - เว็บรับเฉพาะ loopback 127.0.0.1:8088 จาก Tunnel ไม่มีการเปิด API/MongoDB บน public port
@@ -22,7 +22,7 @@
 
 เก็บ images mealq-api:before-20261019 และ mealq-web:before-20261019 สำหรับ rollback โดยใช้ compose เดิมและ MEALQ_RELEASE=before-20261019 หลังคืน environment เดิม ไม่ต้องลบ volume หรือ restore DB เพื่อ rollback โค้ด เพราะ schema ที่เพิ่มรองรับข้อมูลเก่า ห้ามใช้ compose down -v
 
-รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-home-catalogue-sync` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
+รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-wallet-layout` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
 
 ```sh
 docker compose -p mealq --env-file /home/linapspi4/mealq-app/shared/compose.env -f /home/linapspi4/mealq-app/current/deploy/compose.yaml up -d --no-deps --no-build --wait api web
@@ -112,3 +112,12 @@ API/web health ผ่าน, SMTP authentication ผ่าน, capabilities แ�
 - ขณะตรวจมีร้านที่เพิ่มเข้ามาแล้ว ทำให้ public catalogue เป็น 7 ร้าน/49 เมนู การขึ้นหน้า Home ครั้งนี้ไม่แก้หรือล้างข้อมูลร้าน/เมนู
 - Frontend 68 tests, ESLint และ production build ผ่าน ไม่ได้ทดสอบภาพหรือคลิกผ่าน browser เนื่องจากสิทธิ์ origin ที่บันทึกไว้ปฏิเสธการควบคุม
 - จุด rollback: `shared/backups/activation-20261019-home-catalogue-sync-20261019T145324Z-311779`; สำรองเต็มก่อนสลับ `20261019T215338+0700-312313` และหลังสลับ `20261019T215520+0700-313416` เก็บ release/image เดิมครบ
+
+## รุ่น Wallet layout
+
+- ขึ้น `20261019-wallet-layout` สำเร็จ โดยสลับเฉพาะ web; API, DB, Tunnel และโปรเจค muaysart มี container ID/start time ตรงก่อนเปลี่ยน
+- แก้คอลัมน์คงเหลือในหน้าต่าง Admin Wallet ที่ถูกฟอร์มปรับยอดบีบ: ขยายเฉพาะหน้าต่างนี้, แบ่งสองคอลัมน์เมื่อจอ xl, วางฟอร์มด้านล่างบนจอเล็ก และให้ตารางเลื่อนแนวนอนพร้อมแสดงยอดเงินเต็ม
+- DataList และ MerchantDialog มีตัวเลือกสำหรับ Wallet โดยค่าเริ่มต้นของหน้าอื่นคงเดิม ไม่มีการเปลี่ยนการคำนวณเงินหรือ API
+- สำรอง source ก่อนแก้: `C:\Users\game_\MealQBackups\source-before-wallet-layout-20261019T221612`; จุด rollback: `shared/backups/activation-20261019-wallet-layout-20261019T151849Z-324409`
+- Frontend 68 tests, lint และ build ผ่าน ตรวจ HTTPS `/admin/wallets`, root, JS/CSS และ Wallet chunk ตรง SHA256 ของ build, API/DB healthy และเว็บ muaysart 200 ไม่ได้ตรวจหน้าจอผ่าน browser เพราะ saved origin permission ยังปฏิเสธการควบคุม
+- สำรองเต็มก่อนสลับ `20261019T221913+0700-324936` และหลังสลับ `20261019T222018+0700-325754`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว

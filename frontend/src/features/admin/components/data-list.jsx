@@ -17,11 +17,11 @@ function useWide() {
 
 /**
  * ตารางข้อมูลที่ใช้ทุกหน้ารายการ จอ md ขึ้นไปเป็น <table> มือถือเป็นการ์ดเรียงลง
- * columns: [{ key, header, render(row), className?, primary? }]
+ * columns: [{ key, header, render(row), className?, mobileClassName?, primary? }]
  *   primary = คอลัมน์หลัก (ใส่ลิงก์ไปหน้ารายละเอียด) เป็นหัวการ์ดบนมือถือ
  * แสดงทีละ pageSize แถว มีปุ่ม "แสดงเพิ่ม"
  */
-export function DataList({ label, columns, rows, rowKey = (row) => row._id, empty = "ไม่มีข้อมูล", pageSize = 20 }) {
+export function DataList({ label, columns, rows, rowKey = (row) => row._id, empty = "ไม่มีข้อมูล", pageSize = 20, scrollable = false, tableClassName }) {
   const [visible, setVisible] = useState(pageSize);
   const wide = useWide();
   const shown = rows.slice(0, visible);
@@ -35,8 +35,13 @@ export function DataList({ label, columns, rows, rowKey = (row) => row._id, empt
   return (
     <div className="space-y-3">
       {wide ? (
-        <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-haze">
-          <table className="w-full text-left text-sm">
+        <div
+          className={cx("rounded-3xl bg-white ring-1 ring-haze", scrollable ? "overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink" : "overflow-hidden")}
+          role={scrollable ? "region" : undefined}
+          aria-label={scrollable ? label : undefined}
+          tabIndex={scrollable ? 0 : undefined}
+        >
+          <table className={cx("w-full text-left text-sm", tableClassName)}>
             <caption className="sr-only">{label}</caption>
             <thead className="bg-cream text-xs text-ink-soft">
               <tr>
@@ -69,7 +74,7 @@ export function DataList({ label, columns, rows, rowKey = (row) => row._id, empt
                 {rest.map((c) => (
                   <div key={c.key} className="min-w-0">
                     <dt className="text-xs text-ink-soft">{c.header}</dt>
-                    <dd className="truncate text-ink">{c.render(row)}</dd>
+                    <dd className={cx("text-ink", c.mobileClassName ?? "truncate")}>{c.render(row)}</dd>
                   </div>
                 ))}
               </dl>

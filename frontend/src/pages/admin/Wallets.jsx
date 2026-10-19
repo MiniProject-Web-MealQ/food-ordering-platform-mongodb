@@ -96,14 +96,16 @@ function WalletDialog({ user, state, onClose, onAdjust }) {
   const txs = state.wallet_transactions.filter((t) => t.user_id === user._id);
   const balance = walletOf(state, user._id);
   return (
-    <MerchantDialog eyebrow="Wallet" title={user.name} subtitle={user.email} onClose={onClose}>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-        <div className="space-y-3">
+    <MerchantDialog eyebrow="Wallet" title={user.name} subtitle={user.email} onClose={onClose} size="wide">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start">
+        <div className="min-w-0 space-y-3">
           <StatCard label="ยอดคงเหลือ" value={formatBaht(balance)} highlight />
           <DataList
             label="ประวัติรายการ Wallet"
             rows={txs}
             pageSize={15}
+            scrollable
+            tableClassName="min-w-[46rem]"
             empty="ยังไม่มีรายการ"
             columns={[
               { key: "time", header: "เวลา", primary: true, render: (t) => formatDateTime(t.created_at) },
@@ -111,6 +113,8 @@ function WalletDialog({ user, state, onClose, onAdjust }) {
               {
                 key: "desc",
                 header: "รายละเอียด",
+                className: "min-w-48 wrap-anywhere",
+                mobileClassName: "whitespace-normal wrap-anywhere",
                 render: (t) => (
                   <span>
                     {t.description}
@@ -118,12 +122,12 @@ function WalletDialog({ user, state, onClose, onAdjust }) {
                   </span>
                 ),
               },
-              { key: "amount", header: "จำนวน", className: "text-right tabular-nums", render: (t) => <span className={t.amount < 0 ? "text-danger" : "text-brand-ink"}>{signed(t.amount)}</span> },
-              { key: "after", header: "คงเหลือ", className: "text-right tabular-nums", render: (t) => formatBaht(t.balance_after) },
+              { key: "amount", header: "จำนวน", className: "min-w-28 whitespace-nowrap text-right tabular-nums", mobileClassName: "whitespace-normal wrap-anywhere tabular-nums", render: (t) => <span className={t.amount < 0 ? "text-danger" : "text-brand-ink"}>{signed(t.amount)}</span> },
+              { key: "after", header: "คงเหลือ", className: "min-w-28 whitespace-nowrap text-right tabular-nums", mobileClassName: "whitespace-normal wrap-anywhere tabular-nums", render: (t) => formatBaht(t.balance_after) },
             ]}
           />
         </div>
-        <div className="lg:sticky lg:top-0">
+        <div className="min-w-0 xl:sticky xl:top-0">
           <AdjustForm balance={balance} onAdjust={onAdjust} />
         </div>
       </div>
