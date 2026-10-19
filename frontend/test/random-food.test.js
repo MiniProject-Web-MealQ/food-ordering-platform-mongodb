@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chooseRandomCandidate, filterRandomCandidates, getRandomBudgetMax, getRecentMenuIds } from "../src/features/customer/random-food.js";
+import { chooseRandomCandidate, filterRandomCandidates, getRandomBudgetMax, getRecentMenuIds, sampleRandomCandidates } from "../src/features/customer/random-food.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 9, 19, 12);
@@ -91,4 +91,52 @@ test("budget ceiling follows high-priced real items, rounds by the step and igno
   assert.equal(getRandomBudgetMax(undefined), 150);
   assert.equal(getRandomBudgetMax([], NaN, 0), 150);
   assert.equal(Number.isFinite(getRandomBudgetMax([{ price: Number.MAX_VALUE }])), true);
+});
+
+test("orbital samples use deterministic draws without replacement and retain catalogue references", () => {
+  const values = [0.99, 0.1, 0.6];
+  let calls = 0;
+  const result = sampleRandomCandidates(menus, 3, [], () => values[calls++]);
+  assert.deepEqual(result, [menus[4], menus[1], menus[3]]);
+  assert.equal(calls, 3);
+  assert.equal(new Set(result).size, 3);
+  assert.equal(result[0], menus[4]);
+  assert.equal(result[1], menus[1]);
+});
+
+test("orbital samples deduplicate alias groups and exclude any client or database identity", () => {
+  const first = { id: "client-a", backendId: "db-a" };
+  const second = { id: "client-b", backendId: "db-b" };
+  const bridge = { id: "client-b", backendId: "db-a" };
+  const duplicate = { id: "another-client", backendId: "db-a" };
+  const backendOnly = { backendId: "db-only" };
+  const third = { id: "third", backendId: "db-third" };
+  const pool = [first, second, bridge, duplicate, backendOnly, third];
+  assert.deepEqual(sampleRandomCandidates(pool, 5, [], () => 0), [first, backendOnly, third]);
+  assert.deepEqual(sampleRandomCandidates(pool, 5, ["client-b"], () => 0), [backendOnly, third]);
+  assert.deepEqual(sampleRandomCandidates(pool, 5, ["db-a"], () => 0), [backendOnly, third]);
+  assert.deepEqual(sampleRandomCandidates(pool, 5, new Set(["db-only", "third"]), () => 0), [first]);
+});
+
+test("orbital samples keep short pools unique, skip bad entries and do not mutate inputs", () => {
+  const first = Object.freeze({ id: "first", backendId: "db-first" });
+  const last = Object.freeze({ id: "last" });
+  const pool = Object.freeze([null, {}, false, [], { id: "", backendId: " " }, first, last, first]);
+  const excluded = Object.freeze(["missing", "db-first"]);
+  const original = [...pool];
+  assert.deepEqual(sampleRandomCandidates(pool, 20, excluded, () => 1), [last]);
+  assert.deepEqual(sampleRandomCandidates(pool, 2.8, [], () => 1), [last, first]);
+  assert.deepEqual(pool, original);
+  assert.deepEqual(excluded, ["missing", "db-first"]);
+  assert.deepEqual(sampleRandomCandidates(pool, 5, ["first", "last"]), []);
+});
+
+test("orbital samples handle empty pools, invalid limits and malformed RNG values safely", () => {
+  assert.deepEqual(sampleRandomCandidates(undefined), []);
+  assert.deepEqual(sampleRandomCandidates([]), []);
+  for (const limit of [0, -1, 0.8, NaN, Infinity, "3", null]) assert.deepEqual(sampleRandomCandidates(menus, limit), []);
+  assert.equal(sampleRandomCandidates(menus, 1, [], () => 8)[0], menus[4]);
+  for (const value of [-2, NaN, Infinity, "0.9", null]) assert.equal(sampleRandomCandidates(menus, 1, [], () => value)[0], menus[0]);
+  assert.equal(sampleRandomCandidates(menus, 1, null, null)[0], menus[0]);
+  assert.equal(sampleRandomCandidates(menus, 1, [], () => { throw new Error("unavailable RNG"); })[0], menus[0]);
 });

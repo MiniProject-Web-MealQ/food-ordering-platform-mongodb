@@ -64,6 +64,56 @@ export function chooseRandomCandidate(items, previousId, random = Math.random) {
   return pool[Math.min(pool.length - 1, Math.floor(unit * pool.length))];
 }
 
+/** Samples original catalogue objects; client/database aliases describe one menu. */
+export function sampleRandomCandidates(items, limit = 5, excludeIds = [], random = Math.random) {
+  if (!Array.isArray(items) || !Number.isFinite(limit) || limit < 1) return [];
+  const parents = new Map();
+  function rootOf(id) {
+    if (!parents.has(id)) parents.set(id, id);
+    let root = id;
+    while (parents.get(root) !== root) root = parents.get(root);
+    let cursor = id;
+    while (cursor !== root) {
+      const next = parents.get(cursor);
+      parents.set(cursor, root);
+      cursor = next;
+    }
+    return root;
+  }
+
+  const entries = [];
+  for (const item of items) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const ids = identities(item);
+    if (!ids.length) continue;
+    entries.push({ item, ids });
+    const first = rootOf(ids[0]);
+    for (const id of ids.slice(1)) parents.set(rootOf(id), first);
+  }
+  // Resolve all aliases before exclusion: a later duplicate may introduce a
+  // second client ID for an already-seen database ID, or join two copies.
+  const excluded = new Set((Array.isArray(excludeIds) || excludeIds instanceof Set ? [...excludeIds] : []).filter(validId).map(rootOf));
+  const seen = new Set();
+  const pool = [];
+  for (const { item, ids } of entries) {
+    const root = rootOf(ids[0]);
+    if (excluded.has(root) || seen.has(root)) continue;
+    seen.add(root);
+    pool.push(item);
+  }
+
+  const count = Math.min(Math.floor(limit), pool.length);
+  for (let index = 0; index < count; index += 1) {
+    let value = 0;
+    try { value = typeof random === "function" ? random() : 0; } catch { /* Optional RNG cannot break the page. */ }
+    const unit = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+    const remaining = pool.length - index;
+    const target = index + Math.min(remaining - 1, Math.floor(unit * remaining));
+    [pool[index], pool[target]] = [pool[target], pool[index]];
+  }
+  return pool.slice(0, count);
+}
+
 export function getRandomBudgetMax(items, base = 150, step = 10) {
   const floor = Number.isFinite(base) && base >= 0 ? base : 150;
   const increment = Number.isFinite(step) && step > 0 ? step : 10;

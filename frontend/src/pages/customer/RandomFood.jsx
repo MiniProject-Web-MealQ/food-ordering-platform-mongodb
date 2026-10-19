@@ -9,12 +9,13 @@ import { MENU_ITEMS, getMenuItem, getRestaurant, isOrderable } from "@/features/
 import { formatBaht } from "@/features/customer/format";
 import { CUISINES } from "@/features/customer/mock-data";
 import { useCustomer } from "@/features/customer/store";
-import { chooseRandomCandidate, filterRandomCandidates, getRandomBudgetMax, getRecentMenuIds } from "@/features/customer/random-food";
+import { chooseRandomCandidate, filterRandomCandidates, getRandomBudgetMax, getRecentMenuIds, sampleRandomCandidates } from "@/features/customer/random-food";
+import { DEFAULT_RANDOM_FILTERS as DEFAULT_FILTERS, readRandomPreferences, writeRandomPreferences } from "@/features/customer/random-preferences";
 import { useRandomAudio } from "@/features/customer/use-random-audio";
 import { usePageTitle } from "@/lib/use-page-title";
 import "@/features/customer/random-experience.css";
 
-const DEFAULT_FILTERS = { cuisine: "all", budget: 80, openOnly: true, hideSoldOut: true, noRepeat: false };
+const CUISINE_IDS = CUISINES.map((cuisine) => cuisine.id);
 const CUISINE_SYMBOLS = { all: "✦", thai: "🍜", japanese: "🍣", korean: "🍲", fastfood: "🍔", drink: "🥤", dessert: "🍰" };
 const menuId = (item) => item?.id || item?.backendId;
 const menuPath = (item) => `/customer/restaurants/${item.restaurantId}/menu/${menuId(item)}`;
@@ -33,7 +34,9 @@ function useReducedMotion() {
 function RandomFood() {
   usePageTitle("สุ่มอาหาร · ค้นพบจานโปรด");
   const { state } = useCustomer();
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const budgetMax = getRandomBudgetMax(MENU_ITEMS);
+  const [initialPreferences] = useState(() => readRandomPreferences({ cuisineIds: CUISINE_IDS, maxBudget: budgetMax }));
+  const [filters, setFilters] = useState(initialPreferences.filters);
   const [phase, setPhase] = useState("idle");
   const [previewId, setPreviewId] = useState(null);
   const [resultId, setResultId] = useState(null);
@@ -43,8 +46,13 @@ function RandomFood() {
   const [reelIds, setReelIds] = useState([]);
   const [announcement, setAnnouncement] = useState("");
   const [notice, setNotice] = useState("");
-  const [motionEnabled, setMotionEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [motionEnabled, setMotionEnabled] = useState(initialPreferences.motionEnabled);
+  const [soundEnabled, setSoundEnabled] = useState(initialPreferences.soundEnabled);
+  const [preferencesSaved, setPreferencesSaved] = useState(null);
+  const [orbitIds, setOrbitIds] = useState(() => {
+    const pool = filterRandomCandidates(MENU_ITEMS, getRestaurant, { ...initialPreferences.filters, noRepeat: Boolean(state.user) && initialPreferences.filters.noRepeat }, getRecentMenuIds(state.orders));
+    return sampleRandomCandidates(pool, pool.length).map(menuId);
+  });
   const reducedMotion = useReducedMotion();
   const allowMotion = motionEnabled && !reducedMotion;
   const { start: startAudio, tick: tickAudio, finish: finishAudio, stop: stopAudio } = useRandomAudio(soundEnabled);
@@ -71,30 +79,42 @@ function RandomFood() {
   const effectiveFilters = { ...filters, noRepeat: Boolean(state.user) && filters.noRepeat };
   const recent = getRecentMenuIds(state.orders);
   const candidates = filterRandomCandidates(MENU_ITEMS, getRestaurant, effectiveFilters, recent);
-  const budgetMax = getRandomBudgetMax(MENU_ITEMS);
   const cuisinePool = filterRandomCandidates(MENU_ITEMS, getRestaurant, { ...effectiveFilters, cuisine: "all" }, recent);
   const previousResult = resultId ? getMenuItem(resultId) : null;
   const result = previousResult && getRestaurant(previousResult.restaurantId) ? previousResult : null;
   const stagePhase = phase === "result" && !result ? "empty" : phase;
   const stageItem = phase === "result" ? result : phase === "spinning" ? getMenuItem(previewId) : candidates[Math.floor(candidates.length / 3)] || null;
   const spinning = phase === "spinning";
-  const orbitItems = candidates.filter((item) => menuId(item) !== menuId(stageItem)).slice(0, 5);
+  const candidateIds = new Set(candidates.map(menuId));
+  const rankedOrbit = orbitIds.map(getMenuItem).filter((item) => item && candidateIds.has(menuId(item)));
+  const rankedIds = new Set(rankedOrbit.map(menuId));
+  // Resolve saved ordering against fresh catalogue objects, filling gaps after live removals.
+  const orbitItems = [...rankedOrbit, ...candidates.filter((item) => !rankedIds.has(menuId(item)))]
+    .filter((item) => menuId(item) !== menuId(stageItem)).slice(0, 5);
   const historyItems = history.map(getMenuItem).filter((item) => item && getRestaurant(item.restaurantId));
   const showEmpty = phase === "empty" || (phase === "result" && !result);
 
-  function setFilter(key, value) {
+  function savePreferences(nextFilters, nextMotion = motionEnabled, nextSound = soundEnabled) {
+    setPreferencesSaved(writeRandomPreferences({ filters: nextFilters, motionEnabled: nextMotion, soundEnabled: nextSound }, { cuisineIds: CUISINE_IDS, maxBudget: budgetMax }));
+  }
+
+  function applyFilters(nextFilters) {
     if (busy.current) return;
-    setFilters((current) => ({ ...current, [key]: value }));
+    setFilters(nextFilters);
+    const pool = filterRandomCandidates(MENU_ITEMS, getRestaurant, { ...nextFilters, noRepeat: Boolean(state.user) && nextFilters.noRepeat }, getRecentMenuIds(orders.current));
+    setOrbitIds(sampleRandomCandidates(pool, pool.length).map(menuId));
     setPhase("idle");
     setNotice("");
     setAnnouncement("");
+    savePreferences(nextFilters);
+  }
+
+  function setFilter(key, value) {
+    applyFilters({ ...filters, [key]: value });
   }
 
   function resetFilters() {
-    if (busy.current) return;
-    setFilters(DEFAULT_FILTERS);
-    setPhase("idle");
-    setNotice("");
+    applyFilters(DEFAULT_FILTERS);
   }
 
   function spin() {
@@ -113,8 +133,9 @@ function RandomFood() {
     const activeRun = ++run.current;
     const winner = chooseRandomCandidate(pool, resultId);
     // Bound image decoding without limiting the actual draw's eligible pool.
-    const reel = [winner, ...pool.filter((item) => menuId(item) !== menuId(winner)).sort(() => Math.random() - 0.5).slice(0, 6)];
+    const reel = [winner, ...sampleRandomCandidates(pool, 6, [menuId(winner)])];
     setReelIds(reel.map(menuId));
+    setOrbitIds(sampleRandomCandidates(reel, reel.length).map(menuId));
     startAudio();
     const finish = () => {
       if (!busy.current || run.current !== activeRun) return;
@@ -127,6 +148,7 @@ function RandomFood() {
       const currentWinner = freshPool.find((item) => menuId(item) === menuId(winner)) || chooseRandomCandidate(freshPool, resultId);
       if (!currentWinner) {
         setPhase("empty");
+        setOrbitIds([]);
         setNotice("ข้อมูลร้านหรือเมนูเพิ่งเปลี่ยน ลองปรับตัวเลือกแล้วสุ่มอีกครั้ง");
         setAnnouncement("ไม่มีเมนูที่ตรงเงื่อนไขแล้ว กรุณาลองใหม่");
         stopAudio();
@@ -135,6 +157,7 @@ function RandomFood() {
       const id = menuId(currentWinner);
       setPreviewId(id);
       setResultId(id);
+      setOrbitIds(sampleRandomCandidates(freshPool, freshPool.length).map(menuId));
       setDrawId((value) => value + 1);
       setHistory((items) => [id, ...items.filter((value) => value !== id)].slice(0, 5));
       setPhase("result");
@@ -158,6 +181,7 @@ function RandomFood() {
       timers.current.push(setTimeout(() => {
         if (!busy.current || run.current !== activeRun) return;
         setPreviewId(menuId(index === delays.length - 1 ? winner : reel[index % reel.length]));
+        setOrbitIds(sampleRandomCandidates(reel, reel.length).map(menuId));
         tickAudio();
       }, elapsed));
     });
@@ -165,11 +189,19 @@ function RandomFood() {
   }
 
   function toggleMotion() {
-    setMotionEnabled((value) => !value);
+    const nextMotion = !motionEnabled;
+    setMotionEnabled(nextMotion);
+    savePreferences(filters, nextMotion);
     if (allowMotion && busy.current) {
       motion.current = false;
       finishNow.current?.();
     }
+  }
+
+  function toggleSound() {
+    const nextSound = !soundEnabled;
+    setSoundEnabled(nextSound);
+    savePreferences(filters, motionEnabled, nextSound);
   }
 
   return (
@@ -183,7 +215,7 @@ function RandomFood() {
             <p className="random-experience__intro">พักคำถามว่า “กินอะไรดี” แล้วปล่อยให้จานอร่อยมาเซอร์ไพรส์คุณ</p>
           </div>
           <div className="random-experience__controls" aria-label="ตั้งค่าเอฟเฟกต์">
-            <button type="button" aria-pressed={soundEnabled} onClick={() => setSoundEnabled((value) => !value)} title={soundEnabled ? "ปิดเสียง" : "เปิดเสียงตอนสุ่ม"}>{soundEnabled ? <Volume2 /> : <VolumeX />}<span>เสียง{soundEnabled ? "เปิด" : "ปิด"}</span></button>
+            <button type="button" aria-pressed={soundEnabled} onClick={toggleSound} title={soundEnabled ? "ปิดเสียง" : "เปิดเสียงตอนสุ่ม"}>{soundEnabled ? <Volume2 /> : <VolumeX />}<span>เสียง{soundEnabled ? "เปิด" : "ปิด"}</span></button>
             <button type="button" aria-pressed={motionEnabled && !reducedMotion} disabled={reducedMotion} onClick={toggleMotion} title={reducedMotion ? "กำลังใช้การลดการเคลื่อนไหวตามอุปกรณ์" : allowMotion ? "หยุดการเคลื่อนไหว" : "เปิดการเคลื่อนไหว"}>{allowMotion ? <Pause /> : <Play />}<span>{allowMotion ? "พักเอฟเฟกต์" : "ลดการเคลื่อนไหว"}</span></button>
           </div>
         </header>
@@ -210,7 +242,7 @@ function RandomFood() {
               </div>
             </div>
 
-            {showEmpty && <div className="random-experience__empty"><Sparkles /><div><h2>เพิ่มโอกาสเจอจานที่ใช่</h2><p>{notice || (phase === "result" ? "เมนูนี้ถูกนำออกจากร้านแล้ว ลองค้นหาจานใหม่ได้เลย" : "ตอนนี้ยังไม่มีเมนูตรงเงื่อนไข ลองเพิ่มงบ เปลี่ยนหมวด หรือพักตัวเลือกไม่ซ้ำ")}</p><button type="button" onClick={() => { setFilters({ ...DEFAULT_FILTERS, budget: budgetMax }); setPhase("idle"); setNotice(""); }}>ดูทุกหมวดในงบ {formatBaht(budgetMax)} <ArrowRight /></button><Link to="/customer/explore">เลือกดูร้านด้วยตัวเอง <ArrowUpRight /></Link></div></div>}
+            {showEmpty && <div className="random-experience__empty"><Sparkles /><div><h2>เพิ่มโอกาสเจอจานที่ใช่</h2><p>{notice || (phase === "result" ? "เมนูนี้ถูกนำออกจากร้านแล้ว ลองค้นหาจานใหม่ได้เลย" : "ตอนนี้ยังไม่มีเมนูตรงเงื่อนไข ลองเพิ่มงบ เปลี่ยนหมวด หรือพักตัวเลือกไม่ซ้ำ")}</p><button type="button" onClick={() => applyFilters({ ...DEFAULT_FILTERS, budget: budgetMax })}>ดูทุกหมวดในงบ {formatBaht(budgetMax)} <ArrowRight /></button><Link to="/customer/explore">เลือกดูร้านด้วยตัวเอง <ArrowUpRight /></Link></div></div>}
 
             {historyItems.length > 0 && <section className="random-experience__history" aria-labelledby="random-history-title"><div className="random-experience__section-heading"><h2 id="random-history-title"><History />ผลสุ่มรอบนี้</h2><span>เผื่อจานก่อนยังอยู่ในใจ</span></div><div className="random-experience__history-list">{historyItems.map((item, index) => <Link key={menuId(item)} to={menuPath(item)} className="random-experience__history-item"><span className="random-experience__history-number">0{index + 1}</span><CatalogImage src={item.image} label={item.name} compact className="random-experience__history-image" /><span><strong>{item.name}</strong><small>{getRestaurant(item.restaurantId).name}</small></span><b>{formatBaht(item.price)}</b><ArrowUpRight /></Link>)}</div></section>}
           </div>
@@ -223,7 +255,7 @@ function RandomFood() {
               <div className="random-experience__filter-section"><div className="random-experience__label"><label htmlFor="random-budget">งบต่อจาน</label><span>02 / BUDGET</span></div><div className="random-experience__budget-value"><span>ไม่เกิน</span><strong>{formatBaht(filters.budget)}</strong><span>/ จาน</span></div><input id="random-budget" type="range" min="20" max={budgetMax} step="5" value={filters.budget} aria-valuetext={`ไม่เกิน ${filters.budget} บาทต่อจาน`} onChange={(event) => setFilter("budget", Number(event.target.value))} style={{ "--budget-progress": `${Math.max(0, Math.min(100, (filters.budget - 20) / (budgetMax - 20) * 100))}%` }} /><div className="random-experience__range-labels" aria-hidden="true"><span>฿20</span><span>{formatBaht(budgetMax)}</span></div><div className="random-experience__budget-presets">{[50, 80, 120, budgetMax].filter((value, index, values) => values.indexOf(value) === index).map((value) => <button type="button" key={value} aria-pressed={filters.budget === value} onClick={() => setFilter("budget", value)}>{value === budgetMax ? "ทุกช่วงราคา" : formatBaht(value)}</button>)}</div></div>
               <div className="random-experience__filter-section"><div className="random-experience__label"><h3>ใส่ใจอีกนิด</h3><span>03 / YOUR RULES</span></div><div className="random-experience__switches">{[["openOnly", "เฉพาะร้านที่เปิดอยู่", "พร้อมให้คุณเลือกสั่งต่อ"], ["hideSoldOut", "ซ่อนเมนูที่หมด", "เลือกจากจานที่ยังมีอยู่"], ["noRepeat", "ไม่ซ้ำที่สั่งใน 7 วัน", state.user ? "เว้นเมนูเก่า ลองรสชาติใหม่" : "เข้าสู่ระบบเพื่อใช้ประวัติการสั่งซื้อ"]].map(([key, label, description]) => <div key={key}><ToggleSwitch id={`random-${key}`} tone="dark" label={label} checked={Boolean(effectiveFilters[key])} disabled={key === "noRepeat" && !state.user} onChange={(value) => setFilter(key, value)} /><p>{description}</p></div>)}</div></div>
             </fieldset>
-            <div className="random-experience__pool"><div><Sparkles /><span>วงสุ่มของคุณ</span></div><strong>{candidates.length}<small>เมนู</small></strong><p>{candidates.length ? "ปรับตัวเลือกได้ตามใจ แล้วไปลุ้นจานต่อไปกัน" : "ลองขยายตัวเลือกอีกนิด เพื่อเจอเมนูเพิ่มเติม"}</p><a href="#random-how-it-works">สุ่มอย่างไร <ChevronDown /></a></div>
+            <div className="random-experience__pool"><div><Sparkles /><span>วงสุ่มของคุณ</span></div><strong>{candidates.length}<small>เมนู</small></strong><p>{candidates.length ? "ปรับตัวเลือกได้ตามใจ แล้วไปลุ้นจานต่อไปกัน" : "ลองขยายตัวเลือกอีกนิด เพื่อเจอเมนูเพิ่มเติม"}</p><p>{preferencesSaved === false ? "เบราว์เซอร์นี้ไม่อนุญาตให้จำค่า แต่ยังสุ่มได้ตามปกติ" : preferencesSaved ? "จำตัวเลือกไว้บนเบราว์เซอร์นี้แล้ว" : "เปลี่ยนตัวเลือกแล้ว ระบบจะจำไว้บนเบราว์เซอร์นี้"}</p><a href="#random-how-it-works">สุ่มอย่างไร <ChevronDown /></a></div>
           </aside>
         </div>
 

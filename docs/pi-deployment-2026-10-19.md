@@ -4,7 +4,7 @@
 
 - SSH: linapspi4@100.112.221.80 (Tailscale)
 - LAN: 192.168.1.121
-- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-random-switch-fix
+- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-random-preferences
 - Current symlink: /home/linapspi4/mealq-app/current
 - Compose project mealq: รุ่นคูปองอัปเดตเฉพาะ API และ web; MongoDB, Tunnel และ volume mealq_db_data ไม่ถูกเปลี่ยน
 - เว็บรับเฉพาะ loopback 127.0.0.1:8088 จาก Tunnel ไม่มีการเปิด API/MongoDB บน public port
@@ -22,7 +22,7 @@
 
 เก็บ images mealq-api:before-20261019 และ mealq-web:before-20261019 สำหรับ rollback โดยใช้ compose เดิมและ MEALQ_RELEASE=before-20261019 หลังคืน environment เดิม ไม่ต้องลบ volume หรือ restore DB เพื่อ rollback โค้ด เพราะ schema ที่เพิ่มรองรับข้อมูลเก่า ห้ามใช้ compose down -v
 
-รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-random-switch-fix` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
+รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-random-preferences` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
 
 ```sh
 docker compose -p mealq --env-file /home/linapspi4/mealq-app/shared/compose.env -f /home/linapspi4/mealq-app/current/deploy/compose.yaml up -d --no-deps --no-build --wait api web
@@ -161,3 +161,14 @@ API/web health ผ่าน, SMTP authentication ผ่าน, capabilities แ�
 - API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนเปลี่ยน เก็บ release/image ก่อนหน้าและไม่แก้ฐานข้อมูล
 - สำรอง source: `C:\Users\game_\MealQBackups\source-before-random-switch-fix-20261019T233205`; rollback: `shared/backups/activation-20261019-random-switch-fix-20261019T163321Z-362206`
 - สำรองเต็มก่อนสลับ `20261019T233339+0700-362738` และหลังสลับ `20261019T233427+0700-363463`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว
+
+## รุ่น Random orbit และจำการตั้งค่า
+
+- ขึ้น web-only release `20261019-random-preferences` สำเร็จประมาณ 23:41 น. รูปรอบจานสุ่มลำดับใหม่ตอนเข้าหน้า เปลี่ยนตัวกรอง ระหว่าง reel และหลังได้ผล โดยเลือกเมนูที่ยังตรงตัวกรอง ไม่ซ้ำกันและไม่ซ้ำจานกลาง หากมีตัวเลือกน้อยกว่า 6 จะแสดงเฉพาะจำนวนที่มีจริง
+- ใช้ Fisher–Yates sampling ที่ไม่แก้ catalogue, รองรับ alias ของ menu ID และเก็บเฉพาะลำดับ ID เพื่อ resolve ภาพ/ข้อมูลล่าสุด การ render ที่ไม่เกี่ยวกับการสุ่มไม่เปลี่ยนรูปเอง จำกัด reel ไว้ 7 เมนูเพื่อไม่โหลดรูปทั้ง catalogue ทุก tick
+- จำหมวด งบ openOnly/hideSoldOut/noRepeat รวมถึงเสียงและ motion บนเบราว์เซอร์เดิมผ่าน localStorage key `mealq.random.preferences.v1` เก็บเฉพาะค่าที่อนุญาตและ schema version ไม่มีบัญชี ประวัติ ออเดอร์ หรือ credentials ตรวจชนิด/หมวด/ช่วงงบตอนคืนค่า รองรับ storage เสีย/ถูกบล็อก/เต็มโดยยังสุ่มได้และแจ้งหากบันทึกไม่ได้ ปุ่ม reset ตัวกรองบันทึกค่าเริ่มต้นด้วย
+- Frontend **87 tests**, full ESLint และ production build ผ่าน; controller แบบ mock hooks/timers **15 กรณี** ผ่าน รวม orbit 5 รูป/short pool/เปลี่ยน stock, ความคงที่เมื่อ render, คืนค่าข้าม remount/reset และ storage ถูกบล็อก ไม่มีการควบคุม browser ที่ปฏิเสธสิทธิ์จึงไม่อ้างการตรวจ DOM/ภาพ/เสียงจริง
+- HTTPS หน้า Random และ URL รุ่นใหม่ได้ no-store HTML ตรง build (`index-DAfFuPHk.js`), Random chunk `RandomFood-BC28g-ld.js` และ JS/CSS/dependency รวม **22 assets** กับรูปตัวอย่าง **8 ภาพ** ตรง SHA256; API/DB healthy, Google/email พร้อม, www 308 คง path/query และ muaysart 200
+- API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนเปลี่ยน ไม่มีการแก้ข้อมูลร้าน บัญชี หรือออเดอร์ และเก็บ release/image เดิมครบ
+- สำรองหน้า/docs ก่อนแก้ที่ `C:\Users\game_\MealQBackups\source-before-random-preferences-20261019T233546`; helper/test ก่อนแก้ที่ `output/backups/random-orbit-20261019T233546` พร้อมตรวจ SHA256; rollback: `shared/backups/activation-20261019-random-preferences-20261019T164033Z-366415`
+- สำรองเต็มก่อนสลับ `20261019T234052+0700-366942` และหลังสลับ `20261019T234133+0700-367604`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว
