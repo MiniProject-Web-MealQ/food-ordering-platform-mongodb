@@ -13,7 +13,6 @@ const authRoutes = require("./routes/authRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const merchantRoutes = require("./routes/merchantRoutes");
-const userRoutes = require("./routes/userRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const User = require("./models/User");
@@ -52,7 +51,6 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/merchant", merchantRoutes);
 app.use("/api/v1", publicRoutes);
-app.use("/api/users", userRoutes); // legacy route for DB testing
 
 io.use(async (socket, next) => {
   try {
