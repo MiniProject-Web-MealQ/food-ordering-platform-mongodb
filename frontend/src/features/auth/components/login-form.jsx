@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { useEffect, useState } from "react";
+import { ArrowRight, LoaderCircle } from "lucide-react";
 import { GoogleIcon } from "@/components/icons";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,7 @@ export function LoginForm() {
   const oauthError = searchParams.get("authError");
 
   return (
-    <div className="space-y-6">
+    <div className="auth-login space-y-6">
       <form onSubmit={handleSubmit} className="space-y-5">
         <RoleSegmented
           name="portal"
@@ -143,8 +144,9 @@ export function LoginForm() {
           </Link>
         </div>
 
-        <Button type="submit" fullWidth disabled={pending} aria-busy={pending}>
-          {pending ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}
+        <Button type="submit" fullWidth disabled={pending} aria-busy={pending} className="auth-submit">
+          <span>{pending ? "กำลังเข้าสู่ระบบ…" : "เข้าสู่ระบบ"}</span>
+          {pending ? <LoaderCircle aria-hidden="true" className="auth-submit-loader size-5" /> : <ArrowRight aria-hidden="true" className="auth-submit-arrow size-5" />}
         </Button>
       </form>
 
@@ -156,7 +158,7 @@ export function LoginForm() {
       </div>
       <a
         href={googleSignInUrl(portal)}
-        className={buttonClasses({ variant: "secondary", fullWidth: true })}
+        className={`${buttonClasses({ variant: "secondary", fullWidth: true })} auth-google`}
       >
         <GoogleIcon className="size-5 text-brand-ink" />
         เข้าสู่ระบบด้วย Google

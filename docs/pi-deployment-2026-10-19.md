@@ -4,7 +4,7 @@
 
 - SSH: linapspi4@100.112.221.80 (Tailscale)
 - LAN: 192.168.1.121
-- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-wallet-layout-r2
+- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-auth-motion
 - Current symlink: /home/linapspi4/mealq-app/current
 - Compose project mealq: รุ่นคูปองอัปเดตเฉพาะ API และ web; MongoDB, Tunnel และ volume mealq_db_data ไม่ถูกเปลี่ยน
 - เว็บรับเฉพาะ loopback 127.0.0.1:8088 จาก Tunnel ไม่มีการเปิด API/MongoDB บน public port
@@ -22,7 +22,7 @@
 
 เก็บ images mealq-api:before-20261019 และ mealq-web:before-20261019 สำหรับ rollback โดยใช้ compose เดิมและ MEALQ_RELEASE=before-20261019 หลังคืน environment เดิม ไม่ต้องลบ volume หรือ restore DB เพื่อ rollback โค้ด เพราะ schema ที่เพิ่มรองรับข้อมูลเก่า ห้ามใช้ compose down -v
 
-รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-wallet-layout-r2` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
+รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-auth-motion` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
 
 ```sh
 docker compose -p mealq --env-file /home/linapspi4/mealq-app/shared/compose.env -f /home/linapspi4/mealq-app/current/deploy/compose.yaml up -d --no-deps --no-build --wait api web
@@ -130,3 +130,13 @@ API/web health ผ่าน, SMTP authentication ผ่าน, capabilities แ�
 - API/DB healthy; API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนสลับ เว็บ muaysart ตอบ 200 ไม่มีการแก้ยอดเงินหรือฐานข้อมูลจากขั้นตอนนี้ และไม่ได้ควบคุม browser ที่ถูกปฏิเสธสิทธิ์
 - สำรอง source: `C:\Users\game_\MealQBackups\source-before-wallet-layout-r2-20261019T223747`; จุด rollback: `shared/backups/activation-20261019-wallet-layout-r2-20261019T153901Z-334481`
 - สำรองเต็มก่อนสลับ `20261019T223917+0700-335020` และหลังสลับ `20261019T224014+0700-335789`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว
+
+## รุ่น Login motion
+
+- ขึ้น web-only release `20261019-auth-motion` สำเร็จ ลบการ์ดคิวตัวอย่างร้านป้าแดง/#18/เวลารอออกจาก AuthShowcase แล้ว ใช้ภาพอาหาร 3 เมนูแทน พร้อมปุ่มเลือกเมนูที่ใช้คีย์บอร์ดได้, parallax จำกัดระยะ, ภาพลอย, reveal และปุ่มหยุดภาพเคลื่อนไหว
+- เพิ่มแถบเลือกบทบาทแบบเลื่อน ไอคอนลูกค้า/ร้านค้า, focus glow, ปุ่ม submit/Google ตอบสนองเมื่อชี้หรือกด และภาพประกอบขนาดเล็กบนมือถือ โดยคง request, validation, role, session และ OAuth flow เดิม
+- เคารพ prefers-reduced-motion, หยุด animation เมื่อแท็บซ่อน, จัดภาพตามความสูงจอและให้ aside เลื่อนเมื่อเนื้อหายาว ภาพใช้ lazy loading และ URL เวอร์ชันเดิมเพื่อหลีกเลี่ยง cache ภาพเก่า
+- Frontend 68 tests, ESLint และ build ผ่าน; nginx config test ผ่าน ตรวจ HTTPS `/login`, URL รุ่นใหม่, `/register`, `/forgot-password` ได้ no-store HTML ตรง build, JS/CSS/dependency 25 assets และรูป 5 ภาพตรง SHA256; Google/email capabilities ยังพร้อม และ API/DB healthy ไม่ได้ควบคุม browser ที่ปฏิเสธสิทธิ์จึงไม่อ้างว่าได้ตรวจภาพหรือคลิกบนอุปกรณ์จริง
+- API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนเปลี่ยน เว็บ muaysart 200 ไม่มีการเปลี่ยนข้อมูลบัญชีหรือส่งอีเมล/Push ทดสอบจริง
+- สำรอง source ก่อนแก้: `C:\Users\game_\MealQBackups\source-before-login-motion-20261019T225923`; rollback: `shared/backups/activation-20261019-auth-motion-20261019T160740Z-348616`
+- สำรองเต็มก่อนสลับ `20261019T230756+0700-349149` และหลังสลับ `20261019T230857+0700-349906`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว

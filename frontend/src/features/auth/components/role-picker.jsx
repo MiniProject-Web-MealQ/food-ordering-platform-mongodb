@@ -1,3 +1,5 @@
+import { Store, UserRound } from "lucide-react";
+
 const ROLE_COPY = {
   CUSTOMER: { label: "ลูกค้า", description: "สั่งอาหาร ดูคิว" },
   MERCHANT: { label: "ร้านค้า", description: "ขายอาหาร จัดคิว" },
@@ -13,11 +15,12 @@ export function RoleSegmented({ name, legend, value, onChange }) {
   return (
     <fieldset>
       <legend className="sr-only">{legend}</legend>
-      <div className="grid grid-cols-2 gap-1 rounded-full bg-mint p-1.5">
+      <div className="auth-role-switch relative isolate grid grid-cols-2 gap-1 rounded-full bg-mint p-1.5" data-role-selected={value}>
+        <span aria-hidden="true" className="auth-role-indicator pointer-events-none absolute -z-10 rounded-full bg-brand" />
         {ROLE_ORDER.map((role) => (
           <label
             key={role}
-            className={`grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-ink-soft transition-colors hover:text-ink has-checked:bg-brand has-checked:text-ink ${focusRing}`}
+            className={`auth-role-option grid h-11 cursor-pointer place-items-center rounded-full font-semibold text-ink-soft transition-colors hover:text-ink has-checked:text-ink ${focusRing}`}
           >
             <input
               type="radio"
@@ -27,7 +30,10 @@ export function RoleSegmented({ name, legend, value, onChange }) {
               onChange={() => onChange(role)}
               className="sr-only"
             />
-            {ROLE_COPY[role].label}
+            <span className="flex items-center gap-2">
+              {role === "MERCHANT" ? <Store aria-hidden="true" className="size-4" /> : <UserRound aria-hidden="true" className="size-4" />}
+              {ROLE_COPY[role].label}
+            </span>
           </label>
         ))}
       </div>
