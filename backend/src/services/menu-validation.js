@@ -48,13 +48,14 @@ function menuChanges(input, create = false) {
     if (!["thai", "japanese", "korean", "fastfood", "drink", "dessert"].includes(input.cuisine)) fail("ประเภทอาหารไม่ถูกต้อง");
     result.cuisine = input.cuisine;
   }
-  if (input.ingredients !== undefined) {
-    if (!Array.isArray(input.ingredients) || input.ingredients.length > 100) fail("สูตรวัตถุดิบไม่ถูกต้อง");
+  if (create || input.ingredients !== undefined) {
+    if (!Array.isArray(input.ingredients) || input.ingredients.length === 0 || input.ingredients.length > 100) fail("กรุณาระบุวัตถุดิบและปริมาณต่อจานอย่างน้อย 1 รายการ");
     const ids = new Set();
     result.ingredients = input.ingredients.map((row) => {
-      if (!/^[a-f0-9]{24}$/i.test(row?.ingredientId || "") || ids.has(row.ingredientId) || !Number.isFinite(row.quantity) || row.quantity <= 0 || row.quantity > 1000000) fail("ปริมาณวัตถุดิบต้องมากกว่า 0 และห้ามซ้ำ");
-      ids.add(row.ingredientId);
-      return { ingredient_id: row.ingredientId, quantity: row.quantity, unit: text(row.unit, "หน่วย", { empty: false, max: 40 }) };
+      const ingredientId = typeof row?.ingredientId === "string" ? row.ingredientId.toLowerCase() : "";
+      if (!/^[a-f0-9]{24}$/.test(ingredientId) || ids.has(ingredientId) || !Number.isFinite(row.quantity) || row.quantity < 0.000001 || row.quantity > 1000000) fail("ปริมาณวัตถุดิบต้องอย่างน้อย 0.000001 และห้ามซ้ำ");
+      ids.add(ingredientId);
+      return { ingredient_id: ingredientId, quantity: row.quantity, unit: text(row.unit, "หน่วย", { empty: false, max: 40 }) };
     });
   }
   if (input.price !== undefined) {

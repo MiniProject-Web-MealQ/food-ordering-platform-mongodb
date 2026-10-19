@@ -13,6 +13,7 @@ const { hashPassword } = require("../src/services/password");
 const User = require("../src/models/User");
 const Store = require("../src/models/Store");
 const Menu = require("../src/models/Menu");
+const Ingredient = require("../src/models/Ingredient");
 const Order = require("../src/models/Order");
 const Notification = require("../src/models/Notification");
 const Outbox = require("../src/models/EmailOutbox");
@@ -72,7 +73,7 @@ async function run() {
   smtp = await startTestSmtp();
   Object.assign(process.env, smtp.env, { NODE_ENV: "development", PAYMENT_MODE: "demo", FRONTEND_URL: "https://mealq.site", SESSION_SECRET: crypto.randomUUID() });
   assert.equal(process.env.SMTP_HOST, "127.0.0.1");
-  await Promise.all([User, Store, Menu, Order, Notification, Outbox, State].map((model) => model.init()));
+  await Promise.all([User, Store, Menu, Ingredient, Order, Notification, Outbox, State].map((model) => model.init()));
   const watermark = await email.ensureEmailWatermark();
   assert.equal((await email.ensureEmailWatermark(new Date(Date.now() + 86400000))).enabled_at.getTime(), watermark.enabled_at.getTime());
 
@@ -90,7 +91,8 @@ async function run() {
   store = await Store.findById(merchantLogin.store.id);
   await admin("PATCH", `/admin/stores/${store._id}`, { status: "active" });
   await merchant("PATCH", "/merchant/store", { name: "Synthetic email DEMO shop", isOpen: true, maxQueue: 30 });
-  const dish = (await merchant("POST", "/merchant/menu", { name: 'Synthetic egg & rice <dish>', price: 40, category: "single" }, 201)).menu;
+  const ingredient = (await merchant("POST", "/merchant/inventory", { name: "Synthetic email portions", quantity: 1000, unit: "portion" }, 201)).ingredient;
+  const dish = (await merchant("POST", "/merchant/menu", { name: 'Synthetic egg & rice <dish>', price: 40, category: "single", ingredients: [{ ingredientId: ingredient.id, quantity: 1, unit: "portion" }] }, 201)).menu;
   menu = await Menu.findById(dish.id);
   await customer("POST", "/customer/wallet/topup", { amount: 5000 }, 201, "email-fixture-topup");
 
@@ -138,15 +140,15 @@ async function run() {
   const readyDoc = await Order.findById(paid.id);
   await Promise.all([notifications.recordOrder(readyDoc), notifications.recordOrder(readyDoc)]);
   await flush();
-  assert.equal(smtp.messages.length, 3);
+  assert.equal(smtp.messages.length, 5);
   const current = (await merchant("GET", `/merchant/orders/${paid.id}`)).order;
   await merchant("POST", `/merchant/orders/${paid.id}/receive`, { receiveCode: current.pickupCode });
-  await waitFor(async () => (await jobsFor(paid.id)).length === 5, "Pickup should add customer completed + merchant pickup jobs");
-  await flush(); assert.equal(smtp.messages.length, 5);
+  await waitFor(async () => (await jobsFor(paid.id)).length === 7, "Pickup should add customer completed + merchant pickup jobs");
+  await flush(); assert.equal(smtp.messages.length, 7);
   const paidJobs = await jobsFor(paid.id);
-  assert.equal(paidJobs.filter((row) => row.role === "customer").length, 3);
+  assert.deepEqual(paidJobs.filter((row) => row.role === "customer").map((row) => row.event).sort(), ["paid", "confirmed", "preparing", "ready", "completed"].sort());
   assert.equal(paidJobs.filter((row) => row.role === "merchant").length, 2);
-  pass("Ready and pickup produce their intended customer/merchant emails while duplicate status recording is deduplicated");
+  pass("Every customer step from paid through confirmed/preparing/ready/pickup sends once; merchant events remain new and pickup only");
 
   const cancelled = await checkout(); await waitFor(async () => (await jobsFor(cancelled.id)).length === 2, "Cancellation fixture checkout jobs"); await flush();
   const beforeCancel = smtp.messages.length;
@@ -204,6 +206,43 @@ async function run() {
   assert.equal((await Outbox.findById(retry._id)).status, "sent"); assert.equal(smtp.messages.length, beforeRetry + 1);
   pass("A real local SMTP failure leaves a durable job; backoff prevents hot retries and a later successful attempt sends once");
 
+  const timelineUser = await optedInUser();
+  const timelineOrder = await syntheticOrder(timelineUser);
+  const sameTime = new Date();
+  // Reverse insertion at one timestamp exercises rank ordering as well as the
+  // predecessor guard, rather than relying on ObjectId or insertion order.
+  for (const status of ["ready", "preparing", "confirmed"]) {
+    await email.enqueueOrderEmail({ order: { ...timelineOrder.toObject(), status }, user: timelineUser, role: "customer", event: status, eventAt: sameTime, title: status, message: "Synthetic chronological check", url: `/customer/orders/${timelineOrder._id}` });
+  }
+  smtp.reject(true);
+  await email.deliverOrderEmails({ limit: 1 });
+  const held = await Outbox.findOne({ order_id: timelineOrder._id, event: "confirmed" });
+  assert.equal(held.attempts, 1); assert.equal(held.status, "pending");
+  assert.equal(await Outbox.countDocuments({ order_id: timelineOrder._id, event: { $in: ["preparing", "ready"] }, attempts: 0 }), 2);
+  const independent = await directJob(timelineUser);
+  smtp.reject(false); await flush();
+  assert.equal((await Outbox.findById(independent._id)).status, "sent", "Another order must not be blocked by this order's retry backoff");
+  assert.equal(await Outbox.countDocuments({ order_id: timelineOrder._id, status: "sent" }), 0, "Later steps must wait for the earlier retry");
+  await Promise.all([email.deliverOrderEmails({ limit: 100, now: new Date(held.available_at.getTime() + 1) }), email.deliverOrderEmails({ limit: 100, now: new Date(held.available_at.getTime() + 1) })]);
+  const timelineMessages = smtp.messages.filter((row) => row.recipients.includes(timelineUser.email) && row.text.includes(timelineOrder.order_number));
+  assert.deepEqual(timelineMessages.map((row) => row.text.match(/\n(confirmed|preparing|ready)\n/)?.[1]), ["confirmed", "preparing", "ready"]);
+  assert.equal(await Outbox.countDocuments({ order_id: timelineOrder._id, status: "sent" }), 3);
+  pass("Equal-time rapid stages stay chronological across retry backoff and concurrent workers, while another order continues sending");
+
+  const terminalUser = await optedInUser(); const terminalOrder = await syntheticOrder(terminalUser);
+  for (const status of ["confirmed", "ready"]) await email.enqueueOrderEmail({ order: { ...terminalOrder.toObject(), status }, user: terminalUser, role: "customer", event: status, eventAt: new Date(), title: status, url: `/customer/orders/${terminalOrder._id}` });
+  const terminalHead = await Outbox.findOne({ order_id: terminalOrder._id, event: "confirmed" });
+  smtp.reject(true);
+  for (let attempt = 0; attempt < email.MAX_ATTEMPTS; attempt++) {
+    const head = await Outbox.findById(terminalHead._id);
+    await email.deliverOrderEmails({ limit: 1, now: new Date(Math.max(Date.now(), head.available_at.getTime()) + 1) });
+  }
+  assert.equal((await Outbox.findById(terminalHead._id)).status, "failed");
+  smtp.reject(false); await flush();
+  assert.equal((await Outbox.findOne({ order_id: terminalOrder._id, event: "ready" })).status, "sent");
+  assert.equal((await Outbox.findById(terminalHead._id)).attempts, email.MAX_ATTEMPTS);
+  pass("A terminal failed earlier step is retained for audit and does not prevent a later ready notification forever");
+
   const pausedUser = await optedInUser(); process.env.SMTP_HOST = "";
   const paused = await directJob(pausedUser); assert.ok(paused, "An already opted-in event must still be queued during a temporary SMTP outage");
   await flush(); assert.equal((await Outbox.findById(paused._id)).attempts, 0); process.env.SMTP_HOST = host;
@@ -224,20 +263,20 @@ async function run() {
   pass("An active delivery lease prevents a second worker; an expired crashed lease is recovered with a single accepted send");
 
   const journalBase = Date.now();
-  const journal = ["pending", "ready", "completed"].map((status, index) => ({ status, at: new Date(journalBase + index), payment_status: "paid" }));
-  const crashed = await syntheticOrder(customerUser, { status: "completed", receive_time: journal[2].at, notification_events: journal });
+  const journal = ["pending", "confirmed", "preparing", "ready", "completed"].map((status, index) => ({ status, at: new Date(journalBase + index), payment_status: "paid" }));
+  const crashed = await syntheticOrder(customerUser, { status: "completed", receive_time: journal[4].at, notification_events: journal });
   assert.equal((await jobsFor(crashed._id)).length, 0);
   await notifications.recordOrder(crashed);
   await Promise.all([notifications.recordOrder(crashed), notifications.recordOrder(crashed)]);
   const recovered = await jobsFor(crashed._id);
-  assert.equal(recovered.length, 5);
-  const originalTimes = { paid: journal[0].at, new: journal[0].at, ready: journal[1].at, completed: journal[2].at, pickup: journal[2].at };
+  assert.equal(recovered.length, 7);
+  const originalTimes = { paid: journal[0].at, new: journal[0].at, confirmed: journal[1].at, preparing: journal[2].at, ready: journal[3].at, completed: journal[4].at, pickup: journal[4].at };
   for (const job of recovered) assert.equal(job.event_at.getTime(), originalTimes[job.event].getTime());
   const recoveredPush = await Notification.find({ order_id: String(crashed._id) });
   assert.equal(recoveredPush.length, 2);
   assert.ok(recoveredPush.every((notice) => ["completed", "pickup"].includes(notice.kind)), "Only the current state should create a push notice after recovery");
-  const beforeRepair = smtp.messages.length; await flush(); assert.equal(smtp.messages.length, beforeRepair + 5);
-  pass("A committed pending/ready/completed event journal repairs a crash before outbox creation, preserves event timestamps and avoids superseded push spam");
+  const beforeRepair = smtp.messages.length; await flush(); assert.equal(smtp.messages.length, beforeRepair + 7);
+  pass("A committed five-stage event journal repairs a crash before outbox creation, preserves event timestamps and avoids superseded push spam");
 
   const oldEventTime = new Date(); await delay(3);
   const lateOptIn = await optedInUser();
@@ -279,6 +318,22 @@ async function run() {
   assert.deepEqual(await notifications.repairOrders({ limit: 2 }), { processed: 1, failed: 0 });
   assert.equal((await Order.findById(backlog[2]._id)).notification_pending, false);
   pass("Bounded oldest-first journal repair advances across the backlog instead of repeatedly scanning only recent orders");
+
+  const oldExpanded = await syntheticOrder(backlogUser, { status: "preparing", notification_events: [
+    { status: "confirmed", at: staleAt, payment_status: "paid" },
+    { status: "preparing", at: new Date(staleAt.getTime() + 1), payment_status: "paid" },
+  ] });
+  await notifications.recordOrder(oldExpanded);
+  assert.equal((await jobsFor(oldExpanded._id)).length, 0, "An older opt-in cannot backfill newly introduced stages from before this version's activation");
+  const expandedAt = new Date();
+  const newExpanded = await syntheticOrder(backlogUser, { status: "preparing", notification_events: [
+    { status: "confirmed", at: expandedAt, payment_status: "paid" },
+    { status: "preparing", at: new Date(expandedAt.getTime() + 1), payment_status: "paid" },
+  ] });
+  await notifications.recordOrder(newExpanded);
+  assert.deepEqual((await jobsFor(newExpanded._id)).map((job) => job.event), ["confirmed", "preparing"]);
+  await flush();
+  pass("The new-stage activation watermark prevents historical confirmed/preparing backfill while admitting fresh stages for an existing opt-in");
 
   const readyAt = new Date();
   const racing = await syntheticOrder(customerUser, { status: "ready", notification_pending: true, notification_events: [{ status: "ready", at: readyAt, payment_status: "paid" }] });

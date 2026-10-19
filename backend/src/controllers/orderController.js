@@ -77,6 +77,43 @@ async function replayCheckout(identity, res) {
   return true;
 }
 
+async function resolveOrderSelection(inputItems) {
+  const reject = (status, code, message) => { throw Object.assign(new Error(message), { status, code }); };
+  const clientIds = [...new Set(inputItems.map((item) => item.menuId))];
+  const objectIds = clientIds.filter((id) => mongoose.isValidObjectId(id));
+  const menus = await Menu.find({ $or: [
+    { client_id: { $in: clientIds } },
+    ...(objectIds.length ? [{ _id: { $in: objectIds } }] : []),
+  ] });
+  const byClientId = new Map(menus.map((menu) => [menu.client_id, menu]));
+  const byId = new Map(menus.map((menu) => [String(menu._id), menu]));
+  const resolved = inputItems.map((input) => ({ input, menu: byClientId.get(input.menuId) || byId.get(input.menuId) }));
+  if (resolved.some(({ menu }) => !menu)) reject(404, "MENU_NOT_FOUND", "มีเมนูที่ไม่มีหรือถูกลบแล้ว กรุณาตรวจสอบตะกร้า");
+  const storeId = String(resolved[0].menu.store_id);
+  if (resolved.some(({ menu }) => String(menu.store_id) !== storeId)) reject(400, "MULTI_STORE_ORDER", "หนึ่งออเดอร์สั่งได้จากร้านเดียวเท่านั้น");
+  const store = await Store.findById(storeId);
+  if (!store || (store.status && store.status !== "active")) reject(404, "RESTAURANT_NOT_FOUND", "ไม่พบร้านอาหารที่เปิดให้บริการ");
+  if (store.owner_id && !await User.exists({ _id: store.owner_id, status: "active", role: { $in: ["merchant", "staff"] } })) reject(409, "STORE_UNAVAILABLE", "ร้านนี้หยุดรับออเดอร์ชั่วคราว");
+  if (!require("../services/store-hours").isStoreOpen(store)) reject(409, "STORE_CLOSED", "ร้านปิดรับออเดอร์อยู่ในขณะนี้");
+  const items = resolved.map(({ input, menu }) => priceOrderItem(menu, input));
+  require("../services/inventory").assertRecipesConfigured(resolved);
+  return { resolved, store, items };
+}
+
+async function checkOrderStock(req, res) {
+  try {
+    const paymentMethod = validateOrderInput(req.body);
+    if (!paymentCapabilities().paymentMethods.includes(paymentMethod)) return sendError(res, 501, "PAYMENT_NOT_CONFIGURED", "ยังไม่ได้เชื่อมต่อผู้ให้บริการชำระเงินจริง");
+    const settings = await getSettings();
+    if (!settings.accepting_orders) return sendError(res, 503, "ORDERS_PAUSED", "ระบบหยุดรับออเดอร์ชั่วคราว กรุณาลองใหม่ภายหลัง");
+    const { resolved, store } = await resolveOrderSelection(req.body.items);
+    return res.json(await require("../services/inventory").checkStock(resolved, store._id));
+  } catch (error) {
+    if (error.status && error.code) return sendError(res, error.status, error.code, error.message, error.details);
+    throw error;
+  }
+}
+
 async function createOrder(req, res) {
   let paymentMethod;
   let identity;
@@ -92,25 +129,19 @@ async function createOrder(req, res) {
   if (!settings.accepting_orders) return sendError(res, 503, "ORDERS_PAUSED", "ระบบหยุดรับออเดอร์ชั่วคราว กรุณาลองใหม่ภายหลัง");
   const serviceFee = settings.service_fee;
   const inputItems = req.body.items;
-  const clientIds = [...new Set(inputItems.map((item) => item.menuId))];
-  const objectIds = clientIds.filter((id) => mongoose.isValidObjectId(id));
-  const menus = await Menu.find({ $or: [
-    { client_id: { $in: clientIds } },
-    ...(objectIds.length ? [{ _id: { $in: objectIds } }] : []),
-  ] });
-  const byClientId = new Map(menus.map((menu) => [menu.client_id, menu]));
-  const byId = new Map(menus.map((menu) => [String(menu._id), menu]));
-  const resolved = inputItems.map((input) => ({ input, menu: byClientId.get(input.menuId) || byId.get(input.menuId) }));
-  if (resolved.some(({ menu }) => !menu)) return sendError(res, 404, "MENU_NOT_FOUND", "มีเมนูที่ไม่มีหรือถูกลบแล้ว กรุณาตรวจสอบตะกร้า");
-  const storeId = String(resolved[0].menu.store_id);
-  if (resolved.some(({ menu }) => String(menu.store_id) !== storeId)) return sendError(res, 400, "MULTI_STORE_ORDER", "หนึ่งออเดอร์สั่งได้จากร้านเดียวเท่านั้น");
-  const store = await Store.findById(storeId);
-  if (!store || (store.status && store.status !== "active")) return sendError(res, 404, "RESTAURANT_NOT_FOUND", "ไม่พบร้านอาหารที่เปิดให้บริการ");
-  if (store.owner_id && !await User.exists({ _id: store.owner_id, status: "active", role: { $in: ["merchant", "staff"] } })) return sendError(res, 409, "STORE_UNAVAILABLE", "ร้านนี้หยุดรับออเดอร์ชั่วคราว");
-  if (!require("../services/store-hours").isStoreOpen(store)) return sendError(res, 409, "STORE_CLOSED", "ร้านปิดรับออเดอร์อยู่ในขณะนี้");
-  let items;
-  try { items = resolved.map(({ input, menu }) => priceOrderItem(menu, input)); }
-  catch (error) { return sendError(res, error.status || 400, error.code, error.message); }
+  let resolved, store, items;
+  try {
+    ({ resolved, store, items } = await resolveOrderSelection(inputItems));
+    await require("../services/inventory").checkStock(resolved, store._id);
+  }
+  catch (error) {
+    if (error.status && error.code) {
+      // A concurrent copy may have reserved this key after our first lookup.
+      if (await replayCheckout(identity, res)) return;
+      return sendError(res, error.status, error.code, error.message, error.details);
+    }
+    throw error;
+  }
   const subtotal = money(items.reduce((sum, item) => sum + item.total_price, 0));
   let promotion = null;
   let discount = 0;
@@ -255,4 +286,4 @@ async function reviewMyOrder(req, res) {
   return res.json({ order: orderView(order, queue) });
 }
 
-module.exports = { createOrder, listMyOrders, getMyOrder, cancelMyOrder, reviewMyOrder, orderView };
+module.exports = { createOrder, checkOrderStock, listMyOrders, getMyOrder, cancelMyOrder, reviewMyOrder, orderView };

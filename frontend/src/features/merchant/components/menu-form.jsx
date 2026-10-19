@@ -1,6 +1,6 @@
 import { RecipeEditor } from "./recipe-editor";
 import { ImagePlus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ImagePlaceholder } from "@/components/ui/image-placeholder";
@@ -32,6 +32,11 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
   const [imageLoading, setImageLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [recipeStatus, setRecipeStatus] = useState({ valid: false, loading: true, message: "กำลังตรวจสอบวัตถุดิบ…" });
+  const pending = useRef(false);
+  const mounted = useRef(false);
+  const imageRequest = useRef(0);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const errors = validateMenu(values, menus, editingId);
   const errorCount = Object.keys(errors).length;
@@ -63,35 +68,42 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    const request = ++imageRequest.current;
     setImageError("");
     setImageLoading(true);
     try {
-      set("image", await readMenuImage(file));
+      const image = await readMenuImage(file);
+      if (mounted.current && request === imageRequest.current) set("image", image);
     } catch (error) {
-      setImageError(error.message);
+      if (mounted.current && request === imageRequest.current) setImageError(error.message);
     } finally {
-      setImageLoading(false);
+      if (mounted.current && request === imageRequest.current) setImageLoading(false);
     }
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (saving) return;
+    if (pending.current || imageLoading) return;
     setSubmitted(true);
-    if (errorCount > 0) {
+    if (errorCount > 0 || !recipeStatus.valid) {
+      if (!recipeStatus.valid) setSaveError(recipeStatus.message || "ตรวจสอบส่วนผสมก่อนบันทึกเมนู");
       // ช่องปกติก่อน แล้วค่อยช่องในตัวเลือกเสริม (key ของตัวเลือกเสริมคือ id ของช่องนั้นเลย)
       const first = Object.keys(FIELD_IDS).find((field) => errors[field]);
-      const target = first ? FIELD_IDS[first] : Object.keys(errors).find((key) => key.startsWith("og-"));
+      const target = first ? FIELD_IDS[first] : errors.ingredients || !recipeStatus.valid ? "menu-recipe" : Object.keys(errors).find((key) => key.startsWith("og-"));
       document.getElementById(target)?.focus();
       return;
     }
+    pending.current = true;
     setSaving(true);
     setSaveError("");
-    const result = await onSubmit(toMenuFields(values));
-    // ถ้าสำเร็จ pop-up จะปิดและฟอร์มนี้หายไป จึงอัปเดต state เฉพาะตอนล้มเหลว
-    if (result && !result.ok) {
-      setSaving(false);
-      setSaveError(result.error.message);
+    try {
+      const result = await onSubmit(toMenuFields(values));
+      if (mounted.current && result && !result.ok) setSaveError(result.error?.message || "บันทึกเมนูไม่สำเร็จ");
+    } catch {
+      if (mounted.current) setSaveError("เชื่อมต่อไม่สำเร็จ ยังยืนยันการบันทึกไม่ได้ กรุณาลองอีกครั้ง");
+    } finally {
+      pending.current = false;
+      if (mounted.current) setSaving(false);
     }
   }
 
@@ -197,7 +209,7 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
         </div>
 
         {submitted && errors.ingredients && <p role="alert" className="text-danger">{errors.ingredients}</p>}
-        <RecipeEditor rows={values.ingredients || []} onChange={(rows) => set("ingredients", rows)} />
+        <RecipeEditor rows={values.ingredients || []} onChange={(rows) => set("ingredients", rows)} onValidityChange={setRecipeStatus} />
         <OptionGroupsEditor
           groups={values.option_groups}
           onChange={(groups) => set("option_groups", groups)}
@@ -270,9 +282,10 @@ export function MenuForm({ initialValues, menus, editingId = null, submitLabel, 
         </div>
 
         <div className="flex flex-col gap-2">
-          <Button type="submit" variant="cocoa" fullWidth disabled={imageLoading || saving} aria-busy={saving}>
+          <Button type="submit" variant="cocoa" fullWidth disabled={imageLoading || saving || !recipeStatus.valid} aria-busy={saving}>
             {saving ? "กำลังบันทึก…" : submitLabel}
           </Button>
+          {!recipeStatus.valid && <p className="text-sm leading-relaxed text-ink-soft">{recipeStatus.message}</p>}
           <Button variant="cocoa-outline" fullWidth onClick={onCancel}>
             ยกเลิก
           </Button>

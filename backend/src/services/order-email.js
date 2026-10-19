@@ -9,6 +9,8 @@ const MAX_ATTEMPTS = 5;
 const LEASE_MS = 120000;
 const RETRY_MS = [30000, 120000, 600000, 1800000];
 const STATE_ID = "order-email-v1";
+const CUSTOMER_STEPS_STATE_ID = "customer-order-email-steps-v2";
+const EVENT_ORDER = ["paid", "new", "confirmed", "preparing", "ready", "completed", "pickup", "cancelled"];
 
 function deliverableEmail(value) {
   if (typeof value !== "string" || value.length > 254 || !/^[^\s<>(),;:\[\]"@]+@[^\s<>(),;:\[\]"@]+\.[^\s<>(),;:\[\]"@]+$/.test(value)) return false;
@@ -20,13 +22,23 @@ function eligibleUser(user) {
   return Boolean(user && user.status === "active" && ["customer", "merchant"].includes(user.role) && user.email_verified_at && deliverableEmail(user.email));
 }
 
-async function ensureEmailWatermark(now = new Date()) {
+async function ensureWatermark(id, now) {
   try {
-    return await State.findOneAndUpdate({ _id: STATE_ID }, { $setOnInsert: { enabled_at: now } }, { upsert: true, returnDocument: "after" });
+    return await State.findOneAndUpdate({ _id: id }, { $setOnInsert: { enabled_at: now } }, { upsert: true, returnDocument: "after" });
   } catch (error) {
     if (error.code !== 11000) throw error;
-    return State.findById(STATE_ID);
+    return State.findById(id);
   }
+}
+
+async function ensureCustomerStepsWatermark(now = new Date()) { return ensureWatermark(CUSTOMER_STEPS_STATE_ID, now); }
+
+async function ensureEmailWatermark(now = new Date()) {
+  const state = await ensureWatermark(STATE_ID, now);
+  // The existing startup call initializes the new stages before orders are
+  // accepted. Old confirmed/preparing journal entries must not become new mail.
+  await ensureCustomerStepsWatermark(now);
+  return state;
 }
 
 function preferenceView(user) {
@@ -62,15 +74,21 @@ async function updatePreferences(req, res) {
   return res.json(preferenceView(await User.findById(req.user._id)));
 }
 
-async function enqueueOrderEmail({ order, user, role, event, eventAt, title, message, url, storeName = "" }) {
+async function enqueueOrderEmail({ order, user, role, event, eventAt, title, message, nextAction, url, storeName = "" }) {
   if (!eligibleUser(user) || user.role !== role || user.email_order_notifications !== true || !user.email_order_generation || !user.email_order_enabled_at) return null;
   const at = new Date(eventAt);
   if (!Number.isFinite(at.getTime())) return null;
   const state = await ensureEmailWatermark();
   if (at < state.enabled_at || at < user.email_order_enabled_at) return null;
+  if (role === "customer" && ["confirmed", "preparing"].includes(order.status)) {
+    const expanded = await ensureCustomerStepsWatermark();
+    if (at < expanded.enabled_at) return null;
+  }
   const eventKey = `order:${order._id}:${order.status}:email:${role}:${user._id}`;
   const payload = {
     recipientName: String(user.name || "").slice(0, 120), title, message, url, event,
+    eventAt: at.toISOString(),
+    ...(role === "customer" ? { orderStatus: order.status, nextAction: typeof nextAction === "string" ? nextAction.slice(0, 1000) : undefined } : {}),
     orderNumber: String(order.order_number || "").slice(0, 100), storeName: String(storeName).slice(0, 200),
     total: Number(order.total_price || 0),
     items: (order.items || []).slice(0, 100).map((item) => ({ name: String(item.name).slice(0, 200), quantity: Number(item.quantity), totalPrice: Number(item.total_price || 0) })),
@@ -87,6 +105,35 @@ async function enqueueOrderEmail({ order, user, role, event, eventAt, title, mes
   }
 }
 
+function eventRank(path) { return { $indexOfArray: [EVENT_ORDER, path] }; }
+
+async function nextDeliverableJob(at) {
+  const available = { status: { $in: ["pending", "sending"] }, available_at: { $lte: at }, attempts: { $lt: MAX_ATTEMPTS }, $or: [{ lease_until: null }, { lease_until: { $lte: at } }] };
+  const candidates = await Outbox.aggregate([
+    { $match: available },
+    { $lookup: {
+      from: Outbox.collection.name,
+      let: { recipient: "$user_id", order: "$order_id", role: "$role", at: "$event_at", rank: eventRank("$event"), id: "$_id" },
+      pipeline: [
+        { $match: { $expr: { $and: [
+          { $eq: ["$user_id", "$$recipient"] }, { $eq: ["$order_id", "$$order"] }, { $eq: ["$role", "$$role"] },
+          { $in: ["$status", ["pending", "sending"]] },
+          { $or: [
+            { $lt: ["$event_at", "$$at"] },
+            { $and: [{ $eq: ["$event_at", "$$at"] }, { $lt: [eventRank("$event"), "$$rank"] }] },
+            { $and: [{ $eq: ["$event_at", "$$at"] }, { $eq: [eventRank("$event"), "$$rank"] }, { $lt: ["$_id", "$$id"] }] },
+          ] },
+        ] } } },
+        { $limit: 1 }, { $project: { _id: 1 } },
+      ], as: "predecessors",
+    } },
+    { $match: { "predecessors.0": { $exists: false } } },
+    { $sort: { event_at: 1, available_at: 1, createdAt: 1, _id: 1 } },
+    { $limit: 1 }, { $project: { _id: 1 } },
+  ]);
+  return { candidate: candidates[0], available };
+}
+
 async function deliverOrderEmails({ limit = 10, now } = {}) {
   const clock = typeof now === "function" ? () => new Date(now()) : now ? () => new Date(now) : () => new Date();
   let at = clock();
@@ -95,11 +142,13 @@ async function deliverOrderEmails({ limit = 10, now } = {}) {
   let processed = 0;
   while (processed < Math.min(Math.max(Number(limit) || 10, 1), 100)) {
     at = clock();
+    const { candidate, available } = await nextDeliverableJob(at);
+    if (!candidate) break;
     const lease = crypto.randomUUID();
-    const job = await Outbox.findOneAndUpdate({ status: { $in: ["pending", "sending"] }, available_at: { $lte: at }, attempts: { $lt: MAX_ATTEMPTS }, $or: [{ lease_until: null }, { lease_until: { $lte: at } }] }, {
+    const job = await Outbox.findOneAndUpdate({ _id: candidate._id, ...available }, {
       $set: { status: "sending", lease_id: lease, lease_until: new Date(at.getTime() + LEASE_MS) }, $inc: { attempts: 1 },
     }, { sort: { available_at: 1, createdAt: 1 }, returnDocument: "after" });
-    if (!job) break;
+    if (!job) break; // Another worker claimed this scoped head; next pass can progress.
     processed++;
     const owned = { _id: job._id, status: "sending", lease_id: lease };
     try {
@@ -124,4 +173,4 @@ async function deliverOrderEmails({ limit = 10, now } = {}) {
   return { processed };
 }
 
-module.exports = { deliverableEmail, eligibleUser, ensureEmailWatermark, getPreferences, updatePreferences, enqueueOrderEmail, deliverOrderEmails, MAX_ATTEMPTS, LEASE_MS, RETRY_MS };
+module.exports = { deliverableEmail, eligibleUser, ensureEmailWatermark, ensureCustomerStepsWatermark, getPreferences, updatePreferences, enqueueOrderEmail, deliverOrderEmails, MAX_ATTEMPTS, LEASE_MS, RETRY_MS, CUSTOMER_STEPS_STATE_ID };

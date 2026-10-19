@@ -8,6 +8,7 @@ const User = require("../models/User");
 const Order = require("../models/Order");
 const Store = require("../models/Store");
 const orderEmail = require("./order-email");
+const { customerOrderEmailContent } = require("./order-email-content");
 let config;
 async function pushConfig() {
   if (config) return config;
@@ -74,8 +75,9 @@ async function recordOrderEvent(order, { recordPush = true } = {}) {
   const storeId = order.store_id?._id || order.store_id;
   const store = storeId ? await Store.findById(storeId) : null;
   const successful = ["paid", "simulated", "refunded"].includes(order.payment_status);
-  if (successful && ["pending", "ready", "cancelled", "completed"].includes(order.status)) {
-    await orderEmail.enqueueOrderEmail({ order, user: customer, role: "customer", event: order.status === "pending" ? "paid" : order.status, eventAt, title: statusTitles[order.status], message: body, url: customerUrl, storeName: store?.name || order.store_id?.name || "" });
+  const customerContent = customerOrderEmailContent(order.status);
+  if (successful && customerContent) {
+    await orderEmail.enqueueOrderEmail({ order, user: customer, role: "customer", event: order.status === "pending" ? "paid" : order.status, eventAt, title: customerContent.title, message: customerContent.message, nextAction: customerContent.nextAction, url: customerUrl, storeName: store?.name || order.store_id?.name || order.store_snapshot?.name || "" });
   }
   const merchantEvent = order.status === "pending" && ["paid", "simulated"].includes(order.payment_status)
     ? { event: "new", title: "มีออเดอร์ใหม่เข้าร้าน" }

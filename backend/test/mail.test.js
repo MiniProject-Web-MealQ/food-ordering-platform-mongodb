@@ -152,3 +152,28 @@ test("unsafe order-email recipients, external origins and unrelated routes are r
   for (const to of ["bad", "one@example.test,two@example.test", "one@example.test\r\nBcc:other@example.test"]) await assert.rejects(mail.sendOrderNotificationEmail({ ...input, to }));
   assert.equal(messages.length, 0); assert.equal(transports.length, 0);
 });
+
+test("customer stage emails show progress, an event timestamp and next action in both safe HTML and plain text", async (t) => {
+  const { messages } = captureMail(t);
+  for (const orderStatus of ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"]) {
+    await mail.sendOrderNotificationEmail({ to: "fixture@synthetic-mail.mealq.site", title: "Order update", url: "/customer/orders/MQ123", orderStatus, eventAt: "2026-10-19T12:00:00Z", total: 89 });
+  }
+  for (const [index, row] of messages.entries()) {
+    assert.match(row.html, /สิ่งที่ทำต่อได้/);
+    assert.match(row.text, /สิ่งที่ทำต่อได้/);
+    assert.match(row.html, /บันทึกสถานะเมื่อ/);
+    assert.match(row.text, /บันทึกสถานะเมื่อ/);
+    assert.match(row.html, /สถานะล่าสุด/);
+    if (index < 5) {
+      assert.ok(row.text.includes(`ขั้นตอน ${index + 1}/5`));
+      assert.ok(row.html.includes(`ขั้นตอน ${index + 1}/5`));
+    } else {
+      assert.match(row.text, /สิ้นสุดด้วยการยกเลิก/);
+      assert.doesNotMatch(row.html, /รอดำเนินการ/);
+    }
+    assert.doesNotMatch(row.html, /<script|<img\s|<style|<link/i);
+  }
+  await mail.sendOrderNotificationEmail({ to: "fixture@synthetic-mail.mealq.site", title: "Order", url: "/customer/orders/MQ123", orderStatus: "ready", nextAction: '<img src=x onerror="bad">', eventAt: "invalid" });
+  assert.match(messages.at(-1).html, /&lt;img src=x onerror=&quot;bad&quot;&gt;/);
+  assert.doesNotMatch(messages.at(-1).html, /<img\s|Invalid Date/);
+});

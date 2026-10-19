@@ -1,4 +1,4 @@
-import { menuFromApi, menuToApi, orderFromApi, storeFromApi, storeToApi } from "./adapters";
+import { menuFromApi, menuToApi, menuUpdateToApi, orderFromApi, storeFromApi, storeToApi } from "./adapters";
 import * as api from "./api";
 import { nextStep } from "./status";
 import { isSessionLost, sessionLost, useMerchant } from "./store";
@@ -61,7 +61,8 @@ export function useMerchantActions() {
       return saveMenu(api.createMenu(menuToApi(fields)));
     },
     updateMenu(menuId, fields) {
-      return saveMenu(api.updateMenu(menuId, menuToApi(fields)));
+      const currentMenu = state.menus.find((menu) => menu._id === menuId);
+      return saveMenu(api.updateMenu(menuId, menuUpdateToApi(fields, currentMenu)));
     },
     async removeMenu(menuId) {
       const result = await settle(api.deleteMenu(menuId));

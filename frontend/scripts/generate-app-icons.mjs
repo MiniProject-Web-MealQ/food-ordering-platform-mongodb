@@ -6,6 +6,13 @@ import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { deflateSync } from "node:zlib";
 
+// Optional explicit sizes, for example: node scripts/generate-app-icons.mjs 32
+// Keep the established app-icon defaults when no size is supplied.
+const requestedSizes = process.argv.slice(2);
+if (requestedSizes.some((size) => !/^(32|180|192|512)$/.test(size))) {
+  throw new Error("Supported icon sizes: 32, 180, 192, 512");
+}
+const sizes = requestedSizes.length ? [...new Set(requestedSizes.map(Number))] : [180, 192, 512];
 const output = fileURLToPath(new URL("../public/icons/", import.meta.url));
 await mkdir(output, { recursive: true });
 function crc32(bytes) {
@@ -24,7 +31,7 @@ function isMark(x, y) {
   const tail = x > 0.5 && x < 0.71 && y > x + 0.015 && y < x + 0.105 && y > 0.59;
   return (outer && !inner) || tail;
 }
-for (const size of [180, 192, 512]) {
+for (const size of sizes) {
   const raw = Buffer.alloc((size * 3 + 1) * size);
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     let samples = 0;

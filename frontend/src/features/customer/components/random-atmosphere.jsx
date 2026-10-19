@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-const WARM_COLORS = ["255,194,103", "255,226,174", "232,155,98", "255,246,222"];
+const WARM_COLORS = ["187,103,39", "216,151,62", "176,80,37", "154,119,59"];
 const BETWEEN_FRAMES = 1000 / 30;
 
 function randomBetween(minimum, maximum) {

@@ -5,6 +5,10 @@ export function createOrder({ cart, priced, paymentMethod, requestKey }) {
   return requestJson("/orders", { method: "POST", headers: { "Idempotency-Key": requestKey }, body: checkoutBody(cart, paymentMethod, priced.total) });
 }
 
+export function checkOrderStock({ cart, paymentMethod }) {
+  return postJson("/orders/check-stock", checkoutBody(cart, paymentMethod));
+}
+
 export const getWallet = () => getJson("/customer/wallet");
 export const getMyCoupons = () => getJson("/customer/coupons");
 export const collectCoupon = (promotionId) => postJson(`/customer/coupons/${encodeURIComponent(promotionId)}/collect`, {});

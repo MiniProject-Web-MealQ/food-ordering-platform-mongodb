@@ -46,7 +46,7 @@ async function run() {
   await merchant("PATCH", `/merchant/inventory/${foreign._id}`, { adjustment: 1 }, 400);
   pass("Cuisine and recipe data round-trip through real APIs; inventory enforces store ownership and units");
 
-  const deleted = (await merchant("POST", "/merchant/menu", { name: "Deleted dish", price: 5 }, 201)).menu;
+  const deleted = (await merchant("POST", "/merchant/menu", { name: "Deleted dish", price: 5, ingredients: [{ ingredientId: ingredient.id, quantity: 1, unit: "piece" }] }, 201)).menu;
   await customer("PUT", "/customer/favorites", { restaurants: [], menus: [deleted.id] });
   await merchant("DELETE", `/merchant/menu/${deleted.id}`);
   assert.deepEqual((await customer("PUT", "/customer/favorites", { restaurants: [String(store._id)], menus: [deleted.id, menu.id] })).favorites.menus, [menu.id]);

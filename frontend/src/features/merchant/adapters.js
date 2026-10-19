@@ -159,6 +159,13 @@ export function menuToApi(fields) {
   return body;
 }
 
+/** Keep an existing image on the server when an edit only changes other fields. */
+export function menuUpdateToApi(fields, currentMenu) {
+  const body = menuToApi(fields);
+  if (currentMenu && fields.image !== undefined && fields.image === currentMenu.image) delete body.image;
+  return body;
+}
+
 /** Map editable store fields to the API contract. */
 export function storeToApi(changes) {
   const body = {};

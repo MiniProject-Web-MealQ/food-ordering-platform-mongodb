@@ -10,6 +10,7 @@ require("dotenv").config({ path: path.resolve(__dirname, "../.env"), quiet: true
 const User = require("../src/models/User");
 const Store = require("../src/models/Store");
 const Menu = require("../src/models/Menu");
+const Ingredient = require("../src/models/Ingredient");
 const Promotion = require("../src/models/Promotion");
 const CustomerCoupon = require("../src/models/CustomerCoupon");
 const Order = require("../src/models/Order");
@@ -48,7 +49,7 @@ async function run() {
   uri.pathname = `/${database}`;
   Object.assign(process.env, { NODE_ENV: "development", PAYMENT_MODE: "demo", FRONTEND_URL: "http://localhost:5173", SESSION_SECRET: crypto.randomUUID(), SMTP_HOST: "", SMTP_FROM: "" });
   await mongoose.connect(uri.href, { serverSelectionTimeoutMS: 5000 }); connected = true;
-  await Promise.all([User, Store, Menu, Promotion, CustomerCoupon, Order, Wallet].map((model) => model.init()));
+  await Promise.all([User, Store, Menu, Ingredient, Promotion, CustomerCoupon, Order, Wallet].map((model) => model.init()));
   const app = express(); app.use(express.json());
   app.use("/api/v1/auth", require("../src/routes/authRoutes"));
   app.use("/api/v1/customer", require("../src/routes/customerRoutes"));
@@ -62,8 +63,10 @@ async function run() {
   storeA = await Store.create({ name: "Coupon A", owner_id: ownerA._id, status: "active", is_open: true, queue: { max_queue: 500 } });
   storeB = await Store.create({ name: "Coupon B", owner_id: ownerB._id, status: "active", is_open: true, queue: { max_queue: 500 } });
   await User.updateOne({ _id: ownerA._id }, { $set: { store_id: storeA._id } });
-  menuA = await Menu.create({ name: "Synthetic rice A", category: "อาหาร", store_id: storeA._id, price: 40, is_available: true });
-  menuB = await Menu.create({ name: "Synthetic rice B", category: "อาหาร", store_id: storeB._id, price: 40, is_available: true });
+  const ingredientA = await Ingredient.create({ name: "Synthetic portions A", store_id: storeA._id, quantity: 1000, unit: "portion" });
+  const ingredientB = await Ingredient.create({ name: "Synthetic portions B", store_id: storeB._id, quantity: 1000, unit: "portion" });
+  menuA = await Menu.create({ name: "Synthetic rice A", category: "อาหาร", store_id: storeA._id, price: 40, is_available: true, ingredients: [{ ingredient_id: ingredientA._id, quantity: 1, unit: "portion" }] });
+  menuB = await Menu.create({ name: "Synthetic rice B", category: "อาหาร", store_id: storeB._id, price: 40, is_available: true, ingredients: [{ ingredient_id: ingredientB._id, quantity: 1, unit: "portion" }] });
   await login(alice, aliceUser); await login(bob, bobUser); await login(poor, poorUser); await login(merchant, ownerA);
   await alice("POST", "/customer/wallet/topup", { amount: 5000 }, 201, crypto.randomUUID());
   await bob("POST", "/customer/wallet/topup", { amount: 5000 }, 201, crypto.randomUUID());

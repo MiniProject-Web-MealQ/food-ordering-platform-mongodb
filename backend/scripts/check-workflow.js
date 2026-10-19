@@ -61,7 +61,8 @@ async function run() {
   await guest.request("GET", `/restaurants/${m.store.id}`, undefined, 404);
   await admin.request("PATCH", `/admin/stores/${m.store.id}`, { status: "active" });
   await merchant.request("PATCH", "/merchant/store", { name: `Workflow Store ${suffix}`, address: { detail: "Test pickup point" }, maxQueue: 2, isOpen: true });
-  let menu = (await merchant.request("POST", "/merchant/menu", { name: "Workflow dish", category: "single", price: 60, cookTime: 5, isAvailable: true }, 201)).menu;
+  const ingredient = (await merchant.request("POST", "/merchant/inventory", { name: "Workflow portions", quantity: 100, unit: "portion" }, 201)).ingredient;
+  let menu = (await merchant.request("POST", "/merchant/menu", { name: "Workflow dish", category: "single", price: 60, cookTime: 5, isAvailable: true, ingredients: [{ ingredientId: ingredient.id, quantity: 1, unit: "portion" }] }, 201)).menu;
   menu = (await merchant.request("PATCH", `/merchant/menu/${menu.id}`, { price: 75 })).menu;
   const catalogue = await guest.request("GET", `/restaurants/${m.store.id}/menu`);
   assert.equal(catalogue.restaurant.address.detail, "Test pickup point");

@@ -60,7 +60,9 @@ async function run() {
   const m = await merchant("POST", "/auth/register", { name: "Merchant", email: "regression-merchant@mealq.local", password: "Regression123!", role: "MERCHANT" }, 201);
   const s = await staff("POST", "/auth/register", { name: "Staff", email: "regression-staff@mealq.local", password: "Regression123!", role: "CUSTOMER" }, 201);
   const group = { id: "extras", label: "Extras", multiple: true, required: false, options: [{ id: "egg", label: "Original egg", price: 10 }] };
-  const { menu } = await merchant("POST", "/merchant/menu", { name: "Meal", price: 65, cookTime: 8, optionGroups: [group] }, 201);
+  const ingredient = (await merchant("POST", "/merchant/inventory", { name: "Regression portions", quantity: 100, unit: "portion" }, 201)).ingredient;
+  const ingredients = [{ ingredientId: ingredient.id, quantity: 1, unit: "portion" }];
+  const { menu } = await merchant("POST", "/merchant/menu", { name: "Meal", price: 65, cookTime: 8, optionGroups: [group], ingredients }, 201);
   const pendingStore = (await merchant("GET", "/merchant/store")).store;
   assert.equal(pendingStore.status, "pending");
   assert.equal(pendingStore.isOpen, false);
@@ -126,7 +128,7 @@ async function run() {
   await admin("PATCH", `/admin/users/${s.user.id}`, { role: "staff", storeId: m.store.id });
   await staff("POST", "/auth/login", { email: "regression-staff@mealq.local", password: "Regression123!", portal: "MERCHANT" });
   assert.equal((await staff("GET", "/merchant/store")).store.id, m.store.id);
-  await staff("POST", "/merchant/menu", { name: "Staff dish", price: 20 }, 201);
+  await staff("POST", "/merchant/menu", { name: "Staff dish", price: 20, ingredients }, 201);
   await admin("PATCH", `/admin/users/${m.user.id}`, { status: "suspended", reason: "Regression suspension" });
   assert.equal((await customer("GET", `/restaurants/${m.store.id}`)).restaurant.isOpen, false);
   await customer("POST", "/orders", body, 409);

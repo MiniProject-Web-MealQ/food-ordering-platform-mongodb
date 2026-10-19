@@ -5,6 +5,7 @@ const { asyncHandler } = require("../utils/http");
 
 const router = express.Router();
 router.use(requireAuth, requireRole("customer"));
+router.post("/check-stock", asyncHandler(controller.checkOrderStock));
 router.post("/", asyncHandler(controller.createOrder));
 router.get("/", asyncHandler(controller.listMyOrders));
 router.patch("/:id/cancel", asyncHandler(controller.cancelMyOrder));

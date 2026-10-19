@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const crypto = require("node:crypto");
+const { customerOrderEmailContent } = require("./order-email-content");
 
 function mailConfigured() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_FROM);
@@ -22,7 +23,7 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 }
 
-function emailLayout({ preheader, eyebrow, title, introduction, content, safety }) {
+function emailLayout({ preheader, eyebrow, title, introduction, content, safety, footer = "ส่งโดย MealQ เพื่อดูแลความปลอดภัยของบัญชีคุณ" }) {
   // Inline styles and presentation tables also work in clients that strip <style>.
   return `<!doctype html>
 <html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${escapeHtml(title)} | MealQ</title></head>
@@ -50,7 +51,7 @@ function emailLayout({ preheader, eyebrow, title, introduction, content, safety 
           </td></tr>
         </table>
       </td></tr>
-      <tr><td align="center" style="padding:22px 16px 0;"><p style="margin:0;font-size:11px;line-height:1.9;color:#9a8b76;">ส่งโดย MealQ เพื่อดูแลความปลอดภัยของบัญชีคุณ<br>อีเมลนี้ส่งจากระบบอัตโนมัติ กรุณาอย่าตอบกลับ</p></td></tr>
+      <tr><td align="center" style="padding:22px 16px 0;"><p style="margin:0;font-size:11px;line-height:1.9;color:#9a8b76;">${escapeHtml(footer)}<br>อีเมลนี้ส่งจากระบบอัตโนมัติ กรุณาอย่าตอบกลับ</p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`;
@@ -153,7 +154,7 @@ function moneyLabel(value) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1000000000 ? `฿${value.toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : null;
 }
 
-async function sendOrderNotificationEmail({ to, recipientName, title, message, url, orderNumber, storeName, total, items = [], notificationId }) {
+async function sendOrderNotificationEmail({ to, recipientName, title, message, url, orderNumber, storeName, total, items = [], notificationId, orderStatus, nextAction, eventAt }) {
   if (!require("./auth-validation").validEmail(to)) throw new Error("Invalid order notification email recipient");
   const actionUrl = orderNotificationUrl(url);
   const heading = typeof title === "string" && title.trim() ? title.trim() : "อัปเดตคำสั่งซื้อ MealQ";
@@ -162,6 +163,16 @@ async function sendOrderNotificationEmail({ to, recipientName, title, message, u
   const number = orderNumber == null ? "" : String(orderNumber);
   const store = storeName == null ? "" : String(storeName);
   const amount = moneyLabel(total);
+  const stage = new URL(actionUrl).pathname.startsWith("/customer/") ? customerOrderEmailContent(orderStatus) : null;
+  const next = typeof nextAction === "string" && nextAction.trim() ? nextAction.trim() : stage?.nextAction;
+  const updated = eventAt && new Date(eventAt);
+  const updateTime = updated && Number.isFinite(updated.getTime()) ? updated.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" }) : null;
+  const progressText = stage ? stage.step ? `ขั้นตอน ${stage.step}/${stage.totalSteps}\n${stage.progress.map((step) => `${step.state === "done" ? "✓" : step.state === "current" ? "→" : "○"} ${step.label}${step.state === "current" ? " (สถานะในอีเมลนี้)" : ""}`).join("\n")}` : "ออเดอร์นี้สิ้นสุดด้วยการยกเลิก" : null;
+  const progressHtml = stage ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:18px;border:1px solid #eee3d1;border-radius:14px;"><tr><td style="padding:18px;">
+    <p style="margin:0 0 12px;font-size:12px;line-height:1.8;font-weight:bold;color:#8e6a21;">${stage.step ? `ติดตามออเดอร์ · ขั้นตอน ${stage.step}/${stage.totalSteps}` : "สถานะออเดอร์ · ยกเลิกแล้ว"}</p>
+    ${stage.progress.length ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${stage.progress.map((step, index) => `<tr><td width="28" style="padding:5px 8px 5px 0;vertical-align:middle;font-size:12px;font-weight:bold;color:${step.state === "upcoming" ? "#a39482" : "#8e6a21"};">${step.state === "done" ? "✓" : index + 1}</td><td style="padding:5px 0;font-size:12px;line-height:1.8;color:${step.state === "upcoming" ? "#938574" : "#382719"};font-weight:${step.state === "current" ? "bold" : "normal"};">${escapeHtml(step.label)}</td><td align="right" style="padding:5px 0 5px 8px;font-size:10px;line-height:1.8;color:#8e6a21;">${step.state === "done" ? "ผ่านแล้ว" : step.state === "current" ? "สถานะนี้" : "รอดำเนินการ"}</td></tr>`).join("")}</table>` : '<p style="margin:0;font-size:13px;line-height:1.8;color:#776857;">รายการนี้สิ้นสุดแล้ว กรุณาเปิดรายละเอียดเพื่อตรวจสอบข้อมูลการยกเลิก</p>'}
+    ${updateTime ? `<p style="margin:12px 0 0;font-size:10px;line-height:1.8;color:#8a7b68;">บันทึกสถานะเมื่อ ${escapeHtml(updateTime)} (เวลาไทย)</p>` : ""}
+  </td></tr></table>` : "";
   const domain = new URL(trustedFrontendOrigin()).hostname;
   const messageId = typeof notificationId === "string" && notificationId ? `<mealq-order-${crypto.createHash("sha256").update(`${notificationId}\0${to}`).digest("hex")}@${/^[a-z0-9.-]+$/i.test(domain) ? domain : "mealq.local"}>` : undefined;
   const lines = (Array.isArray(items) ? items : []).slice(0, 50).map((item) => ({
@@ -174,13 +185,13 @@ async function sendOrderNotificationEmail({ to, recipientName, title, message, u
     to,
     ...(messageId ? { messageId } : {}),
     subject: `MealQ · ${heading.replace(/[\r\n]+/g, " ").slice(0, 160)}${number ? ` · ${number.replace(/[\r\n]+/g, " ").slice(0, 100)}` : ""}`,
-    text: `${greeting}\n\n${heading}\n${summary}\n${number ? `\nออเดอร์: ${number}` : ""}${store ? `\nร้าน: ${store}` : ""}${lines.length ? `\n\n${lines.map((item) => `${item.name} × ${item.quantity}${item.amount ? ` — ${item.amount}` : ""}`).join("\n")}` : ""}${amount ? `\n\nยอดรวม: ${amount}` : ""}\n\nดูรายละเอียดออเดอร์:\n${actionUrl}\n\nคุณสามารถปรับการรับอีเมลออเดอร์ได้ในการตั้งค่า MealQ`,
+    text: `${greeting}\n\n${heading}\n${summary}\n${progressText ? `\n${progressText}\n` : ""}${updateTime ? `\nบันทึกสถานะเมื่อ ${updateTime} (เวลาไทย)\n` : ""}${next ? `\nสิ่งที่ทำต่อได้: ${next}\n` : ""}${number ? `\nออเดอร์: ${number}` : ""}${store ? `\nร้าน: ${store}` : ""}${lines.length ? `\n\n${lines.map((item) => `${item.name} × ${item.quantity}${item.amount ? ` — ${item.amount}` : ""}`).join("\n")}` : ""}${amount ? `\n\nยอดรวม: ${amount}` : ""}\n\nดูรายละเอียดออเดอร์:\n${actionUrl}\n\nอีเมลนี้แสดงสถานะเมื่อเกิดเหตุการณ์ เปิด MealQ เพื่อตรวจสอบสถานะล่าสุด\nคุณสามารถปรับการรับอีเมลออเดอร์ได้ในการตั้งค่า MealQ`,
     html: emailLayout({
       preheader: `${heading}${number ? ` · ออเดอร์ ${number}` : ""}`,
       eyebrow: "ORDER UPDATE",
       title: heading,
       introduction: `${greeting}\n${summary}`,
-      content: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fff8df;border:1px solid #f0dfab;border-radius:14px;"><tr><td style="padding:20px;">
+      content: `${progressHtml}${next ? `<div style="margin-bottom:18px;padding:16px 18px;border-radius:12px;background-color:#fff8df;"><p style="margin:0 0 4px;font-size:11px;font-weight:bold;line-height:1.8;color:#8e6a21;">สิ่งที่ทำต่อได้</p><p style="margin:0;font-size:13px;line-height:1.9;color:#59442c;">${escapeHtml(next)}</p></div>` : ""}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fff8df;border:1px solid #f0dfab;border-radius:14px;"><tr><td style="padding:20px;">
         ${number ? `<p style="margin:0 0 8px;font-size:12px;line-height:1.8;color:#8e6a21;">ออเดอร์ <strong>${escapeHtml(number)}</strong></p>` : ""}
         ${store ? `<p style="margin:0;font-size:16px;line-height:1.8;font-weight:bold;color:#382719;">${escapeHtml(store)}</p>` : ""}
         ${lines.length ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">${lines.map((item) => `<tr><td style="padding:8px 8px 8px 0;font-size:13px;line-height:1.8;color:#776857;">${escapeHtml(item.name)} <span style="white-space:nowrap;">× ${escapeHtml(item.quantity)}</span></td><td align="right" style="padding:8px 0;font-size:13px;line-height:1.8;white-space:nowrap;color:#382719;">${escapeHtml(item.amount || "")}</td></tr>`).join("")}</table>` : ""}
@@ -189,7 +200,8 @@ async function sendOrderNotificationEmail({ to, recipientName, title, message, u
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:24px 0 8px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#f4c64e" style="background-color:#f4c64e;border-radius:12px;"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:15px 24px;border:1px solid #e8b63b;border-radius:12px;font-size:15px;line-height:1.5;font-weight:bold;text-decoration:none;color:#382719;">ดูรายละเอียดออเดอร์</a></td></tr></table>
       </td></tr></table>`,
-      safety: "คุณได้รับอีเมลนี้ตามการตั้งค่าแจ้งเตือนออเดอร์ ตรวจสอบสถานะล่าสุดหรือปรับการรับอีเมลได้ใน MealQ",
+      safety: "อีเมลนี้แสดงสถานะเมื่อเกิดเหตุการณ์ กรุณาเปิด MealQ เพื่อตรวจสอบสถานะล่าสุด คุณได้รับอีเมลนี้ตามการตั้งค่าแจ้งเตือนออเดอร์และสามารถปรับการรับอีเมลได้ทุกเมื่อ",
+      footer: "แจ้งเตือนสถานะคำสั่งซื้อจาก MealQ",
     }),
   });
 }

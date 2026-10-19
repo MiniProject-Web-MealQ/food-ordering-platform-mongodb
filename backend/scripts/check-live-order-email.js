@@ -77,7 +77,9 @@ async function run() {
   report.storeId = storeId;
   await admin("PATCH", `/admin/stores/${storeId}`, { status: "active" });
   await merchant("PATCH", "/merchant/store", { name: label, description: "DEMO ONLY: four order-notification emails to the owner's Gmail aliases; no real food or payment.", isOpen: true, maxQueue: 3 });
-  const menu = (await merchant("POST", "/merchant/menu", { name: "DEMO email test dish", price: 10, category: "single", isAvailable: true }, 201)).menu;
+  const ingredient = (await merchant("POST", "/merchant/inventory", { name: "DEMO email test portions", quantity: 10, unit: "portion" }, 201)).ingredient;
+  report.ingredientId = ingredient.id;
+  const menu = (await merchant("POST", "/merchant/menu", { name: "DEMO email test dish", price: 10, category: "single", isAvailable: true, ingredients: [{ ingredientId: ingredient.id, quantity: 1, unit: "portion" }] }, 201)).menu;
   await customer("PATCH", "/auth/notification-preferences", { emailOrders: true });
   await merchant("PATCH", "/auth/notification-preferences", { emailOrders: true });
   await customer("POST", "/customer/wallet/topup", { amount: 100 }, 201, `owned-email-topup-${suffix}`);

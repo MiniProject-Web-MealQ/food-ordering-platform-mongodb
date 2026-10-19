@@ -85,6 +85,14 @@ const RandomFood = lazy(() => import("../pages/customer/RandomFood"));
 const Favorites = lazy(() => import("../pages/customer/Favorites"));
 const Notifications = lazy(() => import("../pages/customer/Notifications"));
 const Profile = lazy(() => import("../pages/customer/Profile"));
+const CustomerProfileLayout = lazy(() => import("../layouts/CustomerProfileLayout"));
+const ProfilePersonal = lazy(() => import("../pages/customer/profile/Personal"));
+const ProfileSecurity = lazy(() => import("../pages/customer/profile/Security"));
+const ProfilePreferences = lazy(() => import("../pages/customer/profile/Preferences"));
+const ProfileNotifications = lazy(() => import("../pages/customer/profile/Notifications"));
+const ProfileEmailNotifications = lazy(() => import("../pages/customer/profile/EmailNotifications"));
+const ProfileDeviceNotifications = lazy(() => import("../pages/customer/profile/DeviceNotifications"));
+const ProfileInAppNotifications = lazy(() => import("../pages/customer/profile/InAppNotifications"));
 const Wallet = lazy(() => import("../pages/customer/Wallet"));
 const Coupons = lazy(() => import("../pages/customer/Coupons"));
 
@@ -102,6 +110,11 @@ const AddMenu = lazy(() => import("../pages/merchant/AddMenu"));
 const EditMenu = lazy(() => import("../pages/merchant/EditMenu"));
 const Inventory = lazy(() => import("../pages/merchant/Inventory"));
 const Settings = lazy(() => import("../pages/merchant/Settings"));
+const MerchantNotificationLayout = lazy(() => import("../pages/merchant/notifications/NotificationLayout"));
+const MerchantNotificationOverview = lazy(() => import("../pages/merchant/notifications/Overview"));
+const MerchantInAppNotifications = lazy(() => import("../pages/merchant/notifications/InApp"));
+const MerchantEmailNotifications = lazy(() => import("../pages/merchant/notifications/Email"));
+const MerchantDeviceNotifications = lazy(() => import("../pages/merchant/notifications/Device"));
 
 
 // ==================================================
@@ -193,7 +206,17 @@ function AppRoutes() {
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="random" element={<RandomFood />} />
           <Route path="notifications" element={<Notifications />} />
-          <Route path="profile" element={<Profile />} />
+          <Route path="profile" element={<CustomerProfileLayout />}>
+            <Route index element={<Profile />} />
+            <Route path="personal" element={<ProfilePersonal />} />
+            <Route path="security" element={<ProfileSecurity />} />
+            <Route path="preferences" element={<ProfilePreferences />} />
+            <Route path="notifications" element={<ProfileNotifications />} />
+            <Route path="notifications/email" element={<ProfileEmailNotifications />} />
+            <Route path="notifications/device" element={<ProfileDeviceNotifications />} />
+            <Route path="notifications/in-app" element={<ProfileInAppNotifications />} />
+            <Route path="*" element={<Navigate to="/customer/profile" replace />} />
+          </Route>
           <Route path="wallet" element={<Wallet />} />
           <Route path="coupons" element={<Coupons />} />
         </Route>
@@ -318,6 +341,13 @@ function AppRoutes() {
 
 
         <Route path="inventory" element={<Inventory />} />
+        <Route path="notifications" element={<MerchantNotificationLayout />}>
+          <Route index element={<MerchantNotificationOverview />} />
+          <Route path="in-app" element={<MerchantInAppNotifications />} />
+          <Route path="email" element={<MerchantEmailNotifications />} />
+          <Route path="device" element={<MerchantDeviceNotifications />} />
+          <Route path="*" element={<Navigate to="/merchant/notifications" replace />} />
+        </Route>
         {/* หน้าตั้งค่าร้าน */}
         <Route
           path="settings"

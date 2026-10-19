@@ -22,6 +22,7 @@ export function MerchantSidebar() {
   const { state, loggingOut } = useMerchant();
   const { logout } = useMerchantActions();
   const pending = pendingCount(state);
+  const notificationsActive = isMerchantNavActive({ to: "/merchant/notifications" }, pathname);
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-24 shrink-0 flex-col border-r border-haze bg-white lg:flex xl:w-64">
@@ -76,7 +77,7 @@ export function MerchantSidebar() {
       </nav>
 
       <div className="border-t border-haze p-3 xl:p-4">
-        {state.session.accountRole === "merchant" && <Link to="/merchant/settings#merchant-notifications" className={cx("mb-2 flex items-center justify-center gap-2 rounded-2xl px-2 py-3 text-sm text-ink-soft hover:bg-cream xl:justify-start xl:px-4", focusRing)} aria-label="แจ้งเตือนร้าน"><Bell aria-hidden="true" className="size-5" /><span className="hidden xl:block">แจ้งเตือนร้าน</span></Link>}
+        {state.session.accountRole === "merchant" && <Link to="/merchant/notifications" aria-current={notificationsActive ? "page" : undefined} className={cx("mb-2 flex min-h-11 items-center justify-center gap-2 rounded-2xl px-2 py-3 text-sm xl:justify-start xl:px-4", notificationsActive ? "bg-mint font-semibold text-ink" : "text-ink-soft hover:bg-cream", focusRing)} aria-label="แจ้งเตือนร้าน"><Bell aria-hidden="true" className="size-5" /><span className="hidden xl:block">แจ้งเตือนร้าน</span></Link>}
         <button
           type="button"
           onClick={logout}
@@ -97,6 +98,8 @@ export function MerchantSidebar() {
 /** แถบบนของมือถือ/แท็บเล็ต: โลโก้ ชื่อร้าน และสถานะเปิดรับออเดอร์ */
 export function MerchantTopBar() {
   const { state } = useMerchant();
+  const { pathname } = useLocation();
+  const notificationsActive = isMerchantNavActive({ to: "/merchant/notifications" }, pathname);
 
   return (
     <header className="sticky top-0 z-30 border-b border-haze bg-white/95 backdrop-blur lg:hidden">
@@ -105,7 +108,7 @@ export function MerchantTopBar() {
           <LogoMark className="size-8 text-sm" />
         </Link>
         <p className="min-w-0 flex-1 truncate font-semibold text-ink">{state.store.name}</p>
-        {state.session.accountRole === "merchant" && <Link to="/merchant/settings#merchant-notifications" aria-label="แจ้งเตือนร้าน" className={cx("rounded-full p-2 text-ink", focusRing)}><Bell aria-hidden="true" className="size-5" /></Link>}
+        {state.session.accountRole === "merchant" && <Link to="/merchant/notifications" aria-label="แจ้งเตือนร้าน" aria-current={notificationsActive ? "page" : undefined} className={cx("grid size-11 shrink-0 place-items-center rounded-full text-ink", notificationsActive && "bg-mint", focusRing)}><Bell aria-hidden="true" className="size-5" /></Link>}
         <StoreStatusPill isOpen={state.store.effective_open ?? state.store.is_open} />
       </div>
     </header>

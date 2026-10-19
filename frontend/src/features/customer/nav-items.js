@@ -5,7 +5,7 @@ export const NAV_ITEMS = [
   { to: "/customer/explore", label: "ค้นหาร้าน", Icon: CompassIcon, match: ["/customer/explore", "/customer/search"] },
   { to: "/customer/orders", label: "ออเดอร์", Icon: ReceiptIcon, match: ["/customer/orders"], prefix: true },
   { to: "/customer/random", label: "สุ่มอาหาร", Icon: DiceIcon, match: ["/customer/random"] },
-  { to: "/customer/profile", label: "โปรไฟล์", Icon: UserIcon, match: ["/customer/profile", "/customer/favorites"] },
+  { to: "/customer/profile", label: "โปรไฟล์", Icon: UserIcon, match: ["/customer/profile", "/customer/favorites"], prefix: true },
 ];
 
 export function isNavItemActive(item, pathname) {
