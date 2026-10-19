@@ -4,7 +4,7 @@
 
 - SSH: linapspi4@100.112.221.80 (Tailscale)
 - LAN: 192.168.1.121
-- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-wallet-layout
+- Release ล่าสุด: /home/linapspi4/mealq-app/releases/20261019-wallet-layout-r2
 - Current symlink: /home/linapspi4/mealq-app/current
 - Compose project mealq: รุ่นคูปองอัปเดตเฉพาะ API และ web; MongoDB, Tunnel และ volume mealq_db_data ไม่ถูกเปลี่ยน
 - เว็บรับเฉพาะ loopback 127.0.0.1:8088 จาก Tunnel ไม่มีการเปิด API/MongoDB บน public port
@@ -22,7 +22,7 @@
 
 เก็บ images mealq-api:before-20261019 และ mealq-web:before-20261019 สำหรับ rollback โดยใช้ compose เดิมและ MEALQ_RELEASE=before-20261019 หลังคืน environment เดิม ไม่ต้องลบ volume หรือ restore DB เพื่อ rollback โค้ด เพราะ schema ที่เพิ่มรองรับข้อมูลเก่า ห้ามใช้ compose down -v
 
-รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-wallet-layout` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
+รุ่นปัจจุบัน pin API image เป็น `mealq-api:20261019-catalogue-v2-r2` และ web เป็น `mealq-web:20261019-wallet-layout-r2` แยกกันใน Compose ของ release นี้ คำสั่งเริ่ม API/web ที่ build ไว้แล้ว โดยไม่เปลี่ยน DB:
 
 ```sh
 docker compose -p mealq --env-file /home/linapspi4/mealq-app/shared/compose.env -f /home/linapspi4/mealq-app/current/deploy/compose.yaml up -d --no-deps --no-build --wait api web
@@ -121,3 +121,12 @@ API/web health ผ่าน, SMTP authentication ผ่าน, capabilities แ�
 - สำรอง source ก่อนแก้: `C:\Users\game_\MealQBackups\source-before-wallet-layout-20261019T221612`; จุด rollback: `shared/backups/activation-20261019-wallet-layout-20261019T151849Z-324409`
 - Frontend 68 tests, lint และ build ผ่าน ตรวจ HTTPS `/admin/wallets`, root, JS/CSS และ Wallet chunk ตรง SHA256 ของ build, API/DB healthy และเว็บ muaysart 200 ไม่ได้ตรวจหน้าจอผ่าน browser เพราะ saved origin permission ยังปฏิเสธการควบคุม
 - สำรองเต็มก่อนสลับ `20261019T221913+0700-324936` และหลังสลับ `20261019T222018+0700-325754`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว
+
+## รุ่น Wallet layout r2
+
+- ผู้ใช้ส่งภาพที่ยังเห็นคอลัมน์คงเหลือถูกตัด จึงตรวจต่อพบว่า server มี JS/CSS รุ่นใหม่ครบ แต่ภาพไม่สอดคล้องกับคลาสของรุ่นนั้น และ HTML ยังไม่มี Cache-Control จึงยังยืนยันเวอร์ชันที่แท็บผู้ใช้รันจริงไม่ได้
+- รุ่น `20261019-wallet-layout-r2` แสดงตารางเต็มความกว้าง วางฟอร์มปรับยอดไว้ด้านล่างทุกขนาดจอ และคงการเลื่อนตาราง/ยอดเงินไม่ตัดบรรทัด เพิ่ม `Cache-Control: no-store, max-age=0` เฉพาะ HTML entry เพื่อให้การเปิดหน้าใหม่ตรวจรุ่นล่าสุด ส่วน assets ที่มีชื่อ hash ยังคง immutable
+- lint/build และ nginx config test ผ่าน ตรวจ HTTPS ทั้ง `/`, `/index.html`, `/admin/wallets`, URL ที่มี `user=` และลิงก์รุ่น `?v=20261019-wallet-layout-r2` ได้ header no-store กับ entry `index-C1RwXVLB.js` ตรง build, Wallet chunk `Wallets-EmHqS4tJ.js` เป็น layout เต็มความกว้างและทุก asset ที่ตรวจตรง SHA256
+- API/DB healthy; API, DB, Tunnel และ muaysart container ID/start time ตรงก่อนสลับ เว็บ muaysart ตอบ 200 ไม่มีการแก้ยอดเงินหรือฐานข้อมูลจากขั้นตอนนี้ และไม่ได้ควบคุม browser ที่ถูกปฏิเสธสิทธิ์
+- สำรอง source: `C:\Users\game_\MealQBackups\source-before-wallet-layout-r2-20261019T223747`; จุด rollback: `shared/backups/activation-20261019-wallet-layout-r2-20261019T153901Z-334481`
+- สำรองเต็มก่อนสลับ `20261019T223917+0700-335020` และหลังสลับ `20261019T224014+0700-335789`; สำเนานอก Pi แบบเข้ารหัสผ่าน decryption/SHA/HMAC แล้ว

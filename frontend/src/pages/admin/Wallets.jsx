@@ -97,7 +97,7 @@ function WalletDialog({ user, state, onClose, onAdjust }) {
   const balance = walletOf(state, user._id);
   return (
     <MerchantDialog eyebrow="Wallet" title={user.name} subtitle={user.email} onClose={onClose} size="wide">
-      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start">
+      <div className="min-w-0 space-y-5">
         <div className="min-w-0 space-y-3">
           <StatCard label="ยอดคงเหลือ" value={formatBaht(balance)} highlight />
           <DataList
@@ -127,7 +127,7 @@ function WalletDialog({ user, state, onClose, onAdjust }) {
             ]}
           />
         </div>
-        <div className="min-w-0 xl:sticky xl:top-0">
+        <div className="min-w-0">
           <AdjustForm balance={balance} onAdjust={onAdjust} />
         </div>
       </div>
