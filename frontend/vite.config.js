@@ -10,6 +10,8 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://127.0.0.1:5000', changeOrigin: true },
       '/socket.io': { target: 'http://127.0.0.1:5000', changeOrigin: true, ws: true },
+      // Catalogue images live next to the API in production; forward them in dev too.
+      '/catalogue': { target: 'http://127.0.0.1:5000', changeOrigin: true },
     },
     allowedHosts: ['bid-depot-home-moore.trycloudflare.com', 'straight-percentage-polls-thriller.trycloudflare.com'],
   },
