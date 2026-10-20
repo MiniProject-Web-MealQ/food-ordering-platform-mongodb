@@ -1,0 +1,35 @@
+flowchart LR
+subgraph AUTH[1 ตรวจ session]
+direction TB
+A[Browser ส่งคำขอพร้อม<br/>cookie] --> B[ตรวจรูป token ลายเซ็น<br/>และ exp]
+B --> C[โหลด User ปัจจุบันจาก<br/>MongoDB]
+C --> D{มี User active และ ver<br/>ตรง?}
+D -- ไม่ผ่าน --> E[ตอบ 401 หรือ 403]
+D -- ผ่าน --> F[ตั้ง req.user จากฐาน<br/>ข้อมูล]
+end
+subgraph SCOPE[2 บทบาทและเจ้าของ]
+direction TB
+G{requireRole อนุญาต?} -- ไม่ --> H[403 ไม่มีสิทธิ์]
+G -- customer --> I[กรอง customer_id =<br/>req.user.id]
+G -- merchant หรือ staff --> J[หาร้านจาก owner_id<br/>หรือ staff.store_id]
+J --> K[กรอง store_id ในออเดอร์<br/>เมนู และวัตถุดิบ]
+G -- admin --> L[ผ่าน admin-only และ<br/>ด่านเปลี่ยนรหัสแรกเข้า]
+end
+subgraph EXECUTE[3 ทำงานและตอบกลับ]
+direction TB
+M[ตรวจ input และสถานะที่<br/>อนุญาต] --> N[อ่านหรือแก้เฉพาะข้อมูลที่<br/>มีสิทธิ์]
+N --> P[บันทึก audit สำหรับการ<br/>แก้โดย admin]
+P --> O[จัด response ตาม view<br/>ของงาน]
+end
+AUTH -- ผ่านการตรวจ --> SCOPE
+SCOPE -- มีสิทธิ์แล้ว --> EXECUTE
+class E,H warning
+class F,I,K,L customer
+class N terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

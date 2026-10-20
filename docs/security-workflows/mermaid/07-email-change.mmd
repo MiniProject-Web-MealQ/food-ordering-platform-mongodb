@@ -1,0 +1,35 @@
+flowchart LR
+subgraph START[1 ขอเปลี่ยนอีเมล]
+direction TB
+A[customer ผ่าน<br/>requireAuth และ role] --> B[ตรวจอีเมลใหม่ไม่ซ้ำและ<br/>ไม่ใช่ค่าเดิม]
+B --> C[ตรวจโควตา user และ<br/>ช่วงส่งซ้ำ]
+C --> D[สร้าง ticket และ OTP 6<br/>หลัก]
+D --> E[เก็บ HMAC พร้อม userId<br/>อีเมลเดิม และ version]
+E --> F[ส่ง OTP ไปอีเมลใหม่แล้ว<br/>ตั้ง ready]
+end
+subgraph VERIFY[2 ยืนยัน OTP]
+direction TB
+G[รับ ticket และ OTP พร้อม<br/>session] --> H[ค้น challenge ที่ผูก user<br/>และ version เดิม]
+H --> I[ตรวจเวลา attempts และ<br/>HMAC แบบ timing-safe]
+I --> J{ข้อมูลครบและ OTP ถูก?}
+J -- ไม่ --> K[ปฏิเสธ อีเมลบัญชียังเดิม]
+J -- ใช่ --> L[atomic claim ป้องกัน<br/>ยืนยันซ้ำ]
+end
+subgraph UPDATE[3 เปลี่ยนบัญชี]
+direction TB
+M[ตั้ง email ใหม่ และ<br/>email_verified_at] --> N[ล้าง google_id และ<br/>reset token]
+N --> O[เพิ่ม session_version<br/>และลบ challenge]
+O --> P[disconnect socket แล้ว<br/>ออก cookie ใหม่]
+end
+START --> VERIFY
+VERIFY -- ยืนยันแล้ว --> UPDATE
+class E,L,O customer
+class K warning
+class P terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

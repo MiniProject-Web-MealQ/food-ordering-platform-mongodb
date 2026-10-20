@@ -1,0 +1,31 @@
+flowchart TD
+ START([แอดมินเข้าสู่ระบบ]) --> AUTH{session และบทบาท<br/>admin ถูกต้อง}
+ AUTH -- ไม่ถูกต้อง --> DENY([ปฏิเสธการเข้าถึง])
+ AUTH -- ถูกต้อง --> FIRST{ต้องเปลี่ยนรหัสเริ่มต้นหรือ<br/>ไม่}
+ FIRST -- ต้องเปลี่ยน --> PASSWORD[เปลี่ยนรหัสผ่านก่อน<br/>ทำงาน]
+ PASSWORD --> DASH
+ FIRST -- ไม่ต้อง --> DASH[ดูภาพรวมระบบและเลือก<br/>งาน]
+ DASH --> STORES[ตรวจร้านที่รออนุมัติ]
+ STORES --> DECIDE{ผลการตรวจร้าน}
+ DECIDE -- อนุมัติ --> ACTIVE[ร้าน active และเจ้าของ<br/>เปิดขายได้]
+ DECIDE -- ปฏิเสธ / ระงับ --> CLOSED[ระบุเหตุผลและหยุดรับออ<br/>เดอร์]
+ DASH --> USERS[จัดการผู้ใช้ บทบาท<br/>สถานะ และพนักงาน]
+ DASH --> PROMO[สร้างโปรโมชัน ตั้งค่าค่า<br/>บริการ และการรับออเดอร์]
+ DASH --> FINANCE[ตรวจออเดอร์ ยกเลิก หรือ<br/>ปรับ Wallet พร้อมเหตุผล]
+ ACTIVE --> AUDIT[บันทึกประวัติการดำเนิน<br/>การ]
+ CLOSED --> AUDIT
+ USERS --> AUDIT
+ PROMO --> AUDIT
+ FINANCE --> AUDIT
+ AUDIT --> REPORT[ตรวจรายงานและประวัติ<br/>ย้อนหลัง]
+ REPORT --> DASH
+ class START,DENY terminal
+ class CLOSED warning
+ class DASH,STORES,USERS,PROMO,FINANCE,AUDIT,REPORT admin
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

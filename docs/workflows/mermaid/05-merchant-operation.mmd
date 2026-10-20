@@ -1,0 +1,40 @@
+flowchart LR
+ subgraph DATA[1 เตรียมข้อมูล]
+ direction TB
+ START([เจ้าของร้าน / พนักงานเข้า<br/>สู่ระบบ]) --> STORE[โหลดร้านที่บัญชีมีสิทธิ์<br/>จัดการ]
+ STORE --> INFO[ตั้งชื่อร้าน รูป ที่ตั้ง และ<br/>เวลาเปิด]
+ INFO --> INGREDIENT[เพิ่มวัตถุดิบ หน่วย และ<br/>ยอดคงเหลือ]
+ INGREDIENT --> MENU[สร้างหรือแก้เมนู ราคา<br/>หมวดหมู่ และตัวเลือก]
+ MENU --> RECIPE[กำหนดสูตรวัตถุดิบต่อหนึ่ง<br/>จาน]
+ RECIPE --> VALID{สูตรและหน่วยถูกต้องหรือ<br/>ไม่}
+ VALID -- ไม่ถูกต้อง --> RECIPE
+ VALID -- ถูกต้อง --> SAVE[บันทึกเมนูและความพร้อม<br/>ขาย]
+ end
+ subgraph APPROVAL[2 อนุมัติร้าน]
+ direction TB
+ APPROVED{ร้านผ่านอนุมัติแล้วหรือไม่}
+ APPROVED -- ยังไม่ผ่าน --> WAIT[เตรียมข้อมูลได้ แต่ยังเปิด<br/>ขายไม่ได้]
+ WAIT --> ADMIN[แอดมินตรวจและอนุมัติ ดู<br/>ผัง 06]
+ ADMIN --> APPROVED
+ APPROVED -- ผ่านแล้ว --> ACTIVE([ร้านอยู่สถานะ active])
+ end
+ subgraph SALES[3 เปิดขาย]
+ direction TB
+ OPEN[เปิดรับออเดอร์แบบมือหรือ<br/>อัตโนมัติ]
+ OPEN --> READY{เปิดตามเวลาและมีเมนู<br/>พร้อมขาย}
+ READY -- ไม่พร้อม --> PAUSE[พักขาย / เติมสต็อก / แก้<br/>เมนู]
+ PAUSE --> OPEN
+ READY -- พร้อม --> PUBLIC[แสดงร้านและเมนูพร้อม<br/>ขายให้ลูกค้า]
+ PUBLIC --> ORDER([รับออเดอร์และทำอาหาร<br/>ดูผัง 04])
+ end
+ DATA -- เตรียมแล้ว --> APPROVAL
+ APPROVAL -- อนุมัติแล้ว --> SALES
+ class START,ORDER terminal
+ class WAIT,PAUSE warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

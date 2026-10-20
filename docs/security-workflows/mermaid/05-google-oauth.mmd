@@ -1,0 +1,36 @@
+flowchart LR
+subgraph START[1 เริ่มเข้าสู่ระบบ]
+direction TB
+A[Browser เลือก Google<br/>และ portal] --> B[ตรวจ config portal และ<br/>returnOrigin allowlist]
+B --> C[สุ่ม nonce 32 bytes]
+C --> D[สร้าง state พร้อม nonce<br/>portal origin exp 10<br/>นาที]
+D --> E[ลง HMAC state และตั้ง<br/>nonce cookie HttpOnly]
+E --> F[Redirect ไป Google ผ่าน<br/>HTTPS]
+end
+subgraph GOOGLE[2 ตรวจ callback]
+direction TB
+G[Google ส่ง code และ<br/>state กลับ] --> H[ล้าง nonce cookie หลัง<br/>รับ callback]
+H --> I{HMAC เวลา และ nonce<br/>ตรง?}
+I -- ไม่ --> J[ยุติการเข้าสู่ระบบ]
+I -- ตรง --> K[Backend แลก code ด้วย<br/>client secret]
+K --> L[เรียก Google userinfo<br/>ผ่าน HTTPS]
+end
+subgraph ACCOUNT[3 ผูกบัญชี MealQ]
+direction TB
+M[ตรวจ email_verified<br/>email และ sub] --> N[ตรวจ role สถานะ และ<br/>google_id เดิม]
+N --> O[สร้างบัญชีหรือผูก<br/>verified email ที่อนุญาต]
+O --> P[ออก MealQ session<br/>cookie]
+P --> Q[Redirect ไปหน้า<br/>customer หรือ<br/>merchant]
+end
+START --> GOOGLE
+GOOGLE -- ผ่านการตรวจ --> ACCOUNT
+class E,K,M customer
+class J warning
+class P terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

@@ -1,0 +1,36 @@
+flowchart LR
+ subgraph STAGES[1 ร้านทำออเดอร์]
+ direction TB
+ START([ชำระยอดทดลองและสร้าง<br/>คิวสำเร็จ]) --> PENDING[รอร้านรับออเดอร์ /<br/>pending]
+ PENDING --> CONFIRMED[ร้านรับออเดอร์ /<br/>confirmed]
+ CONFIRMED --> PREPARING[ร้านเริ่มทำอาหาร /<br/>preparing]
+ PREPARING --> READY[อาหารพร้อมรับ / ready]
+ end
+ subgraph PICKUP[2 ตรวจรับอาหาร]
+ direction TB
+ ARRIVE[ลูกค้ามารับและแสดงรหัส<br/>หรือ QR]
+ ARRIVE --> SCAN[ร้านกรอกรหัสหรือสแกน<br/>QR]
+ SCAN --> VALID{ออเดอร์พร้อมรับและรหัส<br/>ตรงกัน}
+ VALID -- ไม่ตรง --> RETRY[แจ้งข้อผิดพลาดและตรวจ<br/>ใหม่]
+ RETRY --> SCAN
+ VALID -- ตรง --> COMPLETE[บันทึกรับอาหารและจบคิว<br/>/ completed]
+ end
+ subgraph AFTER[3 รีวิวหลังรับ]
+ direction TB
+ REVIEW{ลูกค้าต้องการรีวิวหรือไม่}
+ REVIEW -- ต้องการ --> RATE[ให้คะแนนและเขียนรีวิว]
+ RATE --> SUMMARY[อัปเดตคะแนนสรุปของ<br/>ร้าน]
+ SUMMARY --> DONE([จบการสั่งซื้อ])
+ REVIEW -- ไม่รีวิว --> DONE
+ end
+ STAGES -- พร้อมรับ --> PICKUP
+ PICKUP -- รับสำเร็จ --> AFTER
+ class START,DONE,COMPLETE terminal
+ class RETRY warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

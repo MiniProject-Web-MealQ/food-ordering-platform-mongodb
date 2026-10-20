@@ -1,0 +1,26 @@
+flowchart TD
+ USER[ลูกค้า / ร้านค้า / แอดมิน] --> WEB[React UI บน Browser]
+ WEB -->|HTTPS และ session cookie| CF[Cloudflare Tunnel]
+ CF --> NGINX[Nginx เสิร์ฟหน้าเว็บและ<br/>ส่งต่อ API]
+ NGINX --> AUTH[Express ตรวจ session<br/>และบทบาท]
+ AUTH --> LOGIC[Controllers และ<br/>Services]
+ LOGIC --> MONGOOSE[Mongoose ตรวจ<br/>Schema และ query]
+ MONGOOSE <--> DB[(MongoDB)]
+ LOGIC --> SOCKET[Socket.IO เหตุการณ์ตาม<br/>สิทธิ์]
+ SOCKET -. ผ่าน proxy กลับไปหน้าเว็บ .-> WEB
+ LOGIC --> JOBS[คิวอีเมล / Push /<br/>Checkout recovery]
+ JOBS <--> DB
+ JOBS --> SMTP[SMTP ส่งอีเมล]
+ JOBS --> PUSH[ผู้ให้บริการ Web Push]
+ PUSH --> SW[Service Worker ของ<br/>อุปกรณ์]
+ SW --> WEB
+ class USER,DB terminal
+ class WEB customer
+ class AUTH,LOGIC,MONGOOSE,JOBS merchant
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

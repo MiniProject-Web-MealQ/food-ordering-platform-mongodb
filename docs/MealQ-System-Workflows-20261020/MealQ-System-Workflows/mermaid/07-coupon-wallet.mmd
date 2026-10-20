@@ -1,0 +1,36 @@
+flowchart LR
+ subgraph COUPONS[เส้นทางคูปอง]
+ direction TB
+ A[แอดมินสร้างโปรโมชัน] --> B[ลูกค้ากดเก็บคูปองเข้า<br/>บัญชี]
+ B --> C[บันทึกความเป็นเจ้าของ<br/>โดยไม่สร้างรายการซ้ำ]
+ C --> D{ต้องการใช้คูปองหรือไม่}
+ D -- ใช้ --> SELECT[เลือกคูปอง 1 ใบใน<br/>checkout]
+ D -- ไม่ใช้ --> FULL[ใช้ยอดโดยไม่มีส่วนลด]
+ SELECT --> E{ร้าน เวลา ยอด และโควตา<br/>ผ่านหรือไม่}
+ E -- ไม่ผ่าน --> F[แจ้งสาเหตุและให้เลือก<br/>ใหม่]
+ F --> SELECT
+ E -- ผ่าน --> G[คำนวณส่วนลดและจอง<br/>สิทธิ์ตอนสร้างออเดอร์]
+ end
+ subgraph WALLET[เส้นทาง Wallet]
+ direction TB
+ H[ดูยอดและประวัติ Wallet] --> I{ต้องการเติมยอดทดลอง<br/>หรือไม่}
+ I -- ต้องการ --> J{ระบบเปิดโหมด demo<br/>หรือไม่}
+ J -- เปิด --> K[เติมยอดและบันทึกประวัติ<br/>แบบป้องกันการเติมซ้ำ]
+ K --> H
+ J -- ไม่เปิด --> L[ไม่เปิดการเติมยอด<br/>ทดลองด้วยตนเอง]
+ I -- ไม่เติม --> M[จ่ายด้วย Wallet ตามยอด<br/>ที่ Backend คำนวณ]
+ M --> N{ยอด Wallet เพียงพอหรือ<br/>ไม่}
+ N -- ไม่พอ --> O[แจ้งยอดไม่พอและไม่หัก<br/>ยอดติดลบ]
+ N -- ผ่าน --> P[หักยอดและบันทึกประวัติ<br/>โดยรายการเดิมไม่หักซ้ำ]
+ P --> Q([ดำเนินออเดอร์ต่อ])
+ end
+ COUPONS -- ยอดชำระ --> WALLET
+ class F,L,O warning
+ class Q terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

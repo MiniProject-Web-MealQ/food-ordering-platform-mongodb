@@ -1,0 +1,33 @@
+flowchart LR
+subgraph PI[1 สำรองบน Pi]
+direction TB
+A[ล็อกงานและตรวจพื้นที่<br/>ก่อน backup] --> B[mongodump เป็น gzip<br/>พร้อมสำเนา config]
+B --> C[จำกัดไฟล์ 600 และ<br/>โฟลเดอร์ 700]
+C --> D[สร้าง manifest จาก<br/>dump log แล้วตรวจ gzip<br/>และ checksum]
+D --> E[เขียน COMPLETE แล้ว<br/>publish latest แบบ<br/>atomic]
+E --> F[เก็บ snapshot ก่อนหน้า<br/>ไว้ ไม่ลบอัตโนมัติ]
+end
+subgraph COPY[2 สำเนาบน Windows]
+direction TB
+G[stream สำเนาผ่าน SSH] --> H[เข้ารหัส AES-256-CBC<br/>ก่อนเขียนลงดิสก์]
+H --> I[HMAC-SHA256 ตรวจการ<br/>แก้ไขข้อมูล]
+I --> J[DPAPI CurrentUser<br/>ปกป้อง key สุ่ม]
+J --> K[ตรวจ hash หลังถอดรหัส<br/>และขนาดขณะรับ stream]
+end
+subgraph RESTORE[3 ทดสอบการกู้คืน]
+direction TB
+L[restore drill ใช้ Mongo<br/>container และ volume<br/>ใหม่] --> M[ตัด network ในสภาพ<br/>แวดล้อมทดสอบ]
+M --> N[ตรวจ collection counts<br/>และ validation]
+N --> O[คงอาร์ติแฟกต์ไว้เพื่อตรวจ<br/>ย้อนหลัง]
+end
+PI --> COPY
+PI -- ใช้ dump จาก Pi โดยตรง --> RESTORE
+class C,D,H,I,J,K customer
+class F,N,O terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

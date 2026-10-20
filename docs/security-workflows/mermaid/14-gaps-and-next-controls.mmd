@@ -1,0 +1,25 @@
+flowchart LR
+A[ความปลอดภัยที่มีอยู่:<br/>hash auth role<br/>ownership และ integrity] --> B[ตรวจช่องว่างที่ยังเหลือ]
+B --> C[เพิ่ม rate limit ของ login<br/>forgot reset และ pickup<br/>code]
+B --> D[เพิ่ม CSRF defense ให้<br/>คำขอที่เปลี่ยนข้อมูล]
+B --> E[เพิ่ม MFA หรือ re-auth<br/>สำหรับการเปลี่ยนข้อมูล<br/>สำคัญ]
+B --> F[revoke สำเนา session<br/>ตอน logout และตัด<br/>socket เก่า]
+B --> G[เสริม CSP และ security<br/>headers ตามการใช้งาน]
+B --> H[ตรวจ DB auth TLS disk<br/>encryption และ backup<br/>restore]
+C --> I[ออกแบบและทดสอบ<br/>ก่อนนำไปใช้จริง]
+D --> I
+E --> I
+F --> I
+G --> I
+H --> I
+I --> J[ตรวจสิทธิ์ทุก endpoint<br/>พร้อม audit และ<br/>monitoring]
+class A terminal
+class C,D,E,F,G,H warning
+class I,J admin
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

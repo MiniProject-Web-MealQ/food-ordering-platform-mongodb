@@ -1,0 +1,29 @@
+flowchart LR
+subgraph PASSWORD[1 พิสูจน์รหัสผ่าน]
+direction TB
+A[รับ email password<br/>rememberMe และ<br/>portal] --> B[ค้น User จากอีเมลที่<br/>normalize แล้ว]
+B --> C[อ่าน salt และ hash เดิม<br/>จากฐานข้อมูล]
+C --> D[scrypt รหัสผ่านที่รับมา<br/>ด้วย salt เดิม]
+D --> E{แฮชตรงกันหรือไม่?}
+E -- ไม่ตรงหรือไม่มี User --> F[401<br/>INVALID_CREDENTIALS<br/>ข้อความรวม]
+E -- ตรง --> G[ตรวจไม่ถูกระงับ และ role<br/>ตรง portal]
+end
+subgraph COOKIE[2 ออก cookie]
+direction TB
+H[สร้าง payload: sub exp<br/>ver] --> I[แปลง JSON เป็น<br/>base64url]
+I --> J[ลงลายเซ็น HMAC-<br/>SHA256 ด้วย<br/>SESSION_SECRET]
+J --> K[Set-Cookie:<br/>mealq_session =<br/>payload.signature]
+K --> L[HttpOnly และ Secure<br/>บน HTTPS หรือ<br/>production]
+L --> M[Browser แนบ cookie<br/>เมื่อเรียก API]
+end
+PASSWORD -- ตรวจครบแล้ว --> COOKIE
+class D,J customer
+class F warning
+class M terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

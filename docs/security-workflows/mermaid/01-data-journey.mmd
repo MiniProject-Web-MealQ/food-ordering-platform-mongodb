@@ -1,0 +1,31 @@
+flowchart LR
+subgraph PUBLIC[1 อินเทอร์เน็ต]
+direction TB
+A[ผู้ใช้กรอกข้อมูลใน<br/>Browser] --> B[HTTPS ไป Cloudflare]
+B --> C[Cloudflare รับและถอด<br/>TLS ที่ขอบเครือข่าย]
+C --> D[ส่งต่อผ่าน Cloudflare<br/>Tunnel ที่เข้ารหัส]
+end
+subgraph PRIVATE[2 เครื่องให้บริการ]
+direction TB
+E[cloudflared เชื่อมออกไป<br/>หา Cloudflare] --> F[Nginx รับที่ loopback]
+F --> G[HTTP ไป Express ใน<br/>เครือข่าย Docker]
+G --> H[ตรวจข้อมูล ตัวตน สิทธิ์<br/>และเจ้าของ]
+end
+subgraph STORAGE[3 ฐานข้อมูล]
+direction TB
+I[MongoDB ใน shared<br/>Docker network ไม่<br/>publish พอร์ต] --> J[เก็บ password hash และ<br/>token hash]
+I --> K[ชื่อ อีเมล โทรศัพท์ และ<br/>ออเดอร์เป็นข้อมูลปกติ]
+K --> L[ไม่พบ field encryption<br/>ในแอป]
+end
+PUBLIC --> PRIVATE
+PRIVATE --> STORAGE
+class B,D customer
+class H,J terminal
+class L warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

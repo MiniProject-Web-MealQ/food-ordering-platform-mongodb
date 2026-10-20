@@ -1,0 +1,35 @@
+flowchart LR
+subgraph RECEIVE[1 รับอาหาร]
+direction TB
+A[ร้านที่มีสิทธิ์เปิดออเดอร์<br/>ของร้าน] --> B[เปลี่ยน pending<br/>confirmed preparing<br/>ready ตามลำดับ]
+B --> C[ลูกค้าแสดงรหัสหรือ QR<br/>รับอาหาร]
+C --> D{ready และรหัส 4 หลัก<br/>ตรง?}
+D -- ไม่ --> E[ไม่จบออเดอร์]
+D -- ใช่ --> F[conditional update เป็น<br/>completed]
+end
+subgraph CANCEL[2 ยกเลิกตามสิทธิ์]
+direction TB
+G[ตรวจผู้ขอยกเลิก เจ้าของ<br/>และสถานะ] --> H[เปลี่ยนสถานะเฉพาะที่<br/>อนุญาต]
+H --> I[คืน stock และสิทธิ์คูปอง<br/>ตาม marker]
+I --> J[ถ้าหัก Wallet จริง คืนผ่าน<br/>refund key]
+J --> K[ไม่เพิ่ม Wallet ให้<br/>PromptPay Demo]
+end
+subgraph RECOVER[3 กู้คืนอัตโนมัติ]
+direction TB
+L[worker ตรวจ checkout<br/>ค้าง] --> M[ตรวจ lease และหลักฐาน<br/>ขั้นตอนที่ทำแล้ว]
+M --> N[กัน late debit และคืน<br/>เฉพาะทรัพยากรที่ใช้จริง]
+N --> O[ยกเลิก queue และทำ<br/>compensation ให้ครบ]
+O --> P[บันทึกผลเพื่อไม่ให้ทำซ้ำ]
+end
+RECEIVE -. กรณียกเลิก .-> CANCEL
+CANCEL -. กรณีงานทำไม่ครบ .-> RECOVER
+class E warning
+class F,P terminal
+class I,J,N customer
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

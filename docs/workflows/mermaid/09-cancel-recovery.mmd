@@ -1,0 +1,29 @@
+flowchart TD
+ REQUEST([ผู้ใช้ขอยกเลิกออเดอร์]) --> RIGHTS{เจ้าของข้อมูล สิทธิ์ และ<br/>สถานะอนุญาตหรือไม่}
+ RIGHTS -- ไม่อนุญาต --> DENY([แจ้งว่ายกเลิกไม่ได้])
+ RIGHTS -- อนุญาต --> CANCEL[เปลี่ยนออเดอร์เป็น<br/>cancelled]
+ FAIL([checkout ล้มเหลว]) --> COMP[เริ่มชดเชยขั้นตอนที่ทำไป]
+ STALE([worker พบ checkout<br/>ค้าง]) --> LOCK{เข้าเงื่อนไขกู้คืนและ lock<br/>ว่างหรือไม่}
+ LOCK -- ยังไม่เข้าเงื่อนไข --> WAIT[ข้ามและตรวจใหม่ในรอบ<br/>ถัดไป]
+ WAIT -.-> STALE
+ LOCK -- เข้าเงื่อนไข --> COMP
+ COMP --> CANCEL
+ CANCEL --> QUEUE[ยกเลิกคิวของออเดอร์]
+ QUEUE --> STOCK[คืนวัตถุดิบที่จองไว้เพียง<br/>ครั้งเดียว]
+ STOCK --> COUPON[คืนโควตาคูปองที่ออเดอร์<br/>เคยจอง]
+ COUPON --> DEBIT{เป็น Wallet และเคยหัก<br/>ยอดสำเร็จหรือไม่}
+ DEBIT -- ใช่ --> REFUND[คืนยอดเข้ากระเป๋าด้วย<br/>key ป้องกันการคืนซ้ำ]
+ DEBIT -- ไม่ใช่ --> NOREFUND[ไม่เพิ่มยอด Wallet โดย<br/>ไม่มีรายการหัก]
+ REFUND --> SAVE[บันทึกสถานะและผลการ<br/>ชดเชย]
+ NOREFUND --> SAVE
+ SAVE --> NOTICE[อัปเดตหน้าจอและแจ้งผล<br/>ตามเหตุการณ์]
+ NOTICE --> DONE([จบการยกเลิกหรือกู้คืน])
+ class REQUEST,FAIL,STALE,DENY,DONE terminal
+ class WAIT,NOREFUND warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

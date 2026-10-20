@@ -1,0 +1,36 @@
+flowchart LR
+subgraph DRAFT[1 เตรียมคำขอ]
+direction TB
+A[รับชื่อ อีเมล โทรศัพท์<br/>รหัสผ่าน และ role] --> B[ตรวจรูปแบบ ความยาว<br/>และอีเมลซ้ำ]
+B --> C[รับสมัครได้เฉพาะ<br/>customer หรือ<br/>merchant]
+C --> D[ตรวจโควตา IP และอีเมล]
+D --> E[แฮชรหัสผ่านด้วย scrypt<br/>และ salt สุ่ม]
+end
+subgraph CHALLENGE[2 เก็บและส่ง OTP]
+direction TB
+F[สร้าง ticket สุ่ม 24 bytes<br/>และ OTP 6 หลัก] --> G[เก็บ HMAC ของ ticket:<br/>OTP พร้อม password<br/>hash]
+G --> H[กำหนดอายุ 10 นาที และ<br/>ลองได้ 5 ครั้ง]
+H --> I[ส่ง OTP จริงไปอีเมล]
+I --> J[ส่งสำเร็จจึงตั้ง ready และ<br/>คืน ticket ให้ Browser]
+end
+subgraph VERIFY[3 ยืนยันและสร้างบัญชี]
+direction TB
+K[รับ ticket และ OTP] --> L[ตรวจเวลา ready และ<br/>attempts ใน query แล้ว<br/>ลด attempts แบบ<br/>atomic]
+L --> T[ตรวจ HMAC แบบ<br/>timingSafeEqual]
+T --> M{OTP ถูกและยังใช้ได้?}
+M -- ไม่ผ่าน --> N[ปฏิเสธ ไม่มี User และ<br/>ไม่มี session]
+M -- ผ่าน --> O[consume draft แบบ<br/>atomic ป้องกันใช้ซ้ำ]
+O --> P[สร้าง User ที่ยืนยันอีเมล<br/>แล้ว และออก session]
+end
+DRAFT --> CHALLENGE
+CHALLENGE --> VERIFY
+class E,G customer
+class N warning
+class P terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

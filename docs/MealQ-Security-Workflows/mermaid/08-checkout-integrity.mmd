@@ -1,0 +1,39 @@
+flowchart LR
+subgraph RETRY[1 ตรวจคำขอซ้ำ]
+direction TB
+A[customer ส่งรายการและ<br/>payment method] --> V[ตรวจรูปแบบ input และ<br/>Idempotency-Key ถ้ามี]
+V --> F[ผูก key กับ user และ<br/>request fingerprint]
+F --> G{เคยใช้ key นี้แล้ว?}
+G -- payload ต่าง --> H[409 key ซ้ำต่างคำขอ]
+G -- คำขอเดิม --> I[เสร็จแล้วคืนออเดอร์เดิม<br/>ถ้ายังค้างตอบ 409]
+G -- ใหม่หรือไม่มี key --> J[เริ่มตรวจข้อมูลธุรกิจ]
+end
+subgraph VALIDATE[2 ราคาและทรัพยากร]
+direction TB
+B[โหลดราคา เมนู สูตร และ<br/>ร้านจาก DB] --> C[ตรวจร้านเปิด เมนูพร้อม<br/>และร้านเดียวกัน]
+C --> D[คำนวณคูปอง และตรวจ<br/>expectedTotal ถ้าส่งมา]
+D --> E[ตรวจสูตรและสต็อกอีกครั้ง<br/>ตอนสร้างจริง]
+E --> K[checkout lock แล้ว<br/>claim คูปองและ reserve<br/>stock แบบมีเงื่อนไข]
+end
+subgraph PAYMENT[3 จ่ายและบันทึก]
+direction TB
+L{ช่องทางที่อนุญาต?} -- Wallet --> M[ยอดต้องพอ debit และ<br/>ledger key ไม่ซ้ำ]
+M --> R[บันทึก paid]
+L -- PromptPay Demo --> S[บันทึก simulated ไม่<br/>ยืนยันเงินธนาคาร]
+R --> N[ผูก queue และยืนยัน<br/>checkout สำเร็จ]
+S --> N
+N --> O[ตอบข้อมูลออเดอร์จาก<br/>Backend]
+end
+RETRY -- เฉพาะคำขอใหม่ --> VALIDATE
+VALIDATE -- สำรองสำเร็จ --> PAYMENT
+class B,D,K,M customer
+class H warning
+class I customer
+class O terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

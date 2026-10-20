@@ -1,0 +1,30 @@
+flowchart TD
+ START([สร้างออเดอร์หรือเปลี่ยน<br/>สถานะสำเร็จ]) --> EVENT[บันทึกเหตุการณ์และผู้<br/>เกี่ยวข้องใน MongoDB]
+ EVENT --> REALTIME[ส่ง Socket.IO ไปยังห้อง<br/>ของผู้ใช้และร้าน]
+ REALTIME --> UI[หน้าที่เปิดอยู่แสดงสถานะ<br/>ใหม่]
+ EVENT --> INBOX[บันทึกข้อความในกล่อง<br/>แจ้งเตือน]
+ INBOX --> READ[ผู้ใช้ขยายรายละเอียด กด<br/>เปิดรายการ และทำ<br/>เครื่องหมายอ่าน]
+ EVENT --> EMAIL{เปิดรับอีเมลและอีเมล<br/>ยืนยันแล้ว}
+ EMAIL -- ใช่ --> OUTBOX[เข้าคิว EmailOutbox]
+ OUTBOX --> SMTP[worker ส่งผ่าน SMTP]
+ SMTP --> SENT{ส่งสำเร็จหรือไม่}
+ SENT -- สำเร็จ --> ES[บันทึกผลการส่ง]
+ SENT -- ไม่สำเร็จ --> ATTEMPT{ยังไม่ครบจำนวนครั้งที่ส่ง<br/>ซ้ำ}
+ ATTEMPT -- ยังส่งซ้ำได้ --> RETRY[รอตามเวลาส่งซ้ำที่<br/>กำหนด]
+ ATTEMPT -- ครบแล้ว --> FAILED[บันทึกว่าส่งไม่สำเร็จ]
+ RETRY --> OUTBOX
+ EMAIL -- ไม่ใช่ --> SKIP[ข้ามช่องทางอีเมล]
+ EVENT --> PUSH{มี subscription และ<br/>อนุญาตแจ้งเตือน}
+ PUSH -- ใช่ --> SERVICE[ส่ง Web Push ไป<br/>Service Worker]
+ SERVICE --> DEVICE[อุปกรณ์แสดงแจ้งเตือน<br/>ตามการตั้งค่า]
+ DEVICE --> TAP[แตะเพื่อเปิดหน้าออเดอร์<br/>หรือรายการที่เกี่ยวข้อง]
+ PUSH -- ไม่ใช่ --> NOPUSH[ข้ามช่องทางอุปกรณ์]
+ class START terminal
+ class SKIP,NOPUSH warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

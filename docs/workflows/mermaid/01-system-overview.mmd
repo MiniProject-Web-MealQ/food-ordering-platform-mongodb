@@ -1,0 +1,34 @@
+flowchart TD
+ START([เปิดเว็บไซต์ MealQ]) --> PUBLIC[ดูร้าน เมนู และหน้าสาธิต]
+ PUBLIC --> AUTH[สมัครหรือเข้าสู่ระบบ]
+ AUTH --> ROLE{บทบาทของบัญชี}
+ ROLE --> C[ลูกค้า]
+ ROLE --> M[ร้านค้า / พนักงาน]
+ ROLE --> A[แอดมิน]
+ C --> C1[ค้นหา / สุ่มอาหาร / ร้าน<br/>โปรด]
+ C1 --> C2[ตะกร้า / คูปอง / ชำระ<br/>ยอดทดลอง]
+ C2 --> C3[ติดตามคิว / รับอาหาร /<br/>รีวิว]
+ C --> C4[โปรไฟล์ / Wallet / การ<br/>แจ้งเตือน]
+ M --> M1[ข้อมูลร้าน / เมนู / สูตร /<br/>สต็อก]
+ M1 --> M2[รับออเดอร์ / ทำอาหาร /<br/>ตรวจรหัสรับ]
+ M --> M3[รายงาน / ตั้งค่าร้าน]
+ A --> A1[อนุมัติร้าน / ผู้ใช้ /<br/>พนักงาน]
+ A1 --> A2[โปรโมชัน / ออเดอร์ /<br/>Wallet / ตั้งค่า]
+ C3 --> API[Backend ตรวจสิทธิ์และ<br/>กฎของระบบ]
+ C4 --> API
+ M2 --> API
+ M3 --> API
+ A2 --> API
+ API --> DB[(MongoDB)]
+ API -.-> NOTICE[แจ้งเตือนในแอป / อีเมล /<br/>อุปกรณ์]
+ class C,C1,C2,C3,C4 customer
+ class M,M1,M2,M3 merchant
+ class A,A1,A2 admin
+ class START,DB terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

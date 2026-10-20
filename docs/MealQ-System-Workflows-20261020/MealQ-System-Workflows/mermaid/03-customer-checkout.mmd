@@ -1,0 +1,42 @@
+flowchart LR
+ subgraph CUSTOMER[1 เตรียมรายการ]
+ direction TB
+ START([ลูกค้าเข้าสู่ระบบแล้ว]) --> FIND[ค้นหาร้าน / หมวดหมู่ /<br/>สุ่มเมนู]
+ FIND --> MENU[เลือกเมนู ตัวเลือก จำนวน<br/>และหมายเหตุ]
+ MENU --> CART[ตรวจตะกร้าของร้านเดียว]
+ CART --> COUPON[เลือกคูปองที่เก็บไว้ได้ 1<br/>ใบ หรือไม่ใช้]
+ COUPON --> PREFLIGHT[ขอตรวจวัตถุดิบก่อนสั่ง]
+ PREFLIGHT --> STOCK{สูตรและวัตถุดิบพร้อมหรือ<br/>ไม่}
+ STOCK -- ไม่พร้อม --> EDIT[แสดงเมนูหรือวัตถุดิบที่<br/>ขาด]
+ EDIT --> CART
+ STOCK -- พร้อม --> CONFIRM[เลือกวิธีชำระและกดยืนยัน]
+ end
+ subgraph BACKEND[2 ตรวจคำสั่งซื้อ]
+ direction TB
+ CHECK[ตรวจสิทธิ์ ร้าน คิว ราคา<br/>คูปอง และสต็อกซ้ำ]
+ CHECK --> VALID{ข้อมูลและเงื่อนไขผ่าน<br/>หรือไม่}
+ VALID -- ไม่ผ่าน --> REJECT([แจ้งให้กลับไปแก้ตะกร้า])
+ VALID -- ผ่าน --> RESERVE[สร้างออเดอร์และจอง<br/>วัตถุดิบ]
+ end
+ subgraph PAYMENT[3 ชำระและสร้างคิว]
+ direction TB
+ PAY{วิธีชำระ}
+ PAY -- Wallet --> DEBIT[หักยอดทดลองแบบ<br/>ป้องกันการตัดซ้ำ]
+ PAY -- PromptPay Demo --> SIMULATE[บันทึกการชำระจำลอง]
+ DEBIT --> OK{ขั้นตอนชำระสำเร็จหรือไม่}
+ SIMULATE --> OK
+ OK -- ไม่สำเร็จ --> RECOVER[คืนสิ่งที่จองหรือหักไป ดู<br/>ผัง 09]
+ OK -- สำเร็จ --> QUEUE[สร้างเลขคิวและรหัสรับ<br/>อาหาร 4 หลัก]
+ QUEUE --> DONE([ออเดอร์ pending และ<br/>แจ้งร้าน])
+ end
+ CUSTOMER -- ยืนยันแล้ว --> BACKEND
+ BACKEND -- จองสำเร็จ --> PAYMENT
+ class START,DONE terminal
+ class EDIT,RECOVER warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

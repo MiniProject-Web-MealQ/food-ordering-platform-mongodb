@@ -1,0 +1,31 @@
+flowchart LR
+subgraph EVENT[1 สร้างเหตุการณ์]
+direction TB
+A[ออเดอร์เปลี่ยนสถานะจริง<br/>ใน Backend] --> B[ตรวจชนิดเหตุการณ์<br/>preference และเงื่อนไข<br/>ผู้รับ]
+B --> C[บันทึก Notification ผูก<br/>user_id และ role]
+C --> D[อ่านหรือ mark read ต้อง<br/>กรอง user_id ของ<br/>session]
+end
+subgraph REALTIME[2 Socket และ Push]
+direction TB
+E[Socket ตรวจ cookie<br/>User status version ตอน<br/>handshake] --> F[server จัด room user<br/>หรือ store ตามบัญชี]
+F --> G[ส่ง event ไป room ผู้รับ]
+H[Push ต้อง auth และผูก<br/>subscription กับ user] --> I[ส่งผ่านผู้ให้บริการ Push<br/>ไปอุปกรณ์]
+I --> J[endpoint ใช้ไม่ได้จึงปิด<br/>subscription]
+end
+subgraph EMAIL[3 อีเมลที่อนุญาต]
+direction TB
+K[ตรวจผู้รับ active อีเมล<br/>ยืนยัน และ opt-in] --> L[สร้าง EmailOutbox จาก<br/>เหตุการณ์]
+L --> M[worker ตรวจ opt-in และ<br/>generation อีกครั้ง]
+M --> N[ส่ง SMTP และบันทึกผล<br/>retry]
+end
+EVENT --> REALTIME
+EVENT --> EMAIL
+class D,E,F,H,K,M customer
+class G,J,N terminal
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

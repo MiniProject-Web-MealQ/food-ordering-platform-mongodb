@@ -1,0 +1,34 @@
+flowchart TD
+ START([หน้าเข้าสู่ระบบ]) --> HAVE{มีบัญชีแล้วหรือไม่}
+ HAVE -- ยังไม่มี --> REG[กรอกข้อมูลและเลือก<br/>ลูกค้า / ร้านค้า]
+ REG --> SEND[ส่ง OTP ทางอีเมล]
+ SEND --> OTP{OTP ถูกต้องและยังไม่<br/>หมดอายุ}
+ OTP -- ไม่ผ่าน --> RETRY[แก้รหัสหรือขอส่งใหม่ตาม<br/>เวลาที่กำหนด]
+ RETRY --> OTP
+ OTP -- ผ่าน --> CREATE[สร้างบัญชีและยืนยันอีเมล]
+ CREATE --> NEWSTORE[ถ้าเป็นร้านค้า สร้างร้านรอ<br/>อนุมัติ]
+ NEWSTORE --> SESSION
+ HAVE -- มีแล้ว --> METHOD{วิธีเข้าสู่ระบบ}
+ METHOD -- รหัสผ่าน --> INPUT[กรอกอีเมล รหัสผ่าน และ<br/>ประเภทบัญชี]
+ INPUT --> VERIFY{รหัสถูก บัญชีใช้งานได้<br/>และบทบาทตรง}
+ VERIFY -- ไม่ผ่าน --> ERROR([แจ้งสาเหตุและกลับหน้า<br/>เข้าสู่ระบบ])
+ VERIFY -- ผ่าน --> SESSION[ออก session cookie ที่ลง<br/>ลายเซ็น]
+ METHOD -- Google --> GOOGLE[ยืนยันกับ Google และ<br/>ตรวจ OAuth state]
+ GOOGLE --> GOK{อีเมลยืนยันแล้วและบัญชี<br/>ผ่านเงื่อนไข}
+ GOK -- ไม่ผ่าน --> ERROR
+ GOK -- ผ่าน --> GUSER[ค้นหาหรือสร้างบัญชีตาม<br/>บทบาท]
+ GUSER --> SESSION
+ INPUT -. ลืมรหัสผ่าน .-> RESET[ส่งลิงก์ตั้งรหัสผ่านใหม่]
+ RESET --> NEWPASS[ตรวจ token และตั้งรหัส<br/>ใหม่]
+ NEWPASS --> REVOKE[ยกเลิก session เก่า]
+ REVOKE --> INPUT
+ SESSION --> HOME([เปิดหน้าตามบทบาทผู้ใช้])
+ class START,HOME terminal
+ class ERROR,RETRY warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36

@@ -1,0 +1,32 @@
+flowchart LR
+subgraph BROWSER[1 ข้อมูลใน Browser]
+direction TB
+A[session ใช้ HttpOnly<br/>cookie ที่ JS อ่านไม่ได้] --- B[localStorage เก็บ cart<br/>favorites และ<br/>preferences]
+B --- C[แยก key ตามบัญชีหรือ<br/>guest]
+C --- D[sessionStorage เก็บ<br/>ticket metadata และ<br/>retry receipt]
+D --- E[ไม่พบ password หรือ<br/>session token ใน local<br/>หรือ sessionStorage]
+end
+subgraph MEDIA[2 รูปภาพ]
+direction TB
+G[Browser ตรวจรูปและ<br/>ขนาดไม่เกิน 5 MB] --> H[canvas ย่อหรือ crop แล้ว<br/>re-encode เป็น JPEG]
+H --> I[API ตรวจ string MIME<br/>และความยาว]
+I --> J[public media จำกัด kind<br/>field id และชนิดรูป]
+J --> K[ส่งรูปพร้อม nosniff]
+end
+subgraph PUBLIC[3 ข้อมูลที่ใครก็ดูได้]
+direction TB
+L[แค็ตตาล็อกมีข้อมูลติดต่อ<br/>ร้าน พิกัด เมนู และรูป] --- M[รีวิวมีชื่อที่แสดงและ<br/>ข้อความจากลูกค้า]
+M --- N[React แสดงข้อความตาม<br/>รูปแบบปกติ]
+N --- Q[ยังต้องเสริม CSP และ<br/>ตรวจการเปิดเผย field]
+end
+BROWSER -. การอัปโหลด .-> MEDIA
+MEDIA -. ภาพในแค็ตตาล็อก .-> PUBLIC
+class A,E,K customer
+class Q warning
+
+classDef default fill:#fffdf8,stroke:#9d7855,color:#35291f,stroke-width:1.4px
+classDef customer fill:#fff0cb,stroke:#bd8650,color:#35291f
+classDef merchant fill:#ffe6d5,stroke:#b4744d,color:#35291f
+classDef admin fill:#e9eff9,stroke:#6e86a2,color:#273447
+classDef terminal fill:#e6f3e9,stroke:#64866b,color:#263d2b
+classDef warning fill:#fff0ed,stroke:#b76e61,color:#603d36
