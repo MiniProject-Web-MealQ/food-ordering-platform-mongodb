@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatOrderCode } from "@/features/customer/format";
 import { useNavigate, useParams } from "react-router";
 import { StarIcon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/styles";
@@ -78,7 +79,7 @@ function Review() {
     <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 sm:px-6 lg:px-8 lg:pb-16">
       <PageHeader
         title="อาหารเป็นอย่างไร?"
-        subtitle={`#${order.id} · ${restaurant.name} · ${order.items.map((i) => i.name).join(", ")}`}
+        subtitle={`${formatOrderCode(order.id)} · ${restaurant.name} · ${order.items.map((i) => i.name).join(", ")}`}
         fallback="/customer/orders"
       />
 

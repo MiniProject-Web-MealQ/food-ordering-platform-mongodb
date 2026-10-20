@@ -7,7 +7,7 @@ import { cancelOrder } from "@/features/customer/api";
 import { findCustomerOrder } from "@/features/customer/order-lookup";
 import { PageHeader } from "@/features/customer/components/page-header";
 import { PickupCode } from "@/features/customer/components/pickup-code";
-import { formatBaht, formatClock, formatRange } from "@/features/customer/format";
+import { formatBaht, formatClock, formatOrderCode, formatRange } from "@/features/customer/format";
 import { PAYMENT_METHODS } from "@/features/customer/mock-data";
 import { useCustomer } from "@/features/customer/store";
 import { containerClass } from "@/features/customer/styles";
@@ -36,7 +36,7 @@ function OrderDetail() {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState(null);
   const order = findCustomerOrder(state.orders, id);
-  usePageTitle(order ? `ออเดอร์ #${order.id}` : "ไม่พบออเดอร์");
+  usePageTitle(order ? `ออเดอร์ ${formatOrderCode(order.id)}` : "ไม่พบออเดอร์");
 
   if (!order) return <NotFoundPage />;
 
@@ -64,7 +64,7 @@ function OrderDetail() {
   return (
     <div className={cx(containerClass, "pb-8 lg:pb-16")}>
       <PageHeader
-        title={`ออเดอร์ #${order.id}`}
+        title={`ออเดอร์ ${formatOrderCode(order.id)}`}
         subtitle={`${restaurant.name} · ${formatClock(order.statusTimes.PLACED)}`}
         fallback="/customer/orders"
         action={
@@ -90,16 +90,16 @@ function OrderDetail() {
             <span aria-hidden="true" className="size-2 rounded-full bg-brand" />
             {statusLabel(status)}
           </p>
-          <div className="mt-2 flex items-end justify-between gap-4">
-            <div>
-              <p className="font-display text-6xl leading-none font-black lg:text-8xl">#{order.queueNumber}</p>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+            <div className="min-w-0">
+              <p className="font-display text-5xl leading-none font-black sm:text-6xl lg:text-8xl">#{order.queueNumber}</p>
               <p className="mt-2 text-sm text-white/75">
                 {cancelled ? "ยกเลิกออเดอร์แล้ว" : done ? "รับอาหารเรียบร้อย" : order.nowServing ? `กำลังทำคิว #${order.nowServing}` : "รอร้านเริ่มทำอาหาร"}
               </p>
             </div>
             {!done && !cancelled && (
-              <p className="text-right">
-                <span className="block text-2xl font-bold">
+              <p className="shrink-0 text-right">
+                <span className="block text-xl font-bold sm:text-2xl">
                   {ready ? "พร้อมรับ" : `${formatRange(order.etaMinutes)} นาที`}
                 </span>
                 <span className="text-xs text-white/60">{ready ? restaurant.pickupPoint : "ประมาณ"}</span>

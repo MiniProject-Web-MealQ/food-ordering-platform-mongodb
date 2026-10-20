@@ -3,7 +3,7 @@ import { CheckIcon } from "@/components/icons";
 import { buttonClasses } from "@/components/ui/styles";
 import { getOrderRestaurant, queuesAhead } from "@/features/customer/catalog";
 import { PickupCode } from "@/features/customer/components/pickup-code";
-import { formatBaht, formatRange } from "@/features/customer/format";
+import { formatBaht, formatOrderCode, formatRange } from "@/features/customer/format";
 import { useCustomer } from "@/features/customer/store";
 import { usePageTitle } from "@/lib/use-page-title";
 import NotFoundPage from "@/pages/not-found";
@@ -28,7 +28,7 @@ function OrderConfirmed() {
           </span>
           <h1 className="mt-6 text-3xl font-bold lg:text-5xl">สั่งอาหารสำเร็จ!</h1>
           <p className="mt-2 text-white/80 lg:text-lg">
-            ออเดอร์ #{order.id} · {restaurant.name}
+            ออเดอร์ {formatOrderCode(order.id)} · {restaurant.name}
             <br />
             เราจะแจ้งเตือนเมื่ออาหารพร้อม
           </p>

@@ -34,8 +34,8 @@ export function PageHeader({ title, subtitle, fallback, action }) {
     <header className="flex flex-wrap items-start gap-2 pt-5 pb-3 lg:pt-8 lg:pb-6">
       {fallback && <BackButton fallback={fallback} className="-ml-1" />}
       <div className="min-w-0 flex-1 pt-1">
-        <h1 className="text-2xl leading-tight font-bold text-ink lg:text-4xl">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-ink-soft">{subtitle}</p>}
+        <h1 className="text-2xl leading-tight font-bold break-words text-ink lg:text-4xl">{title}</h1>
+        {subtitle && <p className="mt-0.5 text-sm break-words text-ink-soft">{subtitle}</p>}
       </div>
       {action}
     </header>

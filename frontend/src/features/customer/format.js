@@ -25,6 +25,16 @@ export function formatWhen(timestamp, now = Date.now()) {
   return `${dateFormat.format(timestamp)} ${formatClock(timestamp)}`;
 }
 
+/**
+ * Order ids from the API are long (MQ + timestamp + hash), so screens show a short tail.
+ * Keep the full id for QR payloads and links — this is for display only.
+ */
+export function formatOrderCode(id) {
+  const value = String(id ?? "");
+  if (value.length <= 10) return `#${value}`;
+  return `#${value.slice(0, 2)}…${value.slice(-6)}`.toUpperCase();
+}
+
 export function formatRange([min, max]) {
   return `${min}–${max}`;
 }
