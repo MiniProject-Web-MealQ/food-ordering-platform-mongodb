@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { currentStatus, getOrderRestaurant, orderProgress, statusLabel } from "../catalog";
-import { formatBaht, formatRange } from "../format";
+import { formatBaht, formatOrderCode, formatRange } from "../format";
 
 /** Espresso card for an order that has not been picked up yet. */
 export function ActiveOrderCard({ order, variant = "home" }) {
@@ -16,7 +16,7 @@ export function ActiveOrderCard({ order, variant = "home" }) {
           <span aria-hidden="true" className="size-2 rounded-full bg-brand" />
           {statusLabel(status)}
         </p>
-        <p className="text-white/60">#{order.id}</p>
+        <p className="shrink-0 text-white/60">{formatOrderCode(order.id)}</p>
       </div>
 
       <div className="mt-2 flex items-end justify-between gap-4">

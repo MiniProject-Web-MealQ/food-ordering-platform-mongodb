@@ -187,23 +187,25 @@ function RestaurantDetail() {
               </div>
             </div>
 
-            <div className="flex gap-3 lg:w-md lg:shrink-0">
-              <div className="flex-1 rounded-3xl bg-cream px-4 py-3">
-                <p className="font-display text-2xl font-black text-cocoa">
+            <div className="flex gap-2 sm:gap-3 lg:w-md lg:shrink-0">
+              <div className="min-w-0 flex-1 rounded-3xl bg-cream px-3 py-3 sm:px-4">
+                <p className="truncate font-display text-xl font-black text-cocoa sm:text-2xl">
                   {restaurant.isOpen ? restaurant.queueLength : "–"}
                 </p>
-                <p className="text-xs text-ink-soft">คิวปัจจุบัน</p>
+                <p className="truncate text-xs text-ink-soft">คิวปัจจุบัน</p>
               </div>
-              <div className="flex-1 rounded-3xl bg-cream px-4 py-3">
-                <p className="font-display text-2xl font-black text-cocoa">{formatRange(restaurant.waitMinutes)}</p>
-                <p className="text-xs text-ink-soft">นาที (ประมาณ)</p>
+              <div className="min-w-0 flex-1 rounded-3xl bg-cream px-3 py-3 sm:px-4">
+                <p className="truncate font-display text-xl font-black text-cocoa sm:text-2xl">
+                  {formatRange(restaurant.waitMinutes)}
+                </p>
+                <p className="truncate text-xs text-ink-soft">นาที (ประมาณ)</p>
               </div>
               <button
                 type="button"
                 aria-pressed={favorite}
                 aria-label="ร้านโปรด"
                 onClick={() => dispatch({ type: "favorites/toggle", kind: "restaurants", id: restaurant.id })}
-                className={`grid w-16 place-items-center rounded-3xl bg-cream text-brand-ink hover:bg-haze ${focusRing}`}
+                className={`grid w-14 shrink-0 place-items-center rounded-3xl bg-cream text-brand-ink hover:bg-haze sm:w-16 ${focusRing}`}
               >
                 <HeartIcon filled={favorite} className="size-6" />
               </button>

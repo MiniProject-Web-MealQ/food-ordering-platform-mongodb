@@ -5,7 +5,7 @@ import { buttonClasses } from "@/components/ui/styles";
 import { currentStatus, getOrderRestaurant, isActiveOrder } from "@/features/customer/catalog";
 import { ActiveOrderCard } from "@/features/customer/components/active-order-card";
 import { SegmentedTabs } from "@/features/customer/components/segmented-tabs";
-import { formatBaht, formatWhen } from "@/features/customer/format";
+import { formatBaht, formatOrderCode, formatWhen } from "@/features/customer/format";
 import { matchesFilters, orderFilterFields } from "@/features/customer/order-filters";
 import { useCustomer } from "@/features/customer/store";
 import { containerClass } from "@/features/customer/styles";
@@ -32,7 +32,7 @@ function HistoryCard({ order, onReorder }) {
             {order.items.map((item) => `${item.qty}× ${item.name}`).join(" · ")}
           </p>
           <p className="text-xs text-ink-soft">
-            #{order.id} · {cancelled ? "ยกเลิกแล้ว · " : ""}{formatWhen(order.statusTimes.CANCELLED || order.statusTimes.PICKED_UP || order.statusTimes.PLACED)}
+            {formatOrderCode(order.id)} · {cancelled ? "ยกเลิกแล้ว · " : ""}{formatWhen(order.statusTimes.CANCELLED || order.statusTimes.PICKED_UP || order.statusTimes.PLACED)}
           </p>
         </div>
         <p className="shrink-0 font-bold text-ink">{formatBaht(order.total)}</p>
